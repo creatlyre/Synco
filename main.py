@@ -12,6 +12,7 @@ from app.auth.routes import router as auth_router
 from app.database.database import Base, engine
 from app.events.routes import router as events_router
 from app.middleware.auth_middleware import SessionValidationMiddleware
+from app.sync.routes import router as sync_router
 from app.users.routes import router as users_router
 from app.views.calendar_routes import router as calendar_router
 
@@ -36,6 +37,7 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(events_router)
 app.include_router(calendar_router)
+app.include_router(sync_router)
 
 
 @app.get("/", response_class=HTMLResponse)

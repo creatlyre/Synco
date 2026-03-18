@@ -8,6 +8,7 @@ from app.database.database import get_db
 from app.events.repository import EventRepository
 from app.events.schemas import EventCreate, EventResponse, EventUpdate
 from app.events.service import EventService
+from app.sync.service import GoogleSyncService
 
 router = APIRouter(prefix="/api/events", tags=["events"])
 
@@ -24,6 +25,11 @@ async def create_event(payload: EventCreate, user=Depends(get_current_user), db:
         event = service.create_event(user.calendar_id, user.id, payload)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    try:
+        GoogleSyncService(db).sync_event_for_household(event, deleted=False)
+    except Exception:
+        pass
     return event
 
 
@@ -34,6 +40,11 @@ async def update_event(event_id: str, payload: EventUpdate, user=Depends(get_cur
         event = service.update_event(event_id, user.calendar_id, user.id, payload)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    try:
+        GoogleSyncService(db).sync_event_for_household(event, deleted=False)
+    except Exception:
+        pass
     return event
 
 
@@ -41,9 +52,14 @@ async def update_event(event_id: str, payload: EventUpdate, user=Depends(get_cur
 async def delete_event(event_id: str, user=Depends(get_current_user), db: Session = Depends(get_db)):
     service = _service(db)
     try:
-        service.delete_event(event_id, user.calendar_id, user.id)
+        event = service.delete_event(event_id, user.calendar_id, user.id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    try:
+        GoogleSyncService(db).sync_event_for_household(event, deleted=True)
+    except Exception:
+        pass
     return {"message": "deleted"}
 
 
