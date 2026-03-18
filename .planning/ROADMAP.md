@@ -11,7 +11,7 @@
 
 - [x] **Phase 1: Foundation** - Database, OAuth2 authentication, two-user authorization model
 - [x] **Phase 2: Core Event Management** - Event CRUD operations and calendar grid/list views  
-- [ ] **Phase 3: Recurring Events** - RFC5545 RRULE support with timezone/DST handling
+- [x] **Phase 3: Recurring Events** - RFC5545 RRULE support with timezone/DST handling
 - [ ] **Phase 4: Google Calendar Sync** - Push-based sync to Google Calendar with token management
 - [ ] **Phase 5: Natural Language Input** - dateparser-based event creation from text descriptions
 - [ ] **Phase 6: Image / OCR Event Extraction** - Image upload and date/time extraction with review
@@ -99,7 +99,10 @@
 - Timezone/DST disasters: store all times in UTC; render to user's timezone only at UI; hard-test DST boundaries (Nov 5, Mar 9)
 - In v1, disallow editing single recurrence instances; treat as separate events
 
-**Plans:** TBD
+**Plans:** 2/2 complete
+
+- [x] 03-01-PLAN.md - recurrence engine + service integration
+- [x] 03-02-PLAN.md - recurrence UI inputs + view expansion tests
 
 ---
 
@@ -185,11 +188,11 @@
 |-------|---|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-03-18 |
 | 2. Core Event Management | 4/4 | Complete | 2026-03-18 |
-| 3. Recurring Events | 0/2 | Not started | — |
+| 3. Recurring Events | 2/2 | Complete | 2026-03-18 |
 | 4. Google Calendar Sync | 0/3 | Not started | — |
 | 5. Natural Language Input | 0/2 | Not started | — |
 | 6. Image / OCR | 0/2 | Not started | — |
-| **TOTAL** | **7/16** | **In progress** | 2026-03-18 |
+| **TOTAL** | **9/16** | **In progress** | 2026-03-18 |
 
 ---
 
@@ -207,7 +210,7 @@
 | | AUTH-02: Two users linked to shared calendar | Phase 1 | Complete |
 | | AUTH-03: Session persists across refresh | Phase 1 | Complete |
 | **Events** | EVT-01: Create one-time event | Phase 2 | Complete |
-| | EVT-02: Create recurring event | Phase 3 | Pending |
+| | EVT-02: Create recurring event | Phase 3 | Complete |
 | | EVT-03: Edit event | Phase 2 | Complete |
 | | EVT-04: Delete event | Phase 2 | Complete |
 | | EVT-05: View upcoming events (day) | Phase 2 | Complete |
@@ -230,4 +233,4 @@
 ---
 
 *Roadmap created: 2026-03-18 by roadmapper*  
-*Next step: `/gsd-plan-phase 3`*
+*Next step: `/gsd-plan-phase 4`*
