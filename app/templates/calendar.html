@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar - CalendarPlanner{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <section class="rounded bg-white p-4 shadow md:col-span-2">
+        <h2 class="mb-2 text-2xl font-bold">Calendar</h2>
+        <p class="text-sm text-gray-600">Calendar UI lands in Phase 2.</p>
+        <p class="mt-4 text-sm"><strong>User:</strong> {{ user.email }}</p>
+        <p class="text-sm"><strong>Calendar ID:</strong> {{ user.calendar_id }}</p>
+    </section>
+
+    <aside class="rounded bg-white p-4 shadow">
+        <h3 class="mb-2 text-xl font-bold">Household</h3>
+        <div id="household-info" class="text-sm text-gray-600">Loading...</div>
+        <a href="/invite" class="mt-4 inline-block rounded bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700">Invite Member</a>
+    </aside>
+</div>
+
+<script>
+fetch('/api/users/household')
+  .then((res) => res.json())
+  .then((data) => {
+    const div = document.getElementById('household-info');
+    const members = (data.members || []).map((m) => `<li>${m.email}</li>`).join('');
+    div.innerHTML = `<p><strong>Members:</strong> ${data.member_count}</p><ul class="mt-2 list-disc pl-5">${members}</ul>`;
+  })
+  .catch(() => {
+    document.getElementById('household-info').textContent = 'Failed to load household data.';
+  });
+</script>
+{% endblock %}
