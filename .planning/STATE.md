@@ -91,12 +91,22 @@ v1.0 — Foundation through Image OCR (6 phases, 23 requirements)
 
 ---
 
+## Pending Todos
+
+| Title | Area | Phase | Priority |
+|-------|------|-------|----------|
+| Switch database to Supabase with MCP integration | database | 01-foundation | high |
+
+---
+
 ## Session Continuity
 
 **What was done:**
 - Roadmap created: 6 phases, 23 requirements, 100% coverage
 - Major pitfalls identified: token exhaustion, DST, conflicts, OCR accuracy
 - Phase success criteria defined with observable user behaviors
+- Phase 1 plans created (3 plans, 2 waves, ready for execution)
+- Captured todo: Consider switching SQLite → Supabase PostgreSQL (free, MCP-integrated, better for multi-device sync)
 
 **What comes next:**
 ```
