@@ -1,0 +1,111 @@
+# State: CalendarPlanner
+
+**Project:** CalendarPlanner v1.0  
+**Milestone:** 1  
+**Last Updated:** 2026-03-18
+
+---
+
+## Current Position
+
+| Metric | Value |
+|--------|-------|
+| **Current Phase** | 0 (Not started) |
+| **Total Phases** | 6 |
+| **Requirements Covered** | 23/23 |
+| **Progress** | 0% |
+
+---
+
+## Phase Status
+
+| Phase | Status | Progress | Last Updated |
+|-------|--------|----------|--------------|
+| 1. Foundation | Not started | 0% | 2026-03-18 |
+| 2. Core Event Management | Not started | 0% | 2026-03-18 |
+| 3. Recurring Events | Not started | 0% | 2026-03-18 |
+| 4. Google Calendar Sync | Not started | 0% | 2026-03-18 |
+| 5. Natural Language Input | Not started | 0% | 2026-03-18 |
+| 6. Image / OCR | Not started | 0% | 2026-03-18 |
+
+---
+
+## Project Reference
+
+**Core Value:**  
+A shared calendar both partners can edit that stays in sync with Google Calendar, so the family schedule is always current everywhere — on the web and on their phones.
+
+**Current Focus:**  
+Roadmap complete. Ready to plan Phase 1 (Foundation: Database, OAuth2, two-user model).
+
+**Current Milestone:**  
+v1.0 — Foundation through Image OCR (6 phases, 23 requirements)
+
+---
+
+## Key Decisions
+
+| Decision | Rationale | Status |
+|----------|-----------|--------|
+| Python + FastAPI backend | User's stated tech preference; async-first, fast | Approved |
+| Two-user household model | Simplest scope that covers target use case | Approved |
+| Push-only Google Sync (v1) | Reduces complexity; users read on phone via Google | Approved |
+| SQLite (not PostgreSQL) | Perfect for 2-user scope; file-based, zero ops | Approved |
+| Server-rendered (Jinja2 + HTMX) | No SPA complexity; instant render, HTMX for forms | Approved |
+| EasyOCR (not Cloud Vision) | Privacy (local processing); offline; cost-effective | Approved |
+
+---
+
+## Accumulated Context
+
+### Critical Pitfalls (Per Research)
+
+#### 1. Refresh Token Exhaustion (Phase 4)
+- **Prevention:** Store one refresh token per user permanently; reuse for all API calls
+- **Monitoring:** Catch `invalid_grant` errors; flag user for re-auth but don't crash
+- **Testing:** Use "Production" OAuth consent screen from day one
+
+#### 2. Timezone/DST Disasters (Phase 3)
+- **Prevention:** Always store times in UTC internally; render to user's timezone only at UI
+- **Testing:** Hard-test DST boundaries (Nov 5 spring-forward, Mar 9 fall-back in US)
+- **Edge Case:** When user enters "March 15 2pm", ask timezone explicitly if not in profile
+
+#### 3. Concurrent Edit Conflicts (Phase 2/Early)
+- **Prevention:** Implement optimistic locking—store `last_edited_at` + `last_editor_id` with each event
+- **Approach:** When saving, check if event changed; if yes, show conflict dialog to user
+- **Future:** Phase X conflict resolution UI ("Use yours" / "Use theirs" / "Merge")
+
+#### 4. OCR Accuracy (Phase 6)
+- **Prevention:** Never auto-add OCR results; always require human review
+- **UI:** Show confidence indicator per field; highlight <75% in yellow
+- **Fallback:** If OCR fails, show raw text + manual form entry
+
+### Build Order (Dependency Chain)
+
+1. **Phase 1 (Foundation):** Google OAuth2, database schema, two-user auth
+2. **Phase 2 (Core CRUD):** EventService, event views, calendar grid
+3. **Phase 3 (Recurring):** RecurrenceService, RRULE, DST handling (blocks Phase 2 shipping to users)
+4. **Phase 4 (Google Sync):** GoogleSyncService, token management, push workflow
+5. **Phase 5 (NLP):** dateparser integration, natural language input UI
+6. **Phase 6 (OCR):** EasyOCR integration, image upload, human review flow
+
+---
+
+## Session Continuity
+
+**What was done:**
+- Roadmap created: 6 phases, 23 requirements, 100% coverage
+- Major pitfalls identified: token exhaustion, DST, conflicts, OCR accuracy
+- Phase success criteria defined with observable user behaviors
+
+**What comes next:**
+```
+Next Action: `/gsd-plan-phase 1`
+Command to run:
+node "$HOME/.copilot/get-shit-done/bin/gsd-tools.cjs" plan 1
+```
+
+---
+
+*State initialized: 2026-03-18*  
+*Ready to proceed: Phase 1 planning*

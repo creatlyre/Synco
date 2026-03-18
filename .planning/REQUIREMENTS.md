@@ -85,37 +85,37 @@
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
+Which phases cover which requirements.
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| EVT-01 | Phase 2 | Pending |
-| EVT-02 | Phase 3 | Pending |
-| EVT-03 | Phase 2 | Pending |
-| EVT-04 | Phase 2 | Pending |
-| EVT-05 | Phase 2 | Pending |
-| EVT-06 | Phase 2 | Pending |
-| EVT-07 | Phase 1 | Pending |
-| VIEW-01 | Phase 2 | Pending |
-| VIEW-02 | Phase 2 | Pending |
-| VIEW-03 | Phase 2 | Pending |
-| SYNC-01 | Phase 4 | Pending |
-| SYNC-02 | Phase 4 | Pending |
-| SYNC-03 | Phase 4 | Pending |
-| SYNC-04 | Phase 4 | Pending |
-| NLP-01 | Phase 5 | Pending |
-| NLP-02 | Phase 5 | Pending |
-| NLP-03 | Phase 5 | Pending |
-| OCR-01 | Phase 6 | Pending |
-| OCR-02 | Phase 6 | Pending |
-| OCR-03 | Phase 6 | Pending |
+| Requirement | Phase | Goal | Status |
+|-------------|-------|------|--------|
+| AUTH-01 | Phase 1 | Foundation (OAuth2, auth, two-user model) | Pending |
+| AUTH-02 | Phase 1 | Foundation (OAuth2, auth, two-user model) | Pending |
+| AUTH-03 | Phase 1 | Foundation (OAuth2, auth, two-user model) | Pending |
+| EVT-07 | Phase 1 | Foundation (OAuth2, auth, two-user model) | Pending |
+| EVT-01 | Phase 2 | Core Event Management (CRUD, calendar views) | Pending |
+| EVT-03 | Phase 2 | Core Event Management (CRUD, calendar views) | Pending |
+| EVT-04 | Phase 2 | Core Event Management (CRUD, calendar views) | Pending |
+| EVT-05 | Phase 2 | Core Event Management (CRUD, calendar views) | Pending |
+| EVT-06 | Phase 2 | Core Event Management (CRUD, calendar views) | Pending |
+| VIEW-01 | Phase 2 | Core Event Management (CRUD, calendar views) | Pending |
+| VIEW-02 | Phase 2 | Core Event Management (CRUD, calendar views) | Pending |
+| VIEW-03 | Phase 2 | Core Event Management (CRUD, calendar views) | Pending |
+| EVT-02 | Phase 3 | Recurring Events (RRULE, RFC5545, DST) | Pending |
+| SYNC-01 | Phase 4 | Google Calendar Sync (push, token management) | Pending |
+| SYNC-02 | Phase 4 | Google Calendar Sync (push, token management) | Pending |
+| SYNC-03 | Phase 4 | Google Calendar Sync (push, token management) | Pending |
+| SYNC-04 | Phase 4 | Google Calendar Sync (push, token management) | Pending |
+| NLP-01 | Phase 5 | Natural Language Input (dateparser) | Pending |
+| NLP-02 | Phase 5 | Natural Language Input (dateparser) | Pending |
+| NLP-03 | Phase 5 | Natural Language Input (dateparser) | Pending |
+| OCR-01 | Phase 6 | Image / OCR Event Extraction (EasyOCR) | Pending |
+| OCR-02 | Phase 6 | Image / OCR Event Extraction (EasyOCR) | Pending |
+| OCR-03 | Phase 6 | Image / OCR Event Extraction (EasyOCR) | Pending |
 
 **Coverage:**
-- v1 requirements: 22 total
-- Mapped to phases: 22
+- v1 requirements: 23 total
+- Mapped to phases: 23 ✓
 - Unmapped: 0 ✓
 
 ---
