@@ -12,7 +12,7 @@
 - [x] **Phase 1: Foundation** - Database, OAuth2 authentication, two-user authorization model
 - [x] **Phase 2: Core Event Management** - Event CRUD operations and calendar grid/list views  
 - [x] **Phase 3: Recurring Events** - RFC5545 RRULE support with timezone/DST handling
-- [ ] **Phase 4: Google Calendar Sync** - Push-based sync to Google Calendar with token management
+- [x] **Phase 4: Google Calendar Sync** - Push-based sync to Google Calendar with token management
 - [ ] **Phase 5: Natural Language Input** - dateparser-based event creation from text descriptions
 - [ ] **Phase 6: Image / OCR Event Extraction** - Image upload and date/time extraction with review
 
@@ -128,7 +128,11 @@
 - Refresh token exhaustion: reuse single token per user; implement `invalid_grant` error recovery (flag user for re-auth)
 - Google Calendar API quota batching: batch multiple event push operations per request
 
-**Plans:** TBD
+**Plans:** 3/3 complete
+
+- [x] 04-01-PLAN.md - Google sync service foundation
+- [x] 04-02-PLAN.md - month export + sync status APIs
+- [x] 04-03-PLAN.md - automatic sync hooks on event CRUD
 
 ---
 
@@ -189,10 +193,10 @@
 | 1. Foundation | 3/3 | Complete | 2026-03-18 |
 | 2. Core Event Management | 4/4 | Complete | 2026-03-18 |
 | 3. Recurring Events | 2/2 | Complete | 2026-03-18 |
-| 4. Google Calendar Sync | 0/3 | Not started | — |
+| 4. Google Calendar Sync | 3/3 | Complete | 2026-03-18 |
 | 5. Natural Language Input | 0/2 | Not started | — |
 | 6. Image / OCR | 0/2 | Not started | — |
-| **TOTAL** | **9/16** | **In progress** | 2026-03-18 |
+| **TOTAL** | **12/16** | **In progress** | 2026-03-18 |
 
 ---
 
@@ -219,10 +223,10 @@
 | **Views** | VIEW-01: Month calendar grid | Phase 2 | Complete |
 | | VIEW-02: Navigate months | Phase 2 | Complete |
 | | VIEW-03: Events show title/time | Phase 2 | Complete |
-| **Sync** | SYNC-01: Export month to Google Calendar | Phase 4 | Pending |
-| | SYNC-02: Auto-push new events | Phase 4 | Pending |
-| | SYNC-03: Reflected deletions | Phase 4 | Pending |
-| | SYNC-04: Both users' calendars synced | Phase 4 | Pending |
+| **Sync** | SYNC-01: Export month to Google Calendar | Phase 4 | Complete |
+| | SYNC-02: Auto-push new events | Phase 4 | Complete |
+| | SYNC-03: Reflected deletions | Phase 4 | Complete |
+| | SYNC-04: Both users' calendars synced | Phase 4 | Complete |
 | **NLP** | NLP-01: Parse natural language | Phase 5 | Pending |
 | | NLP-02: Show parsed event for confirmation | Phase 5 | Pending |
 | | NLP-03: Allow user to correct fields | Phase 5 | Pending |
@@ -233,4 +237,4 @@
 ---
 
 *Roadmap created: 2026-03-18 by roadmapper*  
-*Next step: `/gsd-plan-phase 4`*
+*Next step: `/gsd-plan-phase 5`*
