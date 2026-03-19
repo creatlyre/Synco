@@ -96,7 +96,7 @@ def set_locale_cookie_if_param(response: Response, request: Request) -> None:
     Set locale cookie if ?lang=xx query param is present and valid.
     
     Called after locale has been resolved and page rendered.
-    Sets httpOnly cookie with 365-day expiry and lax sameSite policy.
+    Sets httponly cookie with 365-day expiry and lax sameSite policy.
     """
     lang_param = request.query_params.get("lang")
     if lang_param:
@@ -105,7 +105,7 @@ def set_locale_cookie_if_param(response: Response, request: Request) -> None:
             response.set_cookie(
                 "locale",
                 normalized,
-                httpOnly=True,
-                sameSite="lax",
+                httponly=True,
+                samesite="lax",
                 max_age=31536000,  # 365 days in seconds
             )

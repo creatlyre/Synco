@@ -253,3 +253,39 @@ def authenticated_client(test_db, test_user_a: User):
         yield client
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def locale_reset_client(authenticated_client):
+    """Test client with locale state cleared (cookie, localStorage sim)."""
+    # Clear locale cookie before each test
+    authenticated_client.cookies.delete("locale", domain=None, path=None)
+    yield authenticated_client
+    # Teardown: clear cookie again
+    authenticated_client.cookies.delete("locale", domain=None, path=None)
+
+
+def get_page_in_locale(client, path, locale="pl"):
+    """Fetch page with locale query param or cookie."""
+    if locale == "pl":
+        # Use default, no param needed
+        return client.get(path)
+    else:
+        # Request with locale param
+        return client.get(f"{path}?lang={locale}")
+
+
+def assert_locale_rendered(html_text, expected_locale):
+    """Verify locale identifier in page (e.g., 'pl-PL', Polish label)."""
+    if expected_locale == "pl":
+        assert 'lang="pl"' in html_text or "Wyloguj" in html_text  # Polish logout
+    elif expected_locale == "en":
+        assert 'lang="en"' in html_text or "Logout" in html_text  # English logout
+
+
+def assert_contains_any(text, *candidates):
+    """Check if text contains any of the candidate strings."""
+    for candidate in candidates:
+        if candidate in text:
+            return True
+    raise AssertionError(f"None of {candidates} found in text")

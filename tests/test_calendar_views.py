@@ -10,6 +10,14 @@ def assert_contains_any(text: str, *candidates: str) -> None:
     )
 
 
+def assert_locale_rendered(html_text, expected_locale):
+    """Verify locale identifier in page (e.g., 'pl-PL', Polish label)."""
+    if expected_locale == "pl":
+        assert 'lang="pl"' in html_text or "Wyloguj" in html_text  # Polish logout
+    elif expected_locale == "en":
+        assert 'lang="en"' in html_text or "Logout" in html_text  # English logout
+
+
 def test_month_view_renders_event_title_and_time(authenticated_client):
     now = datetime.utcnow().replace(microsecond=0)
     authenticated_client.post(
@@ -432,3 +440,62 @@ def test_quick_add_clear_review_resets_visibility(authenticated_client):
 def test_prefill_event_accepts_visibility(authenticated_client):
     html = _calendar_html(authenticated_client)
     assert "eventEntryVisibilityInput.value = visibility || 'shared'" in html
+
+
+# ── Phase 9 locale and language switching ─────────────────────────────────────
+
+def test_default_locale_is_polish(authenticated_client):
+    """First-time user sees Polish UI by default."""
+    html = authenticated_client.get("/").text
+    assert_locale_rendered(html, "pl")
+    # Check some Polish copy is present
+    assert_contains_any(html, "Kalendarz", "Wyloguj", "Synchronizacja Google")
+
+
+def test_switch_locale_from_polish_to_english(authenticated_client):
+    """User can switch to English and UI updates."""
+    # Load in English
+    html = authenticated_client.get("/?lang=en").text
+    assert_locale_rendered(html, "en")
+    assert_contains_any(html, "Calendar", "Logout", "Google Sync")
+
+
+def test_locale_cookie_persists_across_reload(authenticated_client):
+    """Language selection persists in cookie across page reload."""
+    # Switch to English
+    response1 = authenticated_client.get("/?lang=en")
+    assert response1.status_code == 200
+
+    # Verify cookie was set
+    cookies = authenticated_client.cookies
+    assert cookies.get("locale") == "en"
+
+    # Reload without query param
+    html = authenticated_client.get("/").text
+    assert_locale_rendered(html, "en")  # Should still be English
+
+
+def test_english_locale_consistent_across_pages(authenticated_client):
+    """English rendering is consistent across different pages."""
+    # Set locale to English
+    authenticated_client.get("/?lang=en")
+
+    # Check calendar page
+    calendar_html = authenticated_client.get("/").text
+    assert_contains_any(calendar_html, "Calendar", "Logout", "Google Sync")
+
+    # Check invite page
+    invite_html = authenticated_client.get("/invite").text
+    assert_contains_any(invite_html, "Back to Calendar", "Logout")
+
+
+def test_query_param_overrides_cookie(authenticated_client):
+    """?lang=en overrides persisted pl cookie."""
+    # Set cookie to Polish
+    authenticated_client.get("/?lang=pl")
+    assert authenticated_client.cookies.get("locale") == "pl"
+
+    # Request with ?lang=en should set new cookie
+    html = authenticated_client.get("/?lang=en").text
+    assert_locale_rendered(html, "en")
+    assert authenticated_client.cookies.get("locale") == "en"
