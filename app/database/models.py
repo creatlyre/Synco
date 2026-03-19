@@ -1,93 +1,62 @@
-import uuid
+from __future__ import annotations
+
+from dataclasses import dataclass, field
 from datetime import datetime
-
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, String, Text
-from sqlalchemy.orm import relationship
-
-from app.database.database import Base
+import uuid
 
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    email = Column(String(255), unique=True, nullable=False, index=True)
-    name = Column(String(255))
-    google_id = Column(String(255), unique=True)
-
-    google_access_token = Column(Text)
-    google_refresh_token = Column(Text)
-    google_token_expiry = Column(DateTime)
-
-    calendar_id = Column(String(36), ForeignKey("calendars.id"), index=True)
-
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    last_login = Column(DateTime)
-
-    calendar = relationship("Calendar", back_populates="users", foreign_keys=[calendar_id])
+@dataclass
+class User:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    email: str = ""
+    name: str = ""
+    google_id: str | None = None
+    google_access_token: str | None = None
+    google_refresh_token: str | None = None
+    google_token_expiry: datetime | None = None
+    calendar_id: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    last_login: datetime | None = None
 
 
-class Calendar(Base):
-    __tablename__ = "calendars"
-
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = Column(String(255))
-    timezone = Column(String(50), default="UTC")
-
-    owner_user_id = Column(String(36), ForeignKey("users.id"))
-
-    google_calendar_id = Column(String(255))
-    last_sync_at = Column(DateTime)
-
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-
-    users = relationship("User", back_populates="calendar", foreign_keys="User.calendar_id")
-    invitations = relationship("CalendarInvitation", back_populates="calendar", cascade="all, delete-orphan")
-    events = relationship("Event", back_populates="calendar", cascade="all, delete-orphan")
+@dataclass
+class Calendar:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    name: str = ""
+    timezone: str = "UTC"
+    owner_user_id: str | None = None
+    google_calendar_id: str | None = None
+    last_sync_at: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
-class CalendarInvitation(Base):
-    __tablename__ = "calendar_invitations"
-
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    calendar_id = Column(String(36), ForeignKey("calendars.id"), nullable=False)
-    invited_email = Column(String(255), nullable=False, index=True)
-    inviter_user_id = Column(String(36), ForeignKey("users.id"))
-    status = Column(String(20), default="pending", nullable=False)
-
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    expires_at = Column(DateTime)
-
-    calendar = relationship("Calendar", back_populates="invitations")
+@dataclass
+class CalendarInvitation:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    calendar_id: str = ""
+    invited_email: str = ""
+    inviter_user_id: str | None = None
+    status: str = "pending"
+    created_at: datetime | None = None
+    expires_at: datetime | None = None
 
 
-class Event(Base):
-    __tablename__ = "events"
-
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    calendar_id = Column(String(36), ForeignKey("calendars.id"), nullable=False, index=True)
-    created_by_user_id = Column(String(36), ForeignKey("users.id"))
-
-    title = Column(String(255), nullable=False)
-    description = Column(Text)
-
-    start_at = Column(DateTime, nullable=False, index=True)
-    end_at = Column(DateTime, nullable=False)
-    timezone = Column(String(50), default="UTC")
-
-    rrule = Column(String(500))
-
-    google_event_id = Column(String(255))
-    google_sync_at = Column(DateTime)
-
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    last_edited_by_user_id = Column(String(36), ForeignKey("users.id"))
-    is_deleted = Column(Boolean, default=False, nullable=False)
-
-    calendar = relationship("Calendar", back_populates="events")
-
-
-Index("ix_events_start_end", Event.start_at, Event.end_at)
+@dataclass
+class Event:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    calendar_id: str = ""
+    created_by_user_id: str | None = None
+    title: str = ""
+    description: str | None = None
+    start_at: datetime | None = None
+    end_at: datetime | None = None
+    timezone: str = "UTC"
+    rrule: str | None = None
+    google_event_id: str | None = None
+    google_sync_at: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    last_edited_by_user_id: str | None = None
+    is_deleted: bool = False

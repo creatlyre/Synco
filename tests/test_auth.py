@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from app.database.models import User
+from app.users.repository import UserRepository
 
 
 def test_oauth_callback_creates_user(test_db, test_client, monkeypatch):
@@ -26,7 +26,7 @@ def test_oauth_callback_creates_user(test_db, test_client, monkeypatch):
     assert response.headers.get("location") == "/"
     assert "session=" in response.headers.get("set-cookie", "")
 
-    user = test_db.query(User).filter(User.email == "newuser@example.com").first()
+    user = UserRepository(test_db).get_user_by_email("newuser@example.com")
     assert user is not None
     assert user.calendar_id is not None
 
@@ -36,3 +36,25 @@ def test_invalid_session_redirects(test_client):
 
     assert response.status_code == 307
     assert response.headers.get("location") == "/auth/login"
+
+
+def test_parse_invalid_session_returns_401_not_500(test_client, monkeypatch):
+    import app.auth.dependencies as auth_dependencies
+
+    async def _fetch_none(_token: str):
+        return None
+
+    async def _refresh_none(_refresh: str):
+        return None
+
+    monkeypatch.setattr(auth_dependencies, "fetch_supabase_user", _fetch_none)
+    monkeypatch.setattr(auth_dependencies, "refresh_supabase_access_token", _refresh_none)
+
+    response = test_client.post(
+        "/api/events/parse",
+        json={"text": "dentist Thursday 14:00"},
+        cookies={"session": "invalid-token"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid session"

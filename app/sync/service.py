@@ -5,11 +5,11 @@ from datetime import datetime
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from sqlalchemy.orm import Session
 
 from app.auth.oauth import refresh_access_token
 from app.auth.utils import decrypt_token, encrypt_token
 from app.database.models import Event, User
+from app.users.repository import UserRepository
 from app.events.repository import EventRepository
 from app.events.service import EventService
 from config import Settings
@@ -23,12 +23,15 @@ class SyncResult:
 
 
 class GoogleSyncService:
-    def __init__(self, db: Session):
+    def __init__(self, db):
         self.db = db
         self.settings = Settings()
+        self.user_repo = UserRepository(db)
 
     def _household_users(self, calendar_id: str) -> list[User]:
-        return self.db.query(User).filter(User.calendar_id == calendar_id).all()
+        rows = self.db.select("users", {"calendar_id": f"eq.{calendar_id}"})
+        users = [self.user_repo.get_user_by_id(item.get("id")) for item in rows if item.get("id")]
+        return [user for user in users if user is not None]
 
     def _credentials_for_user(self, user: User) -> Credentials | None:
         if not user.google_refresh_token and not user.google_access_token:
@@ -54,8 +57,14 @@ class GoogleSyncService:
             if refreshed.get("refresh_token"):
                 user.google_refresh_token = encrypt_token(refreshed["refresh_token"])
             user.google_token_expiry = refreshed.get("token_expiry")
-            self.db.add(user)
-            self.db.commit()
+            self.user_repo.update_user(
+                user.id,
+                {
+                    "google_access_token": user.google_access_token,
+                    "google_refresh_token": user.google_refresh_token,
+                    "google_token_expiry": user.google_token_expiry.isoformat() if user.google_token_expiry else None,
+                },
+            )
 
             creds = Credentials(
                 token=refreshed["access_token"],
@@ -141,8 +150,11 @@ class GoogleSyncService:
 
         if hasattr(event, "google_sync_at"):
             event.google_sync_at = datetime.utcnow()
-            self.db.add(event)
-            self.db.commit()
+            self.db.update(
+                "events",
+                {"id": f"eq.{event.id}"},
+                {"google_sync_at": event.google_sync_at.isoformat()},
+            )
         return SyncResult(users_synced=synced_users, events_synced=synced_events, errors=errors)
 
     def export_month(self, user: User, year: int, month: int) -> SyncResult:

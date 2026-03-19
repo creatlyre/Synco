@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.database.database import get_db
@@ -15,7 +14,7 @@ router = APIRouter(prefix="/calendar", tags=["calendar"])
 templates = Jinja2Templates(directory="app/templates")
 
 
-def _service(db: Session) -> EventService:
+def _service(db) -> EventService:
     return EventService(EventRepository(db))
 
 
@@ -25,7 +24,7 @@ async def month_grid(
     year: int = Query(...),
     month: int = Query(...),
     user=Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db=Depends(get_db),
 ):
     service = _service(db)
     events = service.list_month_expanded(user.calendar_id, year, month)
@@ -65,7 +64,7 @@ async def day_events(
     month: int = Query(...),
     day: int = Query(...),
     user=Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db=Depends(get_db),
 ):
     service = _service(db)
     events = service.list_day_expanded(user.calendar_id, year, month, day)

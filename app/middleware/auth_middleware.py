@@ -1,12 +1,8 @@
 import os
 
-import jwt
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
-
-from config import Settings
-
 
 class SessionValidationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -17,6 +13,9 @@ class SessionValidationMiddleware(BaseHTTPMiddleware):
             "/health",
             "/auth/login",
             "/auth/callback",
+            "/auth/session",
+            "/auth/register",
+            "/auth/password-login",
             "/docs",
             "/openapi.json",
             "/redoc",
@@ -26,18 +25,8 @@ class SessionValidationMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         session_cookie = request.cookies.get("session")
-        if not session_cookie:
-            return RedirectResponse(url="/auth/login", status_code=307)
-
-        settings = Settings()
-        try:
-            payload = jwt.decode(
-                session_cookie,
-                settings.SECRET_KEY,
-                algorithms=[settings.JWT_ALGORITHM],
-            )
-            request.state.user_id = payload.get("user_id")
-        except jwt.InvalidTokenError:
+        refresh_cookie = request.cookies.get("supabase_refresh")
+        if not session_cookie and not refresh_cookie:
             return RedirectResponse(url="/auth/login", status_code=307)
 
         return await call_next(request)

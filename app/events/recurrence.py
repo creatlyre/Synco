@@ -47,7 +47,11 @@ def expand_event(event: Event, range_start: datetime, range_end: datetime) -> It
         return
 
     duration = event.end_at - event.start_at
-    rule = rrulestr(event.rrule, dtstart=event.start_at)
+    try:
+        rule = rrulestr(event.rrule, dtstart=event.start_at)
+    except Exception:
+        # Gracefully handle legacy/corrupt RRULE values already stored in DB.
+        return
     for index, occurrence_start in enumerate(rule.between(range_start, range_end, inc=True)):
         occurrence_id = f"{event.id}:{index}:{occurrence_start.isoformat()}"
         yield EventOccurrence(

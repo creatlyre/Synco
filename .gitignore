@@ -1,0 +1,9 @@
+.agents/
+.planning/
+.env
+
+package-lock.json
+skill-lock.json
+*.pyc
+__pycache__/
+node_modules/

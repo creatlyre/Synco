@@ -1,8 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, EmailStr
-from sqlalchemy.orm import Session
+from typing import Optional
 
+from fastapi import APIRouter, Cookie, Depends, HTTPException
+from pydantic import BaseModel, EmailStr
+
+from app.auth.supabase_auth import (
+    decode_legacy_session_token,
+    fetch_supabase_user,
+    refresh_supabase_access_token,
+)
 from app.auth.dependencies import get_current_user
+from app.database.supabase_store import SupabaseStoreError
 from app.database.database import get_db
 from app.users.service import UserService
 
@@ -30,7 +37,7 @@ async def get_current_user_info(user=Depends(get_current_user)):
 
 
 @router.get("/household")
-async def get_household_info(user=Depends(get_current_user), db: Session = Depends(get_db)):
+async def get_household_info(user=Depends(get_current_user), db=Depends(get_db)):
     service = UserService(db)
     info = service.get_household_info(user.id)
 
@@ -46,24 +53,55 @@ async def get_household_info(user=Depends(get_current_user), db: Session = Depen
 async def invite_household_member(
     request: InviteRequest,
     user=Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db=Depends(get_db),
+    session: Optional[str] = Cookie(None),
+    supabase_refresh: Optional[str] = Cookie(None),
 ):
     if request.email.lower() == user.email.lower():
         raise HTTPException(status_code=400, detail="Cannot invite yourself")
 
+    db_auth_token = session
+    if session and decode_legacy_session_token(session):
+        db_auth_token = None
+
+    if db_auth_token:
+        supabase_profile = await fetch_supabase_user(db_auth_token)
+        if not supabase_profile:
+            db_auth_token = None
+
+    if not db_auth_token and supabase_refresh:
+        refreshed = await refresh_supabase_access_token(supabase_refresh)
+        if refreshed:
+            db_auth_token = refreshed.get("access_token")
+
+    if not db_auth_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Supabase session required for invite writes. Please sign out and sign in again.",
+        )
+
     service = UserService(db)
     try:
-        invitation = service.invite_user(user.id, request.email)
+        invitation = service.invite_user(
+            user.id,
+            request.email,
+            inviter_email=user.email,
+            inviter_name=user.name,
+            inviter_external_id=getattr(user, "google_id", None) or user.id,
+            auth_token=db_auth_token,
+        )
         return InvitationResponse(
             message=f"Invitation sent to {request.email}",
             invited_email=invitation.invited_email,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except SupabaseStoreError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @router.post("/accept-invitation")
-async def accept_invitation(user=Depends(get_current_user), db: Session = Depends(get_db)):
+async def accept_invitation(user=Depends(get_current_user), db=Depends(get_db)):
     service = UserService(db)
     result = service.accept_household_invitation(user.id)
 

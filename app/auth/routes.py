@@ -3,32 +3,193 @@ import uuid
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Response
-from fastapi.responses import RedirectResponse
-from sqlalchemy.orm import Session
+from fastapi.responses import HTMLResponse, RedirectResponse
+from pydantic import BaseModel, EmailStr
 
 from app.auth.oauth import exchange_code_for_token, get_authorization_url
+from app.auth.supabase_auth import (
+    build_google_authorize_url,
+    fetch_supabase_user,
+    is_supabase_auth_enabled,
+    supabase_password_sign_in,
+    supabase_sign_up,
+)
 from app.auth.utils import encrypt_token
 from app.database.database import get_db
-from app.database.models import Calendar, User
+from app.database.models import User
+from app.users.repository import UserRepository
 from app.users.service import UserService
 from config import Settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+class AuthSessionPayload(BaseModel):
+    access_token: str
+    refresh_token: str | None = None
+    provider_token: str | None = None
+    provider_refresh_token: str | None = None
+
+
+class PasswordAuthPayload(BaseModel):
+    email: EmailStr
+    password: str
+
+
+def _set_session_cookie(response: Response, session_token: str) -> None:
+    settings = Settings()
+    response.set_cookie(
+        key="session",
+        value=session_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=settings.JWT_EXPIRY_HOURS * 3600,
+    )
+
+
+def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
+    settings = Settings()
+    response.set_cookie(
+        key="supabase_refresh",
+        value=refresh_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=max(settings.JWT_EXPIRY_HOURS * 3600 * 4, 86400),
+    )
+
+
+def _upsert_local_user_from_profile(
+    db,
+    email: str,
+    name: str,
+    external_id: str,
+    provider_token: str | None = None,
+    provider_refresh_token: str | None = None,
+) -> User:
+    repo = UserRepository(db)
+    user = repo.get_user_by_email(email.lower())
+
+    if not user:
+        user_id = str(uuid.uuid4())
+        payload = {
+            "id": user_id,
+            "email": email.lower(),
+            "name": name or email,
+            "google_id": external_id,
+            "last_login": datetime.utcnow().isoformat(),
+        }
+        if provider_token:
+            payload["google_access_token"] = encrypt_token(provider_token)
+        if provider_refresh_token:
+            payload["google_refresh_token"] = encrypt_token(provider_refresh_token)
+        user = repo.create_user(payload)
+        cal = repo.create_calendar(
+            {
+                "id": str(uuid.uuid4()),
+                "name": f"{(name or email)}'s Calendar",
+                "owner_user_id": user_id,
+            }
+        )
+        user = repo.update_user(user.id, {"calendar_id": cal.id}) or user
+    else:
+        update_payload = {
+            "name": name or user.name,
+            "google_id": user.google_id or external_id,
+            "last_login": datetime.utcnow().isoformat(),
+        }
+        if not user.calendar_id:
+            cal = repo.create_calendar(
+                {
+                    "id": str(uuid.uuid4()),
+                    "name": f"{(name or email)}'s Calendar",
+                    "owner_user_id": user.id,
+                }
+            )
+            update_payload["calendar_id"] = cal.id
+        if provider_token:
+            update_payload["google_access_token"] = encrypt_token(provider_token)
+        if provider_refresh_token:
+            update_payload["google_refresh_token"] = encrypt_token(provider_refresh_token)
+        user = repo.update_user(user.id, update_payload) or user
+
+    service = UserService(db)
+    service.accept_household_invitation(user.id)
+    return user
+
+
 @router.get("/login")
 async def login():
+    settings = Settings()
+    if is_supabase_auth_enabled(settings):
+        auth_url = build_google_authorize_url(settings.GOOGLE_REDIRECT_URI)
+        return RedirectResponse(url=auth_url)
+
     auth_url, _state = get_authorization_url()
     return RedirectResponse(url=auth_url)
 
 
 @router.get("/callback")
-async def oauth_callback(code: str, state: str, db: Session = Depends(get_db)):
-    if not code:
-        raise HTTPException(status_code=400, detail="Missing auth code")
+async def oauth_callback(
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    db=Depends(get_db),
+):
+    settings = Settings()
 
+    if error:
+        raise HTTPException(status_code=400, detail=f"OAuth callback failed: {error}")
+
+    if not code:
+        # Supabase OAuth implicit flow delivers tokens in URL fragment; JS forwards them to /auth/session.
+        return HTMLResponse(
+            """
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Signing in...</title></head>
+<body>
+  <p>Finalizing sign-in...</p>
+  <script>
+    (async function () {
+      try {
+        const hash = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : '';
+        const params = new URLSearchParams(hash);
+        const payload = {
+          access_token: params.get('access_token'),
+          refresh_token: params.get('refresh_token'),
+          provider_token: params.get('provider_token'),
+          provider_refresh_token: params.get('provider_refresh_token')
+        };
+        if (!payload.access_token) {
+          document.body.innerHTML = '<p>Missing OAuth access token. Please try /auth/login again.</p>';
+          return;
+        }
+        const response = await fetch('/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          document.body.innerHTML = `<p>Sign-in failed: ${data.detail || 'unknown error'}</p>`;
+          return;
+        }
+        window.location.href = '/';
+      } catch (err) {
+        document.body.innerHTML = `<p>Sign-in failed: ${String(err)}</p>`;
+      }
+    })();
+  </script>
+</body>
+</html>
+            """.strip()
+        )
+
+    # Keep direct Google callback flow for backward compatibility and tests.
     try:
-        tokens = exchange_code_for_token(code, state)
+        tokens = exchange_code_for_token(code, state or "")
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"OAuth callback failed: {exc}") from exc
 
@@ -36,45 +197,17 @@ async def oauth_callback(code: str, state: str, db: Session = Depends(get_db)):
     if not user_info.get("email") or not user_info.get("google_id"):
         raise HTTPException(status_code=400, detail="Google profile data is incomplete")
 
-    user = db.query(User).filter(User.google_id == user_info["google_id"]).first()
+    user = _upsert_local_user_from_profile(
+        db=db,
+        email=user_info["email"],
+        name=user_info.get("name") or user_info["email"],
+        external_id=user_info["google_id"],
+        provider_token=tokens.get("access_token"),
+        provider_refresh_token=tokens.get("refresh_token"),
+    )
 
-    if not user:
-        user = User(
-            id=str(uuid.uuid4()),
-            email=user_info["email"].lower(),
-            name=user_info.get("name") or user_info["email"],
-            google_id=user_info["google_id"],
-            google_access_token=encrypt_token(tokens["access_token"]),
-            google_refresh_token=encrypt_token(tokens.get("refresh_token") or ""),
-            google_token_expiry=tokens["token_expiry"],
-            last_login=datetime.utcnow(),
-        )
+    UserRepository(db).update_user(user.id, {"google_token_expiry": tokens["token_expiry"].isoformat()})
 
-        calendar = Calendar(
-            id=str(uuid.uuid4()),
-            name=f"{user.name}'s Calendar",
-            owner_user_id=user.id,
-        )
-        user.calendar_id = calendar.id
-
-        db.add(calendar)
-        db.add(user)
-    else:
-        user.google_access_token = encrypt_token(tokens["access_token"])
-        if tokens.get("refresh_token"):
-            user.google_refresh_token = encrypt_token(tokens["refresh_token"])
-        user.google_token_expiry = tokens["token_expiry"]
-        user.last_login = datetime.utcnow()
-        db.add(user)
-
-    db.commit()
-    db.refresh(user)
-
-    # Auto-accept pending household invitations after login.
-    service = UserService(db)
-    service.accept_household_invitation(user.id)
-
-    settings = Settings()
     payload = {
         "user_id": str(user.id),
         "email": user.email,
@@ -83,18 +216,122 @@ async def oauth_callback(code: str, state: str, db: Session = Depends(get_db)):
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
     response = RedirectResponse(url="/", status_code=302)
-    response.set_cookie(
-        key="session",
-        value=token,
-        httponly=True,
-        secure=False,
-        samesite="lax",
-        max_age=settings.JWT_EXPIRY_HOURS * 3600,
-    )
+    _set_session_cookie(response, token)
+    return response
+
+
+@router.post("/session")
+async def create_supabase_session(payload: AuthSessionPayload, db=Depends(get_db)):
+    profile = await fetch_supabase_user(payload.access_token)
+    if not profile:
+        raise HTTPException(status_code=401, detail="Invalid Supabase session token")
+
+    email = (profile.get("email") or "").lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Supabase profile missing email")
+
+    metadata = profile.get("user_metadata") or {}
+    name = metadata.get("full_name") or metadata.get("name") or email
+    external_id = profile.get("id") or ""
+
+    db_warning = None
+    try:
+        _upsert_local_user_from_profile(
+            db=db,
+            email=email,
+            name=name,
+            external_id=external_id,
+            provider_token=payload.provider_token,
+            provider_refresh_token=payload.provider_refresh_token,
+        )
+    except Exception:
+        db_warning = "Authenticated via Supabase, but local database is unavailable right now."
+
+    body = '{"message":"session created"}' if not db_warning else '{"message":"session created","warning":"local_db_unavailable"}'
+    response = Response(content=body, media_type="application/json")
+    _set_session_cookie(response, payload.access_token)
+    if payload.refresh_token:
+        _set_refresh_cookie(response, payload.refresh_token)
+    return response
+
+
+@router.post("/register")
+async def register_with_password(payload: PasswordAuthPayload, db=Depends(get_db)):
+    settings = Settings()
+    if not is_supabase_auth_enabled(settings):
+        raise HTTPException(status_code=400, detail="Supabase auth is not configured")
+
+    try:
+        data = await supabase_sign_up(payload.email, payload.password)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    access_token = data.get("access_token")
+    user = data.get("user") or {}
+    email = (user.get("email") or payload.email).lower()
+    name = (user.get("user_metadata") or {}).get("full_name") or email
+    external_id = user.get("id") or ""
+    db_warning = None
+    try:
+        _upsert_local_user_from_profile(db, email, name, external_id)
+    except Exception:
+        db_warning = "registered_but_local_db_unavailable"
+
+    if not access_token:
+        if db_warning:
+            return {
+                "message": "Registration created. Confirm your email to sign in.",
+                "warning": db_warning,
+            }
+        return {"message": "Registration created. Confirm your email to sign in."}
+
+    body = '{"message":"registered"}' if not db_warning else '{"message":"registered","warning":"registered_but_local_db_unavailable"}'
+    response = Response(content=body, media_type="application/json")
+    _set_session_cookie(response, access_token)
+    if data.get("refresh_token"):
+        _set_refresh_cookie(response, data["refresh_token"])
+    return response
+
+
+@router.post("/password-login")
+async def login_with_password(payload: PasswordAuthPayload, db=Depends(get_db)):
+    settings = Settings()
+    if not is_supabase_auth_enabled(settings):
+        raise HTTPException(status_code=400, detail="Supabase auth is not configured")
+
+    try:
+        data = await supabase_password_sign_in(payload.email, payload.password)
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+    access_token = data.get("access_token")
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Supabase did not return an access token")
+
+    supabase_profile = await fetch_supabase_user(access_token)
+    if not supabase_profile:
+        raise HTTPException(status_code=401, detail="Unable to fetch Supabase user profile")
+
+    email = (supabase_profile.get("email") or payload.email).lower()
+    metadata = supabase_profile.get("user_metadata") or {}
+    name = metadata.get("full_name") or metadata.get("name") or email
+    external_id = supabase_profile.get("id") or ""
+    db_warning = None
+    try:
+        _upsert_local_user_from_profile(db, email, name, external_id)
+    except Exception:
+        db_warning = "logged_in_but_local_db_unavailable"
+
+    body = '{"message":"logged in"}' if not db_warning else '{"message":"logged in","warning":"logged_in_but_local_db_unavailable"}'
+    response = Response(content=body, media_type="application/json")
+    _set_session_cookie(response, access_token)
+    if data.get("refresh_token"):
+        _set_refresh_cookie(response, data["refresh_token"])
     return response
 
 
 @router.post("/logout")
 async def logout(response: Response):
     response.delete_cookie("session")
+    response.delete_cookie("supabase_refresh")
     return {"message": "Logged out"}

@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 from pydantic import Field
@@ -7,6 +8,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     DEBUG: bool = False
     SECRET_KEY: str = "your-secret-key-change-in-production"
+
+    SUPABASE_URL: str = Field(
+        default_factory=lambda: os.getenv("SUPABASE_URL", "")
+        or os.getenv("NEXT_PUBLIC_SUPABASE_URL", "")
+    )
+    SUPABASE_ANON_KEY: str = Field(
+        default_factory=lambda: os.getenv("SUPABASE_ANON_KEY", "")
+        or os.getenv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY", "")
+        or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "")
+    )
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
 
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
@@ -19,9 +31,6 @@ class Settings(BaseSettings):
             "https://www.googleapis.com/auth/calendar",
         ]
     )
-
-    # Supabase PostgreSQL connection string
-    DATABASE_URL: str = "postgresql://user:password@host:5432/calendar"
 
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRY_HOURS: int = 8

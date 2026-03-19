@@ -2,26 +2,18 @@ import os
 from datetime import datetime
 
 from fastapi import Depends, FastAPI, Request
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.exc import SQLAlchemyError
 
 from app.auth.dependencies import get_current_user
 from app.auth.routes import router as auth_router
-from app.database.database import Base, engine
 from app.events.routes import router as events_router
 from app.middleware.auth_middleware import SessionValidationMiddleware
 from app.sync.routes import router as sync_router
 from app.users.routes import router as users_router
 from app.views.calendar_routes import router as calendar_router
-
-# Initialize database schema. Use Alembic migrations for production evolution.
-try:
-    Base.metadata.create_all(bind=engine)
-except SQLAlchemyError:
-    # Allow app boot without hard-failing when DATABASE_URL is not configured yet.
-    pass
 
 app = FastAPI(
     title="CalendarPlanner",
@@ -74,7 +66,7 @@ async def auth_redirect_handler(request: Request, exc: HTTPException):
         from fastapi.responses import RedirectResponse
 
         return RedirectResponse(url="/auth/login", status_code=307)
-    raise exc
+    return await http_exception_handler(request, exc)
 
 
 if __name__ == "__main__":
