@@ -26,7 +26,7 @@ class ParseEventResponse(BaseModel):
     """Response from parsing natural language event text."""
 
     title: str
-    start_at: datetime
+    start_at: Optional[datetime] = None
     end_at: Optional[datetime] = None
     timezone: str
     confidence_date: float
@@ -57,7 +57,7 @@ async def parse_event(payload: ParseEventRequest, user=Depends(get_current_user)
     # Parse the text
     nlp = NLPService()
     result = nlp.parse(payload.text, timezone, context_date)
-    
+
     # Return as response model
     return ParseEventResponse(
         title=result.title,

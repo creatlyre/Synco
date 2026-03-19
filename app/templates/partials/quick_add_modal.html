@@ -1,0 +1,230 @@
+<!-- Quick Add Modal: text-entry → loading → review → save -->
+<div id="quick-add-modal"
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="qa-modal-title">
+
+  <!-- Desktop: centered dialog; mobile: full-screen (CSS overrides below) -->
+  <div id="qa-modal-panel"
+       class="relative bg-white shadow-lg w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-lg">
+
+    <!-- ── Header ───────────────────────────────────────────── -->
+    <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+      <div>
+        <h2 id="qa-modal-title" class="text-lg font-semibold">Quick Add Event</h2>
+        <p class="mt-0.5 text-xs text-gray-500">
+          Describe an event in natural language, e.g. "dentist Thursday 14:00"
+        </p>
+      </div>
+      <button id="qa-header-close-btn"
+              type="button"
+              class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              aria-label="Close modal">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd"
+                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- ── Text Entry Phase ──────────────────────────────────── -->
+    <div id="qa-text-entry" class="px-6 py-4">
+      <label for="qa-text-input" class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
+        What's the event?
+      </label>
+      <input
+        id="qa-text-input"
+        type="text"
+        placeholder="dentist Thursday 14:00, meeting next Friday 10am, ..."
+        class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        autocomplete="off"
+        aria-describedby="qa-error-summary"
+      />
+
+      <!-- Inline error area (hidden by default) -->
+      <div id="qa-error-inline" class="mt-2 hidden" role="alert" aria-live="assertive">
+        <p id="qa-error-summary" class="text-xs font-medium text-red-600"></p>
+        <p id="qa-error-examples" class="mt-1 hidden text-xs text-gray-500">
+          Try: <span id="qa-examples-list"></span>
+        </p>
+      </div>
+
+      <!-- Status region for screen readers -->
+      <div id="qa-sr-status" aria-live="polite" class="sr-only"></div>
+
+      <div class="mt-4 flex gap-2">
+        <button
+          id="qa-parse-btn"
+          type="button"
+          class="flex-1 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          Parse
+        </button>
+        <button
+          id="qa-close-btn-text"
+          type="button"
+          class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Loading Phase ─────────────────────────────────────── -->
+    <div id="qa-loading" class="hidden px-6 py-10 text-center" aria-hidden="true">
+      <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
+      <p class="mt-2 text-sm text-gray-500">Parsing…</p>
+    </div>
+
+    <!-- ── Review Phase ──────────────────────────────────────── -->
+    <div id="qa-review-phase" class="hidden px-6 py-4">
+
+      <!-- Original text reference -->
+      <div class="mb-4 flex items-start justify-between rounded bg-gray-50 px-3 py-2 text-xs text-gray-600">
+        <span><strong>From:</strong> <span id="qa-review-original-text" class="italic"></span></span>
+        <button
+          id="qa-edit-text-btn"
+          type="button"
+          class="ml-3 shrink-0 text-blue-600 hover:underline"
+        >
+          Edit text
+        </button>
+      </div>
+
+      <!-- Note area (auto-picked date notice, low-confidence note, etc.) -->
+      <div id="qa-review-note" class="hidden mb-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700"></div>
+
+      <div class="space-y-3">
+        <!-- Title -->
+        <div>
+          <label for="qa-parsed-title"
+                 class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
+            Title <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="qa-parsed-title"
+            type="text"
+            class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <!-- Start / End -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="qa-parsed-start"
+                   class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
+              Start <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="qa-parsed-start"
+              type="datetime-local"
+              class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div>
+            <label for="qa-parsed-end"
+                   class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
+              End
+            </label>
+            <input
+              id="qa-parsed-end"
+              type="datetime-local"
+              class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <!-- Repeat / Count -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="qa-parsed-repeat"
+                   class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
+              Repeat
+            </label>
+            <select
+              id="qa-parsed-repeat"
+              class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">No repeat</option>
+              <option value="DAILY">Daily</option>
+              <option value="WEEKLY">Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+              <option value="YEARLY">Yearly</option>
+            </select>
+          </div>
+          <div>
+            <label for="qa-parsed-count"
+                   class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
+              Count
+            </label>
+            <input
+              id="qa-parsed-count"
+              type="number"
+              min="1"
+              placeholder="optional"
+              class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <!-- Until -->
+        <div>
+          <label for="qa-parsed-until"
+                 class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
+            Repeat until (optional)
+          </label>
+          <input
+            id="qa-parsed-until"
+            type="date"
+            class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <!-- Save inline error -->
+        <div id="qa-save-error" class="hidden rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" role="alert"></div>
+
+        <!-- Action buttons -->
+        <div class="mt-4 flex gap-2">
+          <button
+            id="qa-save-btn"
+            type="button"
+            class="flex-1 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            Save Event
+          </button>
+          <button
+            id="qa-save-another-btn"
+            type="button"
+            class="flex-1 rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-50"
+          >
+            Save &amp; Add Another
+          </button>
+          <button
+            id="qa-back-btn"
+            type="button"
+            class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
+          >
+            Back
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Mobile: override to full-screen -->
+<style>
+  @media (max-width: 640px) {
+    #qa-modal-panel {
+      max-width: 100%;
+      max-height: 100vh;
+      min-height: 100vh;
+      border-radius: 0;
+    }
+  }
+</style>

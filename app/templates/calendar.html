@@ -17,9 +17,18 @@
 
     <aside class="space-y-4">
         <div class="rounded bg-white p-4 shadow">
-            <h3 class="mb-3 text-lg font-semibold">Event Editor</h3>
+            <div class="mb-3 flex items-center justify-between">
+                <h3 class="text-lg font-semibold">Event Editor</h3>
+                <button id="qa-open-btn"
+                        type="button"
+                        class="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">
+                    &#9889; Quick Add
+                </button>
+            </div>
             {% include "partials/event_form.html" %}
         </div>
+
+        {% include "partials/quick_add_modal.html" %}
 
         <div class="rounded bg-white p-4 shadow">
             <h3 class="mb-2 text-lg font-semibold">Household</h3>
@@ -147,5 +156,307 @@ fetch('/api/users/household')
   .catch(() => {
     document.getElementById('household-info').textContent = 'Failed to load household data.';
   });
+
+// ── Quick Add Modal ────────────────────────────────────────────────────────
+(function () {
+  const qaModal       = document.getElementById('quick-add-modal');
+  const qaTextEntry   = document.getElementById('qa-text-entry');
+  const qaReview      = document.getElementById('qa-review-phase');
+  const qaLoading     = document.getElementById('qa-loading');
+  const qaTextInput   = document.getElementById('qa-text-input');
+  const qaParseBtn    = document.getElementById('qa-parse-btn');
+  const qaSaveBtn     = document.getElementById('qa-save-btn');
+  const qaSaveAnotherBtn = document.getElementById('qa-save-another-btn');
+  const qaErrorInline = document.getElementById('qa-error-inline');
+  const qaSaveError   = document.getElementById('qa-save-error');
+  const qaSrStatus    = document.getElementById('qa-sr-status');
+
+  let _saveInFlight = false;
+
+  // ── Open / Close helpers ────────────────────────────────────────────────
+  function openModal() {
+    resetModal();
+    qaModal.classList.remove('hidden');
+    qaModal.classList.add('flex');
+    qaTextInput.focus();
+  }
+
+  function closeModal() {
+    if (_saveInFlight) return;
+    qaModal.classList.add('hidden');
+    qaModal.classList.remove('flex');
+    resetModal();
+  }
+
+  function resetModal() {
+    showPhase('text-entry');
+    qaTextInput.value = '';
+    hideError();
+    hideSaveError();
+    clearReviewFields();
+    document.getElementById('qa-review-note').classList.add('hidden');
+  }
+
+  function showPhase(phase) {
+    qaTextEntry.classList.toggle('hidden', phase !== 'text-entry');
+    qaLoading.classList.toggle('hidden', phase !== 'loading');
+    qaLoading.setAttribute('aria-hidden', phase !== 'loading' ? 'true' : 'false');
+    qaReview.classList.toggle('hidden', phase !== 'review');
+  }
+
+  // ── Error display ────────────────────────────────────────────────────────
+  function showError(message, examples) {
+    qaErrorInline.classList.remove('hidden');
+    document.getElementById('qa-error-summary').textContent = message;
+    const examplesEl  = document.getElementById('qa-error-examples');
+    const exListEl    = document.getElementById('qa-examples-list');
+    if (examples && examples.length > 0) {
+      examplesEl.classList.remove('hidden');
+      exListEl.textContent = examples.slice(0, 2).join(' · ');
+    } else {
+      examplesEl.classList.add('hidden');
+    }
+    qaSrStatus.textContent = message;
+  }
+
+  function hideError() {
+    qaErrorInline.classList.add('hidden');
+    qaSrStatus.textContent = '';
+  }
+
+  function showSaveError(message) {
+    qaSaveError.textContent = message;
+    qaSaveError.classList.remove('hidden');
+  }
+
+  function hideSaveError() {
+    qaSaveError.classList.add('hidden');
+    qaSaveError.textContent = '';
+  }
+
+  // ── Review field helpers ────────────────────────────────────────────────
+  function clearReviewFields() {
+    ['qa-parsed-title', 'qa-parsed-start', 'qa-parsed-end',
+     'qa-parsed-count', 'qa-parsed-until'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const rep = document.getElementById('qa-parsed-repeat');
+    if (rep) rep.value = '';
+  }
+
+  function toDatetimeLocal(isoString) {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    // Use sv-SE locale to get YYYY-MM-DDTHH:MM format
+    return d.toLocaleString('sv-SE', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    }).replace(' ', 'T');
+  }
+
+  function populateReview(originalText, parsed) {
+    document.getElementById('qa-review-original-text').textContent = originalText;
+    document.getElementById('qa-parsed-title').value  = parsed.title || '';
+    document.getElementById('qa-parsed-start').value  = toDatetimeLocal(parsed.start_at);
+    document.getElementById('qa-parsed-end').value    = toDatetimeLocal(parsed.end_at);
+
+    // Highlight auto-picked date note
+    const noteEl = document.getElementById('qa-review-note');
+    if (parsed.note) {
+      noteEl.textContent = parsed.note;
+      noteEl.classList.remove('hidden');
+    } else {
+      noteEl.classList.add('hidden');
+    }
+
+    // Recurrence
+    if (parsed.recurrence && parsed.recurrence.freq) {
+      document.getElementById('qa-parsed-repeat').value = parsed.recurrence.freq;
+      if (parsed.recurrence.count) {
+        document.getElementById('qa-parsed-count').value = parsed.recurrence.count;
+      }
+      if (parsed.recurrence.until) {
+        document.getElementById('qa-parsed-until').value =
+          parsed.recurrence.until.split('T')[0];
+      }
+    }
+  }
+
+  // ── Build rrule string from review fields ─────────────────────────────
+  function buildQARRule() {
+    const freq  = document.getElementById('qa-parsed-repeat').value;
+    const count = document.getElementById('qa-parsed-count').value;
+    const until = document.getElementById('qa-parsed-until').value;
+    if (!freq) return null;
+    const parts = [`FREQ=${freq}`];
+    if (count) parts.push(`COUNT=${parseInt(count, 10)}`);
+    if (until) parts.push(`UNTIL=${until.replaceAll('-', '')}T235959Z`);
+    return parts.join(';');
+  }
+
+  function buildPayload() {
+    const startVal = document.getElementById('qa-parsed-start').value;
+    const endVal   = document.getElementById('qa-parsed-end').value;
+    return {
+      title:    document.getElementById('qa-parsed-title').value.trim(),
+      start_at: startVal ? new Date(startVal).toISOString() : null,
+      end_at:   endVal   ? new Date(endVal).toISOString()   : null,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+      rrule:    buildQARRule()
+    };
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────────────
+  function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className =
+      'fixed bottom-4 right-4 z-[100] rounded bg-green-600 px-4 py-2 text-sm text-white shadow-lg';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  // ── Parse ────────────────────────────────────────────────────────────────
+  qaParseBtn.addEventListener('click', async () => {
+    const text = qaTextInput.value.trim();
+    if (!text) {
+      showError('Please enter some text to parse.',
+        ['dentist Thursday 14:00', 'meeting next Friday 10am', 'weekly standup Monday 09:00']);
+      return;
+    }
+    hideError();
+    showPhase('loading');
+
+    try {
+      const contextDate =
+        new Date(currentYear, currentMonth - 1, currentDay)
+          .toISOString()
+          .split('T')[0];
+
+      const res = await fetch('/api/events/parse', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ text, context_date: contextDate })
+      });
+
+      if (!res.ok) {
+        let errMsg = 'Could not parse that text.';
+        try {
+          const data = await res.json();
+          if (data.detail) errMsg = data.detail;
+          else if (Array.isArray(data.errors)) errMsg = data.errors[0] || errMsg;
+        } catch (_) {}
+        showPhase('text-entry');
+        showError(errMsg,
+          ['dentist Thursday 14:00', 'meeting next Friday 10am']);
+        return;
+      }
+
+      const parsed = await res.json();
+
+      // NLPService may return errors inside a 200 response
+      if (parsed.errors && parsed.errors.length > 0) {
+        showPhase('text-entry');
+        showError(parsed.errors[0],
+          ['dentist Thursday 14:00', 'meeting next Friday 10am']);
+        return;
+      }
+
+      populateReview(text, parsed);
+      showPhase('review');
+      document.getElementById('qa-parsed-title').focus();
+      qaSrStatus.textContent = 'Parsed. Review your event details.';
+
+    } catch (_) {
+      showPhase('text-entry');
+      showError('Network error — check your connection and try again.', []);
+    }
+  });
+
+  // ── Save ─────────────────────────────────────────────────────────────────
+  async function saveEvent(keepOpen) {
+    hideSaveError();
+    const payload = buildPayload();
+
+    if (!payload.title) {
+      showSaveError('Title is required.');
+      document.getElementById('qa-parsed-title').focus();
+      return;
+    }
+    if (!payload.start_at) {
+      showSaveError('Start date/time is required.');
+      document.getElementById('qa-parsed-start').focus();
+      return;
+    }
+
+    _saveInFlight = true;
+    qaSaveBtn.disabled = true;
+    qaSaveAnotherBtn.disabled = true;
+
+    try {
+      const res = await fetch('/api/events', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showSaveError(err.detail || 'Failed to save event. Check the fields and try again.');
+        return;
+      }
+
+      showToast('Event saved');
+
+      if (keepOpen) {
+        resetModal();
+        qaTextInput.focus();
+      } else {
+        closeModal();
+        await refreshPanels();
+      }
+
+    } catch (_) {
+      showSaveError('Network error — event not saved. Try again.');
+    } finally {
+      _saveInFlight = false;
+      qaSaveBtn.disabled = false;
+      qaSaveAnotherBtn.disabled = false;
+    }
+  }
+
+  qaSaveBtn.addEventListener('click', () => saveEvent(false));
+  qaSaveAnotherBtn.addEventListener('click', () => saveEvent(true));
+
+  // ── Navigation buttons ───────────────────────────────────────────────────
+  document.getElementById('qa-open-btn').addEventListener('click', openModal);
+  document.getElementById('qa-header-close-btn').addEventListener('click', closeModal);
+  document.getElementById('qa-close-btn-text').addEventListener('click', closeModal);
+
+  document.getElementById('qa-back-btn').addEventListener('click', () => {
+    showPhase('text-entry');
+    qaTextInput.focus();
+  });
+
+  document.getElementById('qa-edit-text-btn').addEventListener('click', () => {
+    showPhase('text-entry');
+    qaTextInput.focus();
+  });
+
+  // Escape closes modal (not during save)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !qaModal.classList.contains('hidden') && !_saveInFlight) {
+      closeModal();
+    }
+  });
+
+  // Click outside dialog panel closes (desktop)
+  qaModal.addEventListener('click', (e) => {
+    if (e.target === qaModal && !_saveInFlight) {
+      closeModal();
+    }
+  });
+}());
 </script>
 {% endblock %}
