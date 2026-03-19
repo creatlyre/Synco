@@ -1,12 +1,13 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from pydantic import BaseModel
 
 from app.auth.dependencies import get_current_user
 from app.database.database import get_db
 from app.events.nlp import NLPService, ParseResult
+from app.events.ocr import OCRService
 from app.events.repository import EventRepository
 from app.events.schemas import EventCreate, EventResponse, EventUpdate
 from app.events.service import EventService
@@ -37,6 +38,20 @@ class ParseEventResponse(BaseModel):
     raw_text: str
     ambiguous: bool = False
     year_candidates: list[int] = []
+
+
+class OCRParseResponse(BaseModel):
+    """Response from OCR-assisted parse."""
+
+    title: str
+    start_at: Optional[datetime] = None
+    end_at: Optional[datetime] = None
+    timezone: str
+    confidence_title: float
+    confidence_date: float
+    confidence_raw: float
+    raw_text: str
+    errors: list[str]
 
 
 def _service(db) -> EventService:
@@ -91,6 +106,41 @@ async def parse_event(payload: ParseEventRequest, user=Depends(get_current_user)
         raw_text=result.raw_text,
         ambiguous=result.ambiguous,
         year_candidates=result.year_candidates,
+    )
+
+
+@router.post("/ocr-parse", response_model=OCRParseResponse)
+async def parse_event_from_image(
+    image: UploadFile = File(...),
+    context_date: Optional[str] = None,
+    user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """Parse event details from uploaded image text using OCR + NLP."""
+    image_bytes = await image.read()
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded image is empty")
+
+    parsed_context = None
+    if context_date:
+        try:
+            parsed_context = datetime.fromisoformat(context_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid context_date format, use ISO 8601") from None
+
+    timezone = _resolve_timezone(user, db)
+    result = OCRService().parse_image(image_bytes, timezone, parsed_context)
+
+    return OCRParseResponse(
+        title=result.title,
+        start_at=result.start_at,
+        end_at=result.end_at,
+        timezone=result.timezone,
+        confidence_title=result.confidence_title,
+        confidence_date=result.confidence_date,
+        confidence_raw=result.confidence_raw,
+        raw_text=result.raw_text,
+        errors=result.errors,
     )
 
 

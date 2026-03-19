@@ -8,20 +8,20 @@
 <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
     <section class="space-y-4 lg:col-span-3">
         <div id="month-grid" hx-get="/calendar/month?year={{ now.year }}&month={{ now.month }}" hx-trigger="load" hx-swap="innerHTML">
-            <div class="rounded bg-white p-4 shadow">Loading month view...</div>
+            <div class="glass rounded-2xl p-4 text-white/50">Loading calendar…</div>
         </div>
         <div id="day-events" hx-get="/calendar/day?year={{ now.year }}&month={{ now.month }}&day={{ now.day }}" hx-trigger="load" hx-swap="innerHTML">
-            <div class="rounded bg-white p-4 shadow">Loading day events...</div>
+            <div class="glass rounded-2xl p-4 text-white/50">Loading events…</div>
         </div>
     </section>
 
     <aside class="space-y-4">
-        <div class="rounded bg-white p-4 shadow">
+        <div class="glass rounded-2xl p-4">
             <div class="mb-3 flex items-center justify-between">
-                <h3 class="text-lg font-semibold">Event Editor</h3>
+                <h3 class="text-lg font-semibold text-white">Event Editor</h3>
                 <button id="qa-open-btn"
                         type="button"
-                    class="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
+                    class="glass-btn-primary rounded-xl px-3 py-1.5 text-sm font-medium">
                     &#9889; Quick Add
                 </button>
             </div>
@@ -30,10 +30,10 @@
 
         {% include "partials/quick_add_modal.html" %}
 
-        <div class="rounded bg-white p-4 shadow">
-            <h3 class="mb-2 text-lg font-semibold">Household</h3>
-            <div id="household-info" class="text-sm text-gray-600">Loading...</div>
-            <a href="/invite" class="mt-3 inline-block rounded bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700">Invite Member</a>
+        <div class="glass rounded-2xl p-4">
+            <h3 class="mb-2 text-lg font-semibold text-white">Household</h3>
+            <div id="household-info" class="text-sm text-white/60">Loading…</div>
+            <a href="/invite" class="mt-3 inline-block glass-btn-primary rounded-xl px-3 py-2 text-sm font-medium">Invite Member</a>
         </div>
     </aside>
 </div>
@@ -170,6 +170,8 @@ fetch('/api/users/household')
   const qaLoading     = document.getElementById('qa-loading');
   const qaTextInput   = document.getElementById('qa-text-input');
   const qaParseBtn    = document.getElementById('qa-parse-btn');
+  const qaOcrBtn      = document.getElementById('qa-ocr-btn');
+  const qaOcrInput    = document.getElementById('qa-ocr-input');
   const qaSaveBtn     = document.getElementById('qa-save-btn');
   const qaSaveAnotherBtn = document.getElementById('qa-save-another-btn');
   const qaErrorInline = document.getElementById('qa-error-inline');
@@ -178,6 +180,7 @@ fetch('/api/users/household')
   const qaLiveRegion  = document.getElementById('qa-live-region');
 
   let _saveInFlight = false;
+  let _ocrInFlight = false;
   let qaParseFailures = 0;
   let _ambiguityPending = false;
   let _ambiguousParseData = null;
@@ -205,6 +208,7 @@ fetch('/api/users/household')
     _ambiguityPending = false;
     _ambiguousParseData = null;
     _ambiguousOriginalText = '';
+    _ocrInFlight = false;
     hideError();
     hideSaveError();
     clearReviewFields();
@@ -512,7 +516,7 @@ fetch('/api/users/household')
         parsed.year_candidates.forEach(year => {
           const btn = document.createElement('button');
           btn.type = 'button';
-          btn.className = 'flex-1 rounded border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-blue-50 hover:border-blue-400';
+          btn.className = 'flex-1 glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium';
           btn.dataset.year = year;
           btn.textContent = String(year);
           btn.setAttribute('aria-label', `Use year ${year}`);
@@ -544,7 +548,7 @@ fetch('/api/users/household')
     const fallbackBtn = document.createElement('button');
     fallbackBtn.id = 'qa-fallback-try-btn';
     fallbackBtn.type = 'button';
-    fallbackBtn.className = 'w-full rounded bg-yellow-500 px-4 py-2 text-sm text-gray-900 hover:bg-yellow-600 mt-2 font-medium';
+    fallbackBtn.className = 'glass-btn-secondary w-full rounded-xl px-4 py-2 text-sm font-medium mt-2';
     fallbackBtn.textContent = 'Try manual entry instead';
     fallbackBtn.addEventListener('click', showQAFallback);
     
@@ -583,6 +587,66 @@ fetch('/api/users/household')
     
     // Announce via live region
     qaLiveRegion.textContent = 'Using manual entry form. Fill in the event details.';
+  }
+
+  async function parseFromImage(file) {
+    if (!file) return;
+    hideError();
+    showPhase('loading');
+    _ocrInFlight = true;
+
+    try {
+      const contextDate =
+        new Date(currentYear, currentMonth - 1, currentDay)
+          .toISOString()
+          .split('T')[0];
+
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('context_date', contextDate);
+
+      const res = await fetch('/api/events/ocr-parse', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showPhase('text-entry');
+        showQAError('parse_failed', err.detail || 'Failed to parse uploaded image.');
+        return;
+      }
+
+      const parsed = await res.json();
+      if (parsed.errors && parsed.errors.length > 0) {
+        showPhase('fallback');
+        document.getElementById('qa-fallback-original-text').textContent =
+          parsed.raw_text || 'No readable text extracted.';
+        document.getElementById('qa-fallback-title').value = parsed.title || '';
+        showQAError('parse_failed', parsed.errors[0]);
+        qaLiveRegion.textContent = 'OCR parsing needs review. Manual form is shown with extracted text.';
+        return;
+      }
+
+      qaTextInput.value = parsed.raw_text || qaTextInput.value;
+      populateReview(parsed.raw_text || 'Image extraction', {
+        title: parsed.title,
+        start_at: parsed.start_at,
+        end_at: parsed.end_at,
+        confidence_title: parsed.confidence_title,
+        confidence_date: parsed.confidence_date,
+        recurrence: null,
+        note: `OCR confidence: ${(parsed.confidence_raw * 100).toFixed(0)}%`,
+      });
+      showPhase('review');
+      qaSrStatus.textContent = 'Image parsed. Review extracted fields before saving.';
+    } catch (_) {
+      showPhase('text-entry');
+      showQAError('network_error');
+    } finally {
+      _ocrInFlight = false;
+      qaOcrInput.value = '';
+    }
   }
 
   document.getElementById('qa-fallback-save-btn').addEventListener('click', async () => {
@@ -719,6 +783,13 @@ fetch('/api/users/household')
 
   qaSaveBtn.addEventListener('click', () => saveEvent(false));
   qaSaveAnotherBtn.addEventListener('click', () => saveEvent(true));
+  qaOcrBtn.addEventListener('click', () => qaOcrInput.click());
+  qaOcrInput.addEventListener('change', () => {
+    const file = qaOcrInput.files && qaOcrInput.files[0] ? qaOcrInput.files[0] : null;
+    if (file) {
+      parseFromImage(file);
+    }
+  });
 
   // ── Navigation buttons ───────────────────────────────────────────────────
   document.getElementById('qa-open-btn').addEventListener('click', openModal);

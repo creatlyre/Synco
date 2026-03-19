@@ -1,25 +1,25 @@
 <!-- Quick Add Modal: text-entry → loading → review → save -->
 <div id="quick-add-modal"
-     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50"
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm"
      role="dialog"
      aria-modal="true"
      aria-labelledby="qa-modal-title">
 
   <!-- Desktop: centered dialog; mobile: full-screen (CSS overrides below) -->
   <div id="qa-modal-panel"
-       class="relative bg-white shadow-lg w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-lg">
+       class="relative glass shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl">
 
     <!-- ── Header ───────────────────────────────────────────── -->
-    <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+    <div class="flex items-center justify-between border-b border-white/20 px-6 py-4">
       <div>
-        <h2 id="qa-modal-title" class="text-lg font-semibold">Quick Add Event</h2>
-        <p class="mt-0.5 text-xs text-gray-500">
+        <h2 id="qa-modal-title" class="text-lg font-semibold text-white">Quick Add Event</h2>
+        <p class="mt-0.5 text-xs text-white/50">
           Describe an event in natural language, e.g. "dentist Thursday 14:00"
         </p>
       </div>
       <button id="qa-header-close-btn"
               type="button"
-              class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              class="rounded-lg p-1 text-white/50 hover:bg-white/10 hover:text-white"
               aria-label="Close modal">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd"
@@ -31,23 +31,23 @@
 
     <!-- ── Text Entry Phase ──────────────────────────────────── -->
     <div id="qa-text-entry" class="px-6 py-4">
-      <label for="qa-text-input" class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
+      <label for="qa-text-input" class="mb-1 block text-xs font-medium uppercase tracking-wide text-white/60">
         What's the event?
       </label>
       <input
         id="qa-text-input"
         type="text"
         placeholder="dentist Thursday 14:00, meeting next Friday 10am, ..."
-        class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="glass-input"
         autocomplete="off"
         aria-describedby="qa-error-summary"
       />
 
       <!-- Inline error area (hidden by default) - structured "What + Why + Fix" -->
-      <div id="qa-error-inline" class="mt-2 hidden p-3 bg-red-50 border border-red-200 rounded" role="alert" aria-live="assertive">
-        <p id="qa-error-summary" class="text-sm text-red-800 font-medium"></p>
-        <p id="qa-error-why" class="text-xs text-red-700 mt-1"></p>
-        <button id="qa-error-retry-link" type="button" class="text-xs text-red-600 hover:underline mt-2 hidden">
+      <div id="qa-error-inline" class="mt-2 hidden p-3 bg-red-900/20 border border-red-400/30 rounded-xl" role="alert" aria-live="assertive">
+        <p id="qa-error-summary" class="text-sm text-red-300 font-medium"></p>
+        <p id="qa-error-why" class="text-xs text-red-400 mt-1"></p>
+        <button id="qa-error-retry-link" type="button" class="text-xs text-red-400/80 hover:text-red-300 hover:underline mt-2 hidden">
           Try again
         </button>
       </div>
@@ -70,30 +70,38 @@
         <button
           id="qa-parse-btn"
           type="button"
-          class="flex-1 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          class="flex-1 glass-btn-primary rounded-xl px-4 py-2 text-sm font-medium disabled:opacity-50"
         >
           Parse
         </button>
         <button
+          id="qa-ocr-btn"
+          type="button"
+          class="glass-btn-secondary rounded-xl px-4 py-2 text-sm"
+        >
+          Scan Image
+        </button>
+        <button
           id="qa-close-btn-text"
           type="button"
-          class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
+          class="glass-btn-secondary rounded-xl px-4 py-2 text-sm"
         >
           Cancel
         </button>
       </div>
+      <input id="qa-ocr-input" type="file" accept="image/*" class="hidden" />
     </div>
 
     <!-- ── Loading Phase ─────────────────────────────────────── -->
     <div id="qa-loading" class="hidden px-6 py-10 text-center" aria-hidden="true">
-      <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
-      <p class="mt-2 text-sm text-gray-500">Parsing…</p>
+      <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-indigo-400"></div>
+      <p class="mt-2 text-sm text-white/50">Parsing…</p>
     </div>
     <!-- ── Ambiguity Phase (year disambiguation) ────────────────── -->
     <div id="qa-ambiguity-phase" class="hidden px-6 py-4">
-      <div class="mb-4 rounded border border-amber-200 bg-amber-50 px-4 py-3">
-        <p class="text-sm font-medium text-amber-800">Which year did you mean?</p>
-        <p class="mt-0.5 text-xs text-amber-700">
+      <div class="mb-4 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3">
+        <p class="text-sm font-medium text-amber-300">Which year did you mean?</p>
+        <p class="mt-0.5 text-xs text-amber-400/80">
           "<span id="qa-ambiguity-event-summary"></span>" — the year wasn't specified.
           Please choose the intended year before saving.
         </p>
@@ -107,7 +115,7 @@
         <button
           id="qa-ambiguity-back-btn"
           type="button"
-          class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
+          class="glass-btn-secondary rounded-xl px-4 py-2 text-sm"
         >
           Back
         </button>
@@ -117,31 +125,31 @@
     <div id="qa-review-phase" class="hidden px-6 py-4">
 
       <!-- Original text reference -->
-      <div class="mb-4 flex items-start justify-between rounded bg-gray-50 px-3 py-2 text-xs text-gray-600">
+      <div class="mb-4 flex items-start justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-xs text-white/60">
         <span><strong>From:</strong> <span id="qa-review-original-text" class="italic"></span></span>
         <button
           id="qa-edit-text-btn"
           type="button"
-          class="ml-3 shrink-0 text-blue-600 hover:underline"
+          class="ml-3 shrink-0 text-indigo-400 hover:text-indigo-300 hover:underline"
         >
           Edit text
         </button>
       </div>
 
       <!-- Note area (auto-picked date notice, low-confidence note, etc.) -->
-      <div id="qa-review-note" class="hidden mb-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700"></div>
+      <div id="qa-review-note" class="hidden mb-3 rounded-xl border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-300"></div>
 
       <div class="space-y-3">
         <!-- Title -->
         <div>
           <label for="qa-parsed-title"
-                 class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
-            Title <span class="text-red-500">*</span>
+                 class="mb-1 block text-xs font-medium uppercase tracking-wide text-white/60">
+            Title <span class="text-red-400">*</span>
           </label>
           <input
             id="qa-parsed-title"
             type="text"
-            class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="glass-input"
             required
           />
         </div>
@@ -150,25 +158,25 @@
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label for="qa-parsed-start"
-                   class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
-              Start <span class="text-red-500">*</span>
+                   class="mb-1 block text-xs font-medium uppercase tracking-wide text-white/60">
+              Start <span class="text-red-400">*</span>
             </label>
             <input
               id="qa-parsed-start"
               type="datetime-local"
-              class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="glass-input"
               required
             />
           </div>
           <div>
             <label for="qa-parsed-end"
-                   class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
+                   class="mb-1 block text-xs font-medium uppercase tracking-wide text-white/60">
               End
             </label>
             <input
               id="qa-parsed-end"
               type="datetime-local"
-              class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="glass-input"
             />
           </div>
         </div>
@@ -177,12 +185,12 @@
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label for="qa-parsed-repeat"
-                   class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
+                   class="mb-1 block text-xs font-medium uppercase tracking-wide text-white/60">
               Repeat
             </label>
             <select
               id="qa-parsed-repeat"
-              class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="glass-input"
             >
               <option value="">No repeat</option>
               <option value="DAILY">Daily</option>
@@ -193,7 +201,7 @@
           </div>
           <div>
             <label for="qa-parsed-count"
-                   class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
+                   class="mb-1 block text-xs font-medium uppercase tracking-wide text-white/60">
               Count
             </label>
             <input
@@ -201,7 +209,7 @@
               type="number"
               min="1"
               placeholder="optional"
-              class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="glass-input"
             />
           </div>
         </div>
@@ -209,39 +217,39 @@
         <!-- Until -->
         <div>
           <label for="qa-parsed-until"
-                 class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-600">
+                 class="mb-1 block text-xs font-medium uppercase tracking-wide text-white/60">
             Repeat until (optional)
           </label>
           <input
             id="qa-parsed-until"
             type="date"
-            class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="glass-input"
           />
         </div>
 
         <!-- Save inline error -->
-        <div id="qa-save-error" class="hidden rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" role="alert"></div>
+        <div id="qa-save-error" class="hidden rounded-xl border border-red-400/30 bg-red-900/20 px-3 py-2 text-xs text-red-300" role="alert"></div>
 
         <!-- Action buttons -->
         <div class="mt-4 flex gap-2">
           <button
             id="qa-save-btn"
             type="button"
-            class="flex-1 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            class="flex-1 glass-btn-primary rounded-xl px-4 py-2 text-sm font-medium disabled:opacity-50"
           >
             Save Event
           </button>
           <button
             id="qa-save-another-btn"
             type="button"
-            class="flex-1 rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-50"
+            class="flex-1 glass-btn-secondary rounded-xl px-4 py-2 text-sm disabled:opacity-50"
           >
             Save &amp; Add Another
           </button>
           <button
             id="qa-back-btn"
             type="button"
-            class="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
+            class="glass-btn-secondary rounded-xl px-4 py-2 text-sm"
           >
             Back
           </button>
@@ -263,6 +271,8 @@
       max-height: 100vh;
       min-height: 100vh;
       border-radius: 0;
+      border-left: none;
+      border-right: none;
     }
   }
   
@@ -281,7 +291,8 @@
   
   /* Yellow highlight for uncertain fields */
   .qa-uncertain {
-    @apply border-yellow-500 bg-yellow-50;
+    border-color: rgba(234, 179, 8, 0.65) !important;
+    background-color: rgba(234, 179, 8, 0.12) !important;
   }
   
   /* High contrast mode support */
