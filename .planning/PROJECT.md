@@ -14,11 +14,14 @@ A shared calendar both partners can edit that stays in sync with Google Calendar
 - Core household workflow is complete: OAuth sign-in, two-user sharing, event CRUD, recurring events, Google sync export/push, NLP quick-add, OCR quick-add, and UI/UX polish.
 - Planning artifacts for v1.0 are archived under `.planning/milestones/`.
 
-## Next Milestone Goals
+## Current Milestone: v1.1 Localization and Language Switching
 
-- Define v1.1 scope with clear requirements and roadmap.
-- Implement event visibility controls (solo/private vs shared family events) starting with Phase 8.
-- Improve release hygiene by running a final milestone audit after the last completed phase before archival.
+**Goal:** Make Polish the default language across the application and provide a complete English switch option without functional regressions.
+
+**Target features:**
+- Polish as the default locale for all user-facing views and messages
+- Global language switcher (Polish/English) available from core application surfaces
+- Persisted language preference and translated copy coverage across UI, API errors, and quick-add flows
 
 ## Requirements
 
@@ -34,17 +37,17 @@ A shared calendar both partners can edit that stays in sync with Google Calendar
 
 ### Active
 
-- [ ] Event visibility controls: solo/private events vs shared household events
-- [ ] Conflict detection when both users edit the same event simultaneously
-- [ ] Real-time collaboration updates between linked users
-- [ ] Browser reminders with configurable reminder lead time
-- [ ] Additional calendar views (weekly and multi-week agenda)
+- [ ] Full Polish localization as default experience across all user-visible app components
+- [ ] English language option with explicit runtime switch and persisted preference
+- [ ] Bilingual copy coverage for auth, calendar, events, sync, NLP, and OCR interaction paths
+- [ ] Locale-aware date/time formatting consistency in Polish and English
 
 ### Out of Scope
 
 - More than two concurrent users / team calendars — focus on household pair first
 - Native mobile app — Google Calendar on phone handles mobile access via sync
 - Full two-way Google Calendar sync as v1 — export/push covers the core need
+- Event visibility controls (private vs shared) — deferred to next milestone after localization baseline ships
 
 ## Context
 
@@ -71,4 +74,4 @@ A shared calendar both partners can edit that stays in sync with Google Calendar
 | Image OCR for event extraction | Differentiating quick-add path with review safety | ✓ Implemented |
 
 ---
-*Last updated: 2026-03-19 after v1.0 milestone completion*
+*Last updated: 2026-03-19 after starting v1.1 localization milestone*

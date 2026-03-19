@@ -3,22 +3,42 @@
 ## Milestones
 
 - [x] v1.0 milestone - Phases 1-7 shipped 2026-03-19 (22/22 plans complete). Archive: .planning/milestones/v1.0-ROADMAP.md
+- [ ] v1.1 milestone - Localization and language switching (Polish default, English option)
 
-## Next Milestone (Planned)
+## Current Milestone (v1.1)
 
-### Phase 8: Event visibility controls: solo/private vs shared family events with Google sync behavior
+### Phase 8: Localization foundation and Polish default
 
-**Goal:** Let each partner choose event visibility (`shared` vs `private`) so household events remain shared while personal events stay owner-only in app views and Google sync.
-**Requirements:** PRIV-01, PRIV-02, PRIV-03, PRIV-04
+**Goal:** Introduce i18n foundations and convert all current user-facing app copy to localization keys with Polish as the default locale.
+**Requirements:** I18N-01, I18N-04, I18N-05
 **Depends on:** Phase 7
 **Plans:** 3 plans
+**Success criteria:**
+1. Calendar, auth, event forms, quick-add modals, and sync surfaces render Polish copy by default for first-time and signed-in users.
+2. User-facing API error/validation messages used by UI flows are available in Polish via localization resources.
+3. Locale-aware date/time rendering uses Polish formatting when locale is `pl`.
 
 Plans:
-- [ ] 08-01-PLAN.md - Event visibility domain contracts, API model, and owner-only filtering
-- [ ] 08-02-PLAN.md - Manual + quick-add UI visibility controls and payload wiring
-- [ ] 08-03-PLAN.md - Google sync fan-out rules for shared/private events
+- [ ] 08-01-PLAN.md - Add i18n architecture, locale resources, and Polish default resolution
+- [ ] 08-02-PLAN.md - Convert templates/components/partials and API-facing copy to translation keys
+- [ ] 08-03-PLAN.md - Locale-aware date/time formatting and regression verification for Polish defaults
+
+### Phase 9: Language switcher, persistence, and translation coverage
+
+**Goal:** Provide a user-accessible Polish/English language switcher with persisted preference and complete translation behavior verification.
+**Requirements:** I18N-02, I18N-03, I18N-06
+**Depends on:** Phase 8
+**Plans:** 2 plans
+**Success criteria:**
+1. User can switch between Polish and English from app navigation in authenticated and unauthenticated flows.
+2. Selected language persists across refresh and session restart.
+3. Automated tests verify default Polish, runtime switching, and key bilingual render paths.
+
+Plans:
+- [ ] 09-01-PLAN.md - Add language switch UI and request/session persistence mechanics
+- [ ] 09-02-PLAN.md - Expand integration and view tests for default locale and switch behavior
 
 ---
 
-*Roadmap archived for v1.0 on 2026-03-19*
-*Next step: /gsd-execute-phase 8*
+*Roadmap updated for v1.1 on 2026-03-19*
+*Next step: /gsd-plan-phase 8*
