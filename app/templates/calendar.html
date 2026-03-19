@@ -91,7 +91,29 @@ const I18N = {
   syncReconnectGoogle: {{ t('sync.reconnect_google')|tojson }},
   syncSyncFailedDetail: {{ t('sync.sync_failed_detail')|tojson }},
   syncPullFailedDetail: {{ t('sync.pull_failed_detail')|tojson }},
-  householdMembersLabel: {{ t('household.members_label')|tojson }}
+  householdMembersLabel: {{ t('household.members_label')|tojson }},
+  errPastWhat: {{ t('qa.err_past_what')|tojson }},
+  errPastWhy: {{ t('qa.err_past_why')|tojson }},
+  errPastFix: {{ t('qa.err_past_fix')|tojson }},
+  errNoAnchorWhat: {{ t('qa.err_no_anchor_what')|tojson }},
+  errNoAnchorWhy: {{ t('qa.err_no_anchor_why')|tojson }},
+  errNoAnchorFix: {{ t('qa.err_no_anchor_fix')|tojson }},
+  errConflictingWhat: {{ t('qa.err_conflicting_what')|tojson }},
+  errConflictingWhy: {{ t('qa.err_conflicting_why')|tojson }},
+  errConflictingFix: {{ t('qa.err_conflicting_fix')|tojson }},
+  errNoTitleWhat: {{ t('qa.err_no_title_what')|tojson }},
+  errNoTitleWhy: {{ t('qa.err_no_title_why')|tojson }},
+  errNoTitleFix: {{ t('qa.err_no_title_fix')|tojson }},
+  errNetworkWhat: {{ t('qa.err_network_what')|tojson }},
+  errNetworkWhy: {{ t('qa.err_network_why')|tojson }},
+  errNetworkFix: {{ t('qa.err_network_fix')|tojson }},
+  errParseWhat: {{ t('qa.err_parse_what')|tojson }},
+  errParseWhy: {{ t('qa.err_parse_why')|tojson }},
+  errParseFix: {{ t('qa.err_parse_fix')|tojson }},
+  errUnknownWhy: {{ t('qa.err_unknown_why')|tojson }},
+  errUnknownFix: {{ t('qa.err_unknown_fix')|tojson }},
+  errWhyLabel: {{ t('qa.err_why_label')|tojson }},
+  errFixLabel: {{ t('qa.err_fix_label')|tojson }}
 };
 
 function pad2(value) {
@@ -718,51 +740,51 @@ loadSyncStatus();
   }
   
   function showQAError(errorType, details = '') {
-    // Map error types to user-friendly "What + Why + Fix" messages
+    // Map error types to localized "What + Why + Fix" messages
     const errorMessages = {
       'past_date': {
-        what: 'The date is in the past',
-        why: 'We can only create events for today or future dates.',
-        fix: 'Edit "last Friday" to "next Friday" or pick a future date.'
+        what: I18N.errPastWhat,
+        why: I18N.errPastWhy,
+        fix: I18N.errPastFix
       },
       'no_anchor': {
-        what: 'I couldn\'t figure out the date',
-        why: 'You said when (like "2pm") but not which day.',
-        fix: 'Add a date or day: "Tuesday at 2pm" or "March 15 at 2pm".'
+        what: I18N.errNoAnchorWhat,
+        why: I18N.errNoAnchorWhy,
+        fix: I18N.errNoAnchorFix
       },
       'conflicting_date': {
-        what: 'The date description is confusing',
-        why: 'You said two different dates (e.g., "March 15 or April 20").',
-        fix: 'Pick one date or rephrase: "March 15 at 2pm".'
+        what: I18N.errConflictingWhat,
+        why: I18N.errConflictingWhy,
+        fix: I18N.errConflictingFix
       },
       'no_title': {
-        what: 'I didn\'t catch what the event is about',
-        why: 'You said when but not what.',
-        fix: 'Add an event name: "dentist Thursday 2pm".'
+        what: I18N.errNoTitleWhat,
+        why: I18N.errNoTitleWhy,
+        fix: I18N.errNoTitleFix
       },
       'network_error': {
-        what: 'Network error',
-        why: 'Could not reach the server.',
-        fix: 'Check your connection and try again.'
+        what: I18N.errNetworkWhat,
+        why: I18N.errNetworkWhy,
+        fix: I18N.errNetworkFix
       },
       'parse_failed': {
-        what: 'Parse failed',
-        why: 'Could not understand the text.',
-        fix: 'Try rephrasing more clearly or use manual entry.'
+        what: I18N.errParseWhat,
+        why: I18N.errParseWhy,
+        fix: I18N.errParseFix
       }
     };
 
     const msg = errorMessages[errorType] || {
-      what: details || 'Parse failed',
-      why: 'Unknown error occurred.',
-      fix: 'Try rephrasing or switch to manual entry.'
+      what: details || I18N.errParseWhat,
+      why: I18N.errUnknownWhy,
+      fix: I18N.errUnknownFix
     };
 
     const errorSummary = document.getElementById('qa-error-summary');
     const errorWhy = document.getElementById('qa-error-why');
     
     errorSummary.textContent = msg.what;
-    errorWhy.innerHTML = `<strong>Why:</strong> ${msg.why}<br/><strong>Fix:</strong> ${msg.fix}`;
+    errorWhy.innerHTML = `<strong>${I18N.errWhyLabel}</strong> ${msg.why}<br/><strong>${I18N.errFixLabel}</strong> ${msg.fix}`;
     
     qaErrorInline.classList.remove('hidden');
     

@@ -329,6 +329,16 @@ class NLPService:
         if result.get("error"):
             return result
 
+        # No explicit date found — check if there's an explicit time.
+        # If user said "dentysta 14:00" (title + time, no day), anchor to context_date.
+        if self._has_explicit_time(text, locale):
+            hour, minute = self._extract_time_from_text(text, locale)
+            start_at = context_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            if start_at < context_date:
+                start_at = start_at + timedelta(days=1)
+            end_at = start_at + timedelta(hours=1)
+            return {"start_at": start_at, "end_at": end_at, "confidence": 0.7}
+
         # No date found
         return {"error": "No date found in input", "start_at": None}
 
@@ -553,6 +563,21 @@ class NLPService:
 
         end_at = start_at + timedelta(hours=1)
         return {"start_at": start_at, "end_at": end_at, "confidence": 0.95}
+
+    def _has_explicit_time(self, text: str, locale: str = "en") -> bool:
+        """Return True if the text contains an explicit time expression."""
+        if re.search(r"\b\d{1,2}:\d{2}\b", text):
+            return True
+        if re.search(r"\b\d{1,2}\s*(am|pm)\b", text, re.IGNORECASE):
+            return True
+        if locale == "pl" and re.search(r"\bo\s+\d{1,2}\b", text.lower()):
+            return True
+        text_lower = text.lower()
+        merged_time = {**self.TIME_DEFAULTS.get("en", {}), **self.TIME_DEFAULTS.get(locale, {})}
+        for pattern in merged_time:
+            if re.search(pattern, text_lower):
+                return True
+        return False
 
     def _extract_time_from_text(self, text: str, locale: str = "en") -> tuple[int, int]:
         """Extract explicit clock time; return default 09:00 when no explicit time exists."""
