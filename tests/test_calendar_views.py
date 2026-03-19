@@ -270,3 +270,25 @@ def test_quick_add_save_gated_on_unresolved_ambiguity(authenticated_client):
     """Save action checks _ambiguityPending and blocks save until year is chosen."""
     html = _calendar_html(authenticated_client)
     assert "if (_ambiguityPending)" in html
+
+
+# ── OCR quick-add flow (06-01) ────────────────────────────────────────────
+
+def test_quick_add_ocr_controls_present(authenticated_client):
+    html = _calendar_html(authenticated_client)
+    assert 'id="qa-ocr-btn"' in html
+    assert 'id="qa-ocr-input"' in html
+    assert "Scan Image" in html
+
+
+def test_quick_add_ocr_endpoint_wiring(authenticated_client):
+    html = _calendar_html(authenticated_client)
+    assert "parseFromImage(file)" in html
+    assert "fetch('/api/events/ocr-parse'" in html
+    assert "OCR confidence:" in html
+
+
+def test_quick_add_ocr_fallback_on_errors(authenticated_client):
+    html = _calendar_html(authenticated_client)
+    assert "parsed.raw_text || 'No readable text extracted.'" in html
+    assert "showPhase('fallback')" in html

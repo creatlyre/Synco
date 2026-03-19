@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 
+from app.events.ocr import OCRParseResult
+
 
 def _payload(title: str, start: datetime, end: datetime) -> dict:
     return {
@@ -113,3 +115,47 @@ def test_parse_event_uses_calendar_timezone(authenticated_client, test_db, test_
     assert response.status_code == 200
     data = response.json()
     assert data["timezone"] == "America/New_York"
+
+
+def test_ocr_parse_event_success(authenticated_client, monkeypatch):
+    now = datetime(2026, 3, 20, 14, 0, 0)
+
+    def fake_parse_image(self, image_bytes, timezone, context_date):
+        assert image_bytes == b"fake-image-bytes"
+        return OCRParseResult(
+            title="School concert",
+            start_at=now,
+            end_at=now + timedelta(hours=1),
+            timezone=timezone,
+            confidence_title=0.82,
+            confidence_date=0.79,
+            confidence_raw=0.88,
+            raw_text="School concert Friday 2pm",
+            errors=[],
+        )
+
+    monkeypatch.setattr("app.events.routes.OCRService.parse_image", fake_parse_image)
+
+    response = authenticated_client.post(
+        "/api/events/ocr-parse",
+        data={"context_date": "2026-03-19"},
+        files={"image": ("flyer.png", b"fake-image-bytes", "image/png")},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == "School concert"
+    assert data["raw_text"] == "School concert Friday 2pm"
+    assert data["confidence_raw"] == 0.88
+    assert data["errors"] == []
+
+
+def test_ocr_parse_event_empty_upload(authenticated_client):
+    response = authenticated_client.post(
+        "/api/events/ocr-parse",
+        data={"context_date": "2026-03-19"},
+        files={"image": ("empty.png", b"", "image/png")},
+    )
+
+    assert response.status_code == 400
+    assert "empty" in response.json()["detail"].lower()
