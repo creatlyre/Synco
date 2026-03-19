@@ -127,6 +127,7 @@ v1.0 — Foundation through Image OCR (6 phases, 23 requirements)
 - Supabase MCP provisioning completed for project `zwciuzqozupxksdzofyd` (migration `20260318202504`): users, calendars, calendar_invitations, events tables created
 - Phase 4 executed: Google sync service, month export API, and automatic sync hooks on create/update/delete
 - Automated validation: `python -m pytest tests/test_sync_api.py tests/test_sync_integration.py tests/test_recurrence.py tests/test_events_api.py tests/test_calendar_views.py tests/test_events_integration.py tests/test_users.py tests/test_auth.py -q` (20 passed)
+- Phase 5 discuss completed: captured implementation decisions in `.planning/phases/05-natural-language-input/05-CONTEXT.md`
 
 **What comes next:**
 
@@ -135,6 +136,8 @@ Next Action: `/gsd-plan-phase 5`
 Command to run:
 node "$HOME/.copilot/get-shit-done/bin/gsd-tools.cjs" plan 5
 ```
+
+**Resume file:** `.planning/phases/05-natural-language-input/05-CONTEXT.md`
 
 ---
 
