@@ -1,10 +1,11 @@
 ---
 phase: 10
 slug: verify-parser-works-with-polish-language-after-localization
-status: draft
+status: validated
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-03-19
+audited: 2026-03-20
 ---
 
 # Phase 10 - Validation Strategy
@@ -30,9 +31,9 @@ created: 2026-03-19
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 10-01-01 | 01 | 1 | I18N-07 | unit+api | `.venv\\Scripts\\python.exe -m pytest tests/test_nlp.py -q` | yes | pending |
-| 10-01-02 | 01 | 1 | I18N-07 | api | `.venv\\Scripts\\python.exe -m pytest tests/test_events_api.py -k "parse or ocr" -q` | yes | pending |
-| 10-02-01 | 02 | 2 | I18N-07 | unit+api | `.venv\\Scripts\\python.exe -m pytest tests/test_nlp.py tests/test_events_api.py -q` | yes | pending |
+| 10-01-01 | 01 | 1 | I18N-07 | unit+api | `.venv\\Scripts\\python.exe -m pytest tests/test_nlp.py -q` | yes | COVERED |
+| 10-01-02 | 01 | 1 | I18N-07 | api | `.venv\\Scripts\\python.exe -m pytest tests/test_events_api.py -k "parse or ocr" -q` | yes | COVERED |
+| 10-02-01 | 02 | 2 | I18N-07 | unit+api | `.venv\\Scripts\\python.exe -m pytest tests/test_nlp.py tests/test_events_api.py -q` | yes | COVERED |
 
 ## Wave 0 Requirements
 
@@ -50,4 +51,15 @@ All phase behaviors have automated verification.
 - [x] Feedback latency target defined
 - [x] nyquist_compliant true
 
-Approval: pending
+Approval: validated 2026-03-20
+
+## Validation Audit 2026-03-20
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+**Tests verified:** 62 passed (42 NLP + 20 events API), 0 failures.
+**Requirement I18N-07:** Fully covered by 14 Polish NLP tests + 3 OCR locale tests + regression gate.
