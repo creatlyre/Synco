@@ -10,6 +10,7 @@
       <div>
         <h2 id="event-entry-title" class="text-lg font-semibold text-white">{{ t('calendar.add_event') }}</h2>
         <p class="mt-1 text-xs text-white/60">{{ t('event_entry.manual_help') }}</p>
+        <p id="quick-entry-hint" class="hidden mt-1 text-xs text-cyan-200">{{ t('event_entry.quick_entry_hint') }}</p>
       </div>
       <button id="event-entry-close-btn"
               type="button"
@@ -94,6 +95,21 @@
 </div>
 
 <style>
+  .quick-entry-mode #event-entry-start-date {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .quick-entry-mode #event-entry-date-lock-note {
+    display: block;
+  }
+
+  .quick-entry-mode .repeat-fields {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
   @media (max-width: 640px) {
     #event-entry-modal {
       padding: 0;

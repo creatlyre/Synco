@@ -149,6 +149,7 @@
   "event_entry.end_time": "Godzina zakończenia (opcjonalnie)",
   "event_entry.end_adjusted": "Godzina zakończenia została dostosowana automatycznie.",
   "event_entry.repeat_count": "Liczba powtórzeń",
+  "event_entry.quick_entry_hint": "Tylko tytuł i godzina—data zablokowana, koniec ustawiony automatycznie na +1h.",
   "event_form.reset": "Resetuj",
   "qa.err_past_what": "Data jest w przeszłości",
   "qa.err_past_why": "Można tworzyć wydarzenia tylko na dziś lub w przyszłości.",

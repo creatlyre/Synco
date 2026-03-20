@@ -327,11 +327,42 @@ function prefillEvent(eventId, title, description, startAt, endAt, visibility) {
   openEventEntryModal(document.activeElement);
 }
 
+function calculateEndTime(startTimeStr) {
+  if (!startTimeStr) return '';
+  const [hours, minutes] = startTimeStr.split(':').map(x => parseInt(x, 10));
+  const newHours = (hours + 1) % 24;
+  return `${String(newHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+function getDefaultStartTime() {
+  const now = new Date();
+  const hour = now.getHours();
+  if (hour >= 9 && hour < 17) {
+    return `${pad2(hour)}:00`;
+  }
+  return '12:00';
+}
+
 function openEventEntryForDay(year, month, day) {
   loadDay(year, month, day);
   resetEventEntryForm();
   eventEntryStartDateInput.value = new Date(Date.UTC(year, month - 1, day)).toISOString().split('T')[0];
   setEventEntryDateLocked(true);
+  updateEventEntryValidation();
+  openEventEntryModal(document.activeElement || eventEntryOpenBtn);
+}
+
+function addEventForDay(year, month, day) {
+  loadDay(year, month, day);
+  resetEventEntryForm();
+  eventEntryForm.classList.add('quick-entry-mode');
+  eventEntryStartDateInput.value = new Date(Date.UTC(year, month - 1, day)).toISOString().split('T')[0];
+  setEventEntryDateLocked(true);
+  const startTime = getDefaultStartTime();
+  eventEntryStartTimeInput.value = startTime;
+  eventEntryEndTimeInput.value = calculateEndTime(startTime);
+  const hint = document.getElementById('quick-entry-hint');
+  if (hint) hint.classList.remove('hidden');
   updateEventEntryValidation();
   openEventEntryModal(document.activeElement || eventEntryOpenBtn);
 }
@@ -354,6 +385,9 @@ function closeEventEntryModal(force = false) {
   }
   eventEntryModal.classList.add('hidden');
   eventEntryModal.classList.remove('flex');
+  eventEntryForm.classList.remove('quick-entry-mode');
+  const hint = document.getElementById('quick-entry-hint');
+  if (hint) hint.classList.add('hidden');
   resetEventEntryForm();
   if (eventEntryLastTrigger && typeof eventEntryLastTrigger.focus === 'function') {
     eventEntryLastTrigger.focus();

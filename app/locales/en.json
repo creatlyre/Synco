@@ -149,6 +149,7 @@
   "event_entry.end_time": "End Time (optional)",
   "event_entry.end_adjusted": "End time adjusted automatically.",
   "event_entry.repeat_count": "Repeat count",
+  "event_entry.quick_entry_hint": "Title and time only—date is fixed, end auto-set to +1h.",
   "event_form.reset": "Reset",
   "qa.err_past_what": "The date is in the past",
   "qa.err_past_why": "We can only create events for today or future dates.",
