@@ -87,13 +87,19 @@ Plans:
 
 ### Phase 16: Overview month detail - clickable months showing one-time expense breakdown
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Users can click any month row in the year overview to expand an inline accordion detail showing one-time expense breakdown with full CRUD (add, edit, delete)
+**Requirements**: OMD-01, OMD-02, OMD-03, OMD-04, OMD-05
 **Depends on:** Phase 15
-**Plans:** 0 plans
+**Success Criteria** (what must be TRUE):
+  1. User can click any month row to expand an inline detail showing one-time expenses for that month
+  2. Expanded detail shows expense name, amount, and total — with inline add, edit, and delete
+  3. Only one month is expanded at a time (accordion) with smooth CSS animation
+  4. CRUD operations in detail use existing expense API and recalculate overview totals
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 16 to break down)
+- [ ] 16-01-PLAN.md — Overview API extension + accordion UI with CRUD detail
+- [ ] 16-02-PLAN.md — Integration tests + human verification
 
 ### Phase 17: Performance optimization - faster page loads and API responses
 
