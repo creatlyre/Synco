@@ -1,5 +1,27 @@
 # Milestones
 
+## v3.0 Overview Detail & Performance (Shipped: 2026-03-20)
+
+**Phases completed:** 2 phases (16-17), 4 plans
+
+**Key accomplishments:**
+
+- Accordion month detail in year overview — click any month row to expand inline one-time expense breakdown with full CRUD (add, edit, delete)
+- Replaced Tailwind CDN play script (~300KB runtime) with prebuilt static CSS (34KB minified)
+- Added httpx connection pooling in SupabaseStore (shared singleton client)
+- FastAPI StaticFiles mount for serving CSS with caching headers
+- 6 new integration tests for month detail CRUD
+- 222 tests passing across all subsystems
+
+**Stats:**
+
+- 11 files changed
+- 598 insertions, 298 deletions
+- Timeline: 2026-03-20 (1 day)
+- 10 commits
+
+**Git range:** v2.0 -> v3.0
+
 ## v1.1 Localization and Language Switching (Shipped: 2026-03-20)
 
 **Phases completed:** 4 phases, 10 plans, 0 tasks
