@@ -182,3 +182,105 @@ class TestOverviewPage:
     def test_overview_api_requires_auth(self, test_client):
         res = test_client.get("/api/budget/overview?year=2026")
         assert res.status_code in (302, 303, 401)
+
+
+class TestMonthDetail:
+    """OMD-01 through OMD-05: Month detail with one-time expense breakdown."""
+
+    def test_overview_includes_onetime_items(self, authenticated_client, test_db, test_user_a):
+        """OMD-01, OMD-02: Clicking month shows expense items with id, name, amount."""
+        _seed_settings(test_db, test_user_a.calendar_id)
+        authenticated_client.post(
+            "/api/budget/expenses",
+            json={"year": 2026, "month": 3, "name": "Insurance", "amount": 500},
+        )
+        authenticated_client.post(
+            "/api/budget/expenses",
+            json={"year": 2026, "month": 3, "name": "Car repair", "amount": 1200},
+        )
+        res = authenticated_client.get("/api/budget/overview?year=2026")
+        march = res.json()["data"]["months"][2]
+        items = march["onetime_items"]
+        assert len(items) == 2
+        names = {i["name"] for i in items}
+        assert names == {"Insurance", "Car repair"}
+        for item in items:
+            assert "id" in item
+            assert "name" in item
+            assert "amount" in item
+
+    def test_onetime_items_empty_for_no_expenses(self, authenticated_client, test_db, test_user_a):
+        """OMD-01: Empty months return empty onetime_items array."""
+        _seed_settings(test_db, test_user_a.calendar_id)
+        res = authenticated_client.get("/api/budget/overview?year=2026")
+        for m in res.json()["data"]["months"]:
+            assert m["onetime_items"] == []
+
+    def test_onetime_items_excludes_recurring(self, authenticated_client, test_db, test_user_a):
+        """OMD-02: Recurring expenses never appear in onetime_items."""
+        _seed_settings(test_db, test_user_a.calendar_id)
+        authenticated_client.post(
+            "/api/budget/expenses",
+            json={"year": 2026, "month": 0, "name": "Rent", "amount": 3000, "recurring": True},
+        )
+        authenticated_client.post(
+            "/api/budget/expenses",
+            json={"year": 2026, "month": 5, "name": "Gift", "amount": 200},
+        )
+        res = authenticated_client.get("/api/budget/overview?year=2026")
+        data = res.json()["data"]
+        may = data["months"][4]
+        assert len(may["onetime_items"]) == 1
+        assert may["onetime_items"][0]["name"] == "Gift"
+        # No month should have Rent in onetime_items
+        for m in data["months"]:
+            for item in m["onetime_items"]:
+                assert item["name"] != "Rent"
+
+    def test_add_expense_from_overview_updates_totals(self, authenticated_client, test_db, test_user_a):
+        """OMD-03: Adding expense via API updates both totals and items."""
+        _seed_settings(test_db, test_user_a.calendar_id)
+        authenticated_client.post(
+            "/api/budget/expenses",
+            json={"year": 2026, "month": 1, "name": "New item", "amount": 750},
+        )
+        res = authenticated_client.get("/api/budget/overview?year=2026")
+        jan = res.json()["data"]["months"][0]
+        assert jan["onetime_expenses"] == 750.0
+        assert len(jan["onetime_items"]) == 1
+        assert jan["onetime_items"][0]["name"] == "New item"
+        assert jan["onetime_items"][0]["amount"] == 750.0
+
+    def test_delete_expense_updates_overview(self, authenticated_client, test_db, test_user_a):
+        """OMD-04: Deleting expense removes it from items and recalculates."""
+        _seed_settings(test_db, test_user_a.calendar_id)
+        create_res = authenticated_client.post(
+            "/api/budget/expenses",
+            json={"year": 2026, "month": 2, "name": "To delete", "amount": 300},
+        )
+        expense_id = create_res.json()["data"]["id"]
+        del_res = authenticated_client.delete(f"/api/budget/expenses/{expense_id}")
+        assert del_res.status_code == 200
+
+        res = authenticated_client.get("/api/budget/overview?year=2026")
+        feb = res.json()["data"]["months"][1]
+        assert feb["onetime_expenses"] == 0.0
+        assert len(feb["onetime_items"]) == 0
+
+    def test_edit_expense_updates_overview(self, authenticated_client, test_db, test_user_a):
+        """OMD-04: Editing expense updates amount in items and totals."""
+        _seed_settings(test_db, test_user_a.calendar_id)
+        create_res = authenticated_client.post(
+            "/api/budget/expenses",
+            json={"year": 2026, "month": 4, "name": "Editable", "amount": 100},
+        )
+        expense_id = create_res.json()["data"]["id"]
+        authenticated_client.put(
+            f"/api/budget/expenses/{expense_id}",
+            json={"amount": 200},
+        )
+        res = authenticated_client.get("/api/budget/overview?year=2026")
+        april = res.json()["data"]["months"][3]
+        assert april["onetime_expenses"] == 200.0
+        assert len(april["onetime_items"]) == 1
+        assert april["onetime_items"][0]["amount"] == 200.0
