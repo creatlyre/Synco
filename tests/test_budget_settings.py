@@ -31,7 +31,8 @@ def test_get_budget_settings_existing(authenticated_client, test_db, test_user_a
         "rate_1": 150.0,
         "rate_2": 200.0,
         "rate_3": 250.0,
-        "monthly_costs": 1800.0,
+        "zus_costs": 1500.0,
+        "accounting_costs": 300.0,
         "initial_balance": 50000.0,
     })
 
@@ -42,7 +43,8 @@ def test_get_budget_settings_existing(authenticated_client, test_db, test_user_a
     assert data["rate_1"] == 150.0
     assert data["rate_2"] == 200.0
     assert data["rate_3"] == 250.0
-    assert data["monthly_costs"] == 1800.0
+    assert data["zus_costs"] == 1500.0
+    assert data["accounting_costs"] == 300.0
     assert data["initial_balance"] == 50000.0
 
 
@@ -52,7 +54,8 @@ def test_save_budget_settings_create(authenticated_client):
         "rate_1": 150.0,
         "rate_2": 200.0,
         "rate_3": 250.0,
-        "monthly_costs": 1800.0,
+        "zus_costs": 1500.0,
+        "accounting_costs": 300.0,
         "initial_balance": 50000.0,
     }
     response = authenticated_client.put("/api/budget/settings", json=payload)
@@ -61,7 +64,8 @@ def test_save_budget_settings_create(authenticated_client):
     assert data["rate_1"] == 150.0
     assert data["rate_2"] == 200.0
     assert data["rate_3"] == 250.0
-    assert data["monthly_costs"] == 1800.0
+    assert data["zus_costs"] == 1500.0
+    assert data["accounting_costs"] == 300.0
     assert data["initial_balance"] == 50000.0
 
 
@@ -73,7 +77,8 @@ def test_save_budget_settings_update(authenticated_client, test_db, test_user_a)
         "rate_1": 100.0,
         "rate_2": 100.0,
         "rate_3": 100.0,
-        "monthly_costs": 1000.0,
+        "zus_costs": 800.0,
+        "accounting_costs": 200.0,
         "initial_balance": 10000.0,
     })
 
@@ -81,7 +86,8 @@ def test_save_budget_settings_update(authenticated_client, test_db, test_user_a)
         "rate_1": 200.0,
         "rate_2": 300.0,
         "rate_3": 400.0,
-        "monthly_costs": 2000.0,
+        "zus_costs": 1600.0,
+        "accounting_costs": 400.0,
         "initial_balance": 60000.0,
     }
     response = authenticated_client.put("/api/budget/settings", json=payload)
@@ -90,7 +96,8 @@ def test_save_budget_settings_update(authenticated_client, test_db, test_user_a)
     assert data["rate_1"] == 200.0
     assert data["rate_2"] == 300.0
     assert data["rate_3"] == 400.0
-    assert data["monthly_costs"] == 2000.0
+    assert data["zus_costs"] == 1600.0
+    assert data["accounting_costs"] == 400.0
     assert data["initial_balance"] == 60000.0
 
 
@@ -100,7 +107,8 @@ def test_save_budget_settings_validation_negative_rate(authenticated_client):
         "rate_1": -10.0,
         "rate_2": 200.0,
         "rate_3": 250.0,
-        "monthly_costs": 1800.0,
+        "zus_costs": 1500.0,
+        "accounting_costs": 300.0,
         "initial_balance": 50000.0,
     }
     response = authenticated_client.put("/api/budget/settings", json=payload)
@@ -113,7 +121,8 @@ def test_save_budget_settings_validation_negative_balance(authenticated_client):
         "rate_1": 150.0,
         "rate_2": 200.0,
         "rate_3": 250.0,
-        "monthly_costs": 1800.0,
+        "zus_costs": 1500.0,
+        "accounting_costs": 300.0,
         "initial_balance": -100.0,
     }
     response = authenticated_client.put("/api/budget/settings", json=payload)
@@ -126,7 +135,8 @@ def test_save_budget_settings_validation_zero_rate(authenticated_client):
         "rate_1": 0.0,
         "rate_2": 200.0,
         "rate_3": 250.0,
-        "monthly_costs": 1800.0,
+        "zus_costs": 1500.0,
+        "accounting_costs": 300.0,
         "initial_balance": 50000.0,
     }
     response = authenticated_client.put("/api/budget/settings", json=payload)
@@ -139,7 +149,8 @@ def test_save_budget_settings_zero_balance_allowed(authenticated_client):
         "rate_1": 150.0,
         "rate_2": 200.0,
         "rate_3": 250.0,
-        "monthly_costs": 1800.0,
+        "zus_costs": 1500.0,
+        "accounting_costs": 300.0,
         "initial_balance": 0.0,
     }
     response = authenticated_client.put("/api/budget/settings", json=payload)
@@ -153,7 +164,8 @@ def test_save_budget_settings_rounds_to_two_decimals(authenticated_client):
         "rate_1": 150.999,
         "rate_2": 200.0,
         "rate_3": 250.0,
-        "monthly_costs": 1800.0,
+        "zus_costs": 1500.0,
+        "accounting_costs": 300.0,
         "initial_balance": 50000.0,
     }
     response = authenticated_client.put("/api/budget/settings", json=payload)
@@ -179,7 +191,8 @@ def test_budget_settings_page_has_form_fields(authenticated_client):
     assert 'id="rate_1"' in response.text
     assert 'id="rate_2"' in response.text
     assert 'id="rate_3"' in response.text
-    assert 'id="monthly_costs"' in response.text
+    assert 'id="zus_costs"' in response.text
+    assert 'id="accounting_costs"' in response.text
     assert 'id="initial_balance"' in response.text
 
 

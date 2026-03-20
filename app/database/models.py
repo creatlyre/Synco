@@ -81,7 +81,8 @@ class BudgetSettings:
     rate_1: float = 0.0
     rate_2: float = 0.0
     rate_3: float = 0.0
-    monthly_costs: float = 0.0
+    zus_costs: float = 0.0
+    accounting_costs: float = 0.0
     initial_balance: float = 0.0
     created_at: datetime | None = None
     updated_at: datetime | None = None

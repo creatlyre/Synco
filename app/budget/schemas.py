@@ -5,10 +5,11 @@ class BudgetSettingsUpdate(BaseModel):
     rate_1: float
     rate_2: float
     rate_3: float
-    monthly_costs: float
+    zus_costs: float
+    accounting_costs: float
     initial_balance: float
 
-    @field_validator("rate_1", "rate_2", "rate_3", "monthly_costs")
+    @field_validator("rate_1", "rate_2", "rate_3", "zus_costs", "accounting_costs")
     @classmethod
     def must_be_positive(cls, v: float) -> float:
         if v <= 0:
@@ -29,7 +30,8 @@ class BudgetSettingsResponse(BaseModel):
     rate_1: float
     rate_2: float
     rate_3: float
-    monthly_costs: float
+    zus_costs: float
+    accounting_costs: float
     initial_balance: float
 
     model_config = {"from_attributes": True}

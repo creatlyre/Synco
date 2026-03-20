@@ -55,7 +55,10 @@
       </div>
       <div class="glass rounded-2xl p-6 mb-6">
         <div class="animate-pulse bg-white/5 h-6 w-40 rounded mb-4"></div>
-        <div class="animate-pulse bg-white/5 h-10 rounded-xl"></div>
+        <div class="space-y-4">
+          <div class="animate-pulse bg-white/5 h-10 rounded-xl"></div>
+          <div class="animate-pulse bg-white/5 h-10 rounded-xl"></div>
+        </div>
       </div>
       <div class="glass rounded-2xl p-6 mb-6">
         <div class="animate-pulse bg-white/5 h-6 w-40 rounded mb-4"></div>
@@ -108,16 +111,29 @@
       <!-- Section: Monthly Costs -->
       <div class="glass rounded-2xl p-6 mb-6">
         <h3 class="text-lg font-semibold mb-4">{{ t('budget.section_costs') }}</h3>
-        <div>
-          <div class="flex items-center gap-2">
-            <div class="flex-1">
-              <label for="monthly_costs" class="text-sm font-semibold mb-1 block">{{ t('budget.costs_label') }}</label>
-              <input type="number" step="0.01" min="0" placeholder="0.00"
-                     class="glass-input rounded-xl" id="monthly_costs" name="monthly_costs">
+        <div class="space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <div class="flex-1">
+                <label for="zus_costs" class="text-sm font-semibold mb-1 block">{{ t('budget.zus_label') }}</label>
+                <input type="number" step="0.01" min="0" placeholder="0.00"
+                       class="glass-input rounded-xl" id="zus_costs" name="zus_costs">
+              </div>
+              <span class="text-sm font-medium mt-6">{{ t('budget.currency') }}</span>
             </div>
-            <span class="text-sm font-medium mt-6">{{ t('budget.currency') }}</span>
+            <p class="text-xs mt-1 hidden" id="zus_costs_error" style="color: rgba(252,165,165,1)"></p>
           </div>
-          <p class="text-xs mt-1 hidden" id="monthly_costs_error" style="color: rgba(252,165,165,1)"></p>
+          <div>
+            <div class="flex items-center gap-2">
+              <div class="flex-1">
+                <label for="accounting_costs" class="text-sm font-semibold mb-1 block">{{ t('budget.accounting_label') }}</label>
+                <input type="number" step="0.01" min="0" placeholder="0.00"
+                       class="glass-input rounded-xl" id="accounting_costs" name="accounting_costs">
+              </div>
+              <span class="text-sm font-medium mt-6">{{ t('budget.currency') }}</span>
+            </div>
+            <p class="text-xs mt-1 hidden" id="accounting_costs_error" style="color: rgba(252,165,165,1)"></p>
+          </div>
         </div>
       </div>
 
@@ -148,8 +164,8 @@
 
 <script>
 (function() {
-  const fields = ['rate_1', 'rate_2', 'rate_3', 'monthly_costs', 'initial_balance'];
-  const positiveFields = ['rate_1', 'rate_2', 'rate_3', 'monthly_costs'];
+  const fields = ['rate_1', 'rate_2', 'rate_3', 'zus_costs', 'accounting_costs', 'initial_balance'];
+  const positiveFields = ['rate_1', 'rate_2', 'rate_3', 'zus_costs', 'accounting_costs'];
   const skeleton = document.getElementById('skeleton-loader');
   const form = document.getElementById('settings-form');
   const emptyState = document.getElementById('empty-state');
