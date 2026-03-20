@@ -46,6 +46,16 @@ class InMemoryStore:
             if isinstance(target, str):
                 return target.lower() == "true"
             return bool(target)
+        if isinstance(source, int) and isinstance(target, str):
+            try:
+                return int(target)
+            except ValueError:
+                return target
+        if isinstance(source, float) and isinstance(target, str):
+            try:
+                return float(target)
+            except ValueError:
+                return target
         return target
 
     @classmethod
