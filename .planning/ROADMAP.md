@@ -8,7 +8,7 @@
 
 ## Phases
 
-- [ ] **Phase 12: Budget Data Foundation & Settings UI** — Database models, settings page for rates/costs/balance, nav integration, i18n setup
+- [x] **Phase 12: Budget Data Foundation & Settings UI** — Database models, settings page for rates/costs/balance, nav integration, i18n setup (completed 2026-03-20)
 - [ ] **Phase 13: Income Calculation Engine** — Monthly hours entry per rate, gross/net computation, additional household earnings
 - [ ] **Phase 14: Expense Management** — Recurring and one-time expense CRUD with auto-application
 - [ ] **Phase 15: Year Overview Dashboard** — 12-month financial table with running balance and live recalculation
@@ -66,7 +66,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
-| 12. Budget Data Foundation & Settings UI | 2/3 | In Progress|  |
+| 12. Budget Data Foundation & Settings UI | 3/3 | Complete   | 2026-03-20 |
 | 13. Income Calculation Engine | 0/? | Not started | - |
 | 14. Expense Management | 0/? | Not started | - |
 | 15. Year Overview Dashboard | 0/? | Not started | - |
