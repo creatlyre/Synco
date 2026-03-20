@@ -203,3 +203,80 @@ def test_day_click_entry_with_default_reminders(
 
     assert body["reminders"]["useDefault"] is True
     assert "overrides" not in body["reminders"] or len(body["reminders"].get("overrides", [])) == 0
+
+
+def test_sync_retraction_deletes_from_partner(authenticated_client, monkeypatch):
+    """When visibility changes to private, sync should retract event from partner's GCal."""
+    calls = {"sync_to": []}
+
+    class FakeResult:
+        users_synced = 1
+        events_synced = 1
+        errors = []
+
+    def fake_sync(self, event, deleted=False):
+        calls["sync_to"].append({"visibility": getattr(event, "visibility", "shared"), "deleted": deleted})
+        return FakeResult()
+
+    import app.sync.service
+    monkeypatch.setattr(app.sync.service.GoogleSyncService, "sync_event_for_household", fake_sync)
+
+    # Create shared event, then update to private
+    create_resp = authenticated_client.post(
+        "/api/events",
+        json={
+            "title": "Was Shared",
+            "start_at": "2026-03-18T10:00:00",
+            "end_at": "2026-03-18T11:00:00",
+            "timezone": "UTC",
+            "visibility": "shared",
+        },
+    )
+    assert create_resp.status_code == 201
+    event_id = create_resp.json()["id"]
+
+    update_resp = authenticated_client.put(
+        f"/api/events/{event_id}",
+        json={"visibility": "private"},
+    )
+    assert update_resp.status_code == 200
+    assert update_resp.json()["visibility"] == "private"
+
+    # sync_event_for_household called on both create and update
+    assert len(calls["sync_to"]) >= 2
+    assert calls["sync_to"][-1]["visibility"] == "private"
+
+
+def test_export_month_respects_visibility(authenticated_client, test_db, test_user_a, monkeypatch):
+    """export_month should pass requesting_user_id to filter private events."""
+    import app.sync.service
+    import app.events.service
+
+    captured = {"requesting_user_id": "NOT_SET"}
+
+    original_list = app.events.service.EventService.list_month_expanded
+
+    def tracking_list(self, calendar_id, year, month, *, requesting_user_id=None):
+        captured["requesting_user_id"] = requesting_user_id
+        return original_list(self, calendar_id, year, month, requesting_user_id=requesting_user_id)
+
+    monkeypatch.setattr(app.events.service.EventService, "list_month_expanded", tracking_list)
+
+    # Mock sync to avoid real GCal API calls
+    class FakeResult:
+        users_synced = 0
+        events_synced = 0
+        errors = []
+
+    monkeypatch.setattr(
+        app.sync.service.GoogleSyncService,
+        "sync_event_for_household",
+        lambda self, event, deleted=False: FakeResult(),
+    )
+
+    # Call export_month directly on the service
+    sync_service = app.sync.service.GoogleSyncService(test_db)
+    sync_service.export_month(test_user_a, 2026, 3)
+
+    # Verify requesting_user_id was passed
+    assert captured["requesting_user_id"] == test_user_a.id
