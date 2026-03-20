@@ -1,207 +1,151 @@
-# Research Summary: CalendarPlanner
+# Project Research Summary
+
+**Project:** CalendarPlanner v2.1 — Privacy, Reminders & Multi-Year Budget
+**Domain:** Household calendar + budget planner (2-user, Polish locale, Google Calendar sync)
+**Researched:** 2026-03-20
+**Confidence:** HIGH
 
 ## Executive Summary
 
-CalendarPlanner is a **two-user household calendar web application** that solves the specific problem of keeping a couple synchronized on family events. The recommended approach uses **FastAPI + SQLite + Jinja2 + HTMX** for a lightweight, server-rendered application that syncs bidirectionally with Google Calendar, eliminating the need for a mobile app (Google Calendar handles mobile access) and JavaScript framework complexity.
+CalendarPlanner v2.1 is a feature-completion milestone that activates backend capabilities already built in v1.1–v2.0 but never exposed to users. Event privacy (visibility toggle, filtering) is ~90% shipped — the data model, repository filtering, sync pipeline, and even the form UI exist. Reminder configuration has a complete backend pipeline (schema, validation, Google sync) but zero UI. Multi-year budget browsing already works via year-parameterized API and navigation arrows. The research conclusion is clear: **this is primarily a frontend wiring and data-integrity milestone, not a greenfield build.** Zero new Python packages are needed. Zero database migrations are required for the core features.
 
-The research identifies three layers of value: **(1) table stakes** (event CRUD, sharing, calendar views, Google sync), **(2) household-specific features** (user attribution, color coding, conflict detection), and **(3) differentiators** (natural language event creation, image OCR extraction). By deferring multi-user, multi-calendar, and advanced permission models, the v1 scope stays focused on households and delivers 80% of the value in 20% of the complexity.
+The recommended approach is to validate existing implementations first (privacy), then wire missing UI to existing backends (reminders), then fix data-model gaps that make multi-year browsing inaccurate (carry-forward balance, recurring expense year-scoping), and finally build the one genuinely new feature (year-over-year comparison). The biggest risk is **data integrity in multi-year budget views**: the current single-row `BudgetSettings` and year-unscoped recurring expenses produce incorrect numbers for any year other than the current one. These must be fixed before shipping year navigation, or users will see wrong data and lose trust. The secondary risk is **Google Calendar sync consistency** — changing event visibility from shared to private must delete the event from the partner's Google Calendar, which is not currently handled.
 
-The primary risks are **refresh token exhaustion** (Google limits 100 tokens per user per client), **timezone/DST pitfalls in recurring events**, and **concurrent edit conflicts** between the two users. These are preventable with explicit architecture patterns (token reuse, UTC-internal storage, optimistic locking).
+## Key Findings
 
----
+### Recommended Stack
 
-## Recommended Stack
+No stack changes. The existing FastAPI 0.135.1 + Pydantic 2.10.6 + google-api-python-client 2.93.0 + Jinja2 + Supabase (httpx) + Tailwind CSS stack covers every v2.1 feature. No new pip packages, no version upgrades, no frontend libraries.
 
-| Layer | Technology | Version | Rationale |
-|-------|-----------|---------|-----------|
-| **Framework** | FastAPI | 0.135.1 | Async-first, fastest Python framework (vs. Django/Flask), native OpenAPI docs, excellent for WebSocket/SSE real-time updates |
-| **Server** | Uvicorn | Latest | Battle-tested ASGI server, efficient for async operations |
-| **Database** | SQLite | 3.51.3 | Perfect for 2-user household scope; file-based, zero ops, ACID-compliant, upgrade path to PostgreSQL exists |
-| **ORM** | SQLAlchemy | 2.x | FastAPI-native, strong typing, migration support via Alembic |
-| **Frontend** | Jinja2 + HTMX | Latest | Server-rendered HTML templates + lightweight JavaScript for forms/updates; eliminates SPA complexity, instant first render |
-| **Styling** | Tailwind CSS | 3.x | Utility-first, responsive, lean output |
-| **Google Integration** | google-api-python-client | 2.193.0 | Official Google client, OAuth2 + Calendar API v3, full event CRUD |
-| **NLP (Dates)** | dateparser | 1.3.0 | Robust relative date parsing ("next Friday," "in 3 weeks"), timezone-aware |
-| **NLP (Entities)** | spaCy | 3.7 | Optional; named entity recognition for "Sarah's soccer" → participant extraction |
-| **Image OCR** | EasyOCR | 1.7.2 | Offline (privacy), supports 80+ languages, asyncio-friendly |
-| **Real-Time** | Polling 5-10s (Phase 1) → SSE (Phase 2) | — | Polling is simple and sufficient for household; upgrade to Server-Sent Events when needed |
+**Core technologies (all existing, all sufficient):**
+- **FastAPI**: Routes, dependency injection, query params for year navigation — all patterns proven in v2.0
+- **Pydantic**: `EventCreate`/`EventUpdate` already validate `visibility`, `reminder_minutes_list` with range constraints
+- **google-api-python-client**: Calendar v3 API stable; reminder overrides (max 5, popup/email, 0–40320 min) already implemented in `_event_body()`
+- **Vanilla JS + Jinja2 templates**: New UI (reminder chips, comparison table) follows existing patterns; no framework addition warranted
 
-**Why NOT alternatives:**
-- Django: Over-engineered, slower dev cycle, unnecessary ORM overhead
-- Flask: Not async-first, WebSocket support requires add-ons
-- PostgreSQL (v1): Overkill for 2-user scope; SQLite adequate, migration path exists
-- Cloud Vision API: Privacy concern (household data → cloud), latency, cost
-- React/Vue SPA: Adds build step, bundle bloat; server-rendered sufficient
+**Explicitly rejected:** Alpine.js, htmx, Chart.js, any ORM, Celery, WebSocket/SSE, any new pip package.
 
----
+### Expected Features
 
-## Table Stakes Features
+**Must have (P1 — table stakes):**
+- Visibility toggle in event form (wired to existing `shared`/`private` field)
+- Private event filtering verified across ALL calendar view routes
+- Reminder on/off toggle with household defaults (30 min + 2 days)
+- Multi-year budget navigation (remove any frontend year restrictions)
+- Budget carry-forward balance (year N ending → year N+1 starting)
+- Year-over-year comparison summary (side-by-side annual totals)
 
-### Event Management
-- **Create events** — Core functionality; one-time and recurring
-- **Edit events** — Schedule changes, note updates
-- **Delete events** — Remove cancelled/moved events
-- **Event fields** — Title, start/end time, description, recurring pattern (RRULE)
-- **Recurring patterns** — Weekly, monthly, yearly with frequency control
-- **User attribution** — "Sarah added dentist appointment" visibility
+**Should have (P2 — differentiators):**
+- Custom reminder entries (add/remove up to 5 per event)
+- Lock icon indicator for private events on calendar grid
+- Color-coded YoY delta indicators (green ↑ improvement / red ↓ decline with percentages)
+- Reminder method choice (popup vs email)
 
-### Sharing & Collaboration
-- **Two-user shared calendar** — Both household members can view and edit the same calendar
-- **Google Calendar export** — Push events to Google Calendar (phone access, reminders)
-- **Real-time sync** — Changes visible to other user within 5-10 seconds
-- **Conflict detection** — Alert when both users have overlapping events
+**Defer (v2.2+):**
+- User-level default reminder preferences
+- Budget data import (Excel/CSV)
+- Busy/free display for private events
+- Per-year budget settings UI
 
-### Calendar Views
-- **Month view** — Full month overview with event indicators
-- **Week view** — Multi-day layout with time grid
-- **Day view** — Detailed view of single day
-- **Upcoming events list** — Next N days without switching views
-- **Today indicator** — Always know current date
+### Architecture Approach
 
-### Mobile Access & Notifications
-- **Mobile-responsive design** — Works on phone browser (no native app)
-- **In-app notifications** — Alert when event added/modified
-- **Reminder selection** — "Alert 15 min before," "1 day before," "on day"
-- **Google Calendar notifications** — Leverage Google's notification system on phone
+The architecture is a clean layered stack: Jinja2 templates → FastAPI routes → service layer → repository layer → SupabaseStore (httpx). All v2.1 features modify existing files — **zero new files created, 5–7 existing files modified, zero database migrations.** The event privacy pipeline is fully wired end-to-end. Reminder UI needs 3 file modifications (modal HTML, calendar JS, day events partial). YoY comparison adds a service method + API endpoint + UI section to existing files.
 
----
+**Major components (all existing):**
+1. **Event pipeline** (models → schemas → repository → service → routes → templates) — privacy and reminders are field additions to this pipeline
+2. **Budget pipeline** (overview_service → overview_routes → budget_overview template) — comparison extends this with one new method + endpoint
+3. **Google Sync pipeline** (GoogleSyncService → `_event_body` → `_sync_recipients`) — must add `_retract_from_non_recipients` for visibility changes
 
-## Differentiating Features
+### Critical Pitfalls
 
-| Feature | Why Valuable | Complexity |
-|---------|-------------|-----------|
-| **Natural language event creation** | "Mom's dentist appointment Tuesday 2pm" → auto-creates event (10x faster than form fill) | High |
-| **Image/document OCR** | Photograph flyer/invitation → extract date/time/name automatically | High |
-| **Color coding by person** | Visual identification: Sarah=red, Tom=blue | Low |
-| **Quick add templates** | "Sarah practice," "Doctor appointment" with pre-set details | Low |
-| **Event search** | Find "dentist" across all events | Low |
-| **Conflict highlighting** | Visual alert when both users scheduled simultaneously | Medium |
-| **PDF export** | Print calendar for fridge | Low |
-| **iCal/ICS export** | Portable calendar format | Low |
+1. **Visibility change doesn't clean up partner's Google Calendar** — When event changes shared→private, it persists in partner's Google Calendar. Must add `_retract_from_non_recipients` deletion step in sync service. Ship WITH the visibility toggle, not after.
 
----
+2. **Initial balance is not year-scoped** — `BudgetSettings.initial_balance` is a single value applied to ALL years. Year N+1 must compute its starting balance from year N's ending balance. Fix BEFORE enabling year navigation.
 
-## Architecture Overview
+3. **Recurring expenses appear in all years** — `get_by_calendar_year` fetches recurring expenses (`month=0`) without year filtering. A 2026 recurring expense shows in 2024 view. Add `year <= requested_year` filter to recurring expense queries.
 
-CalendarPlanner follows a **three-tier service-oriented architecture**:
+4. **Google Calendar API rejects >5 reminder overrides** — No list-length validation in schema. Events with 6+ reminders fail to sync silently. Add `max_length=5` to schema AND cap in UI.
 
-```
-Web Frontend (Jinja2 templates, HTMX forms)
-    ↓ REST API
-Service Layer (Event, Recurrence, GoogleSync, NLP, OCR services)
-    ↓ Repository Pattern
-Data Access (SQLAlchemy ORM)
-    ↓
-SQLite Database
+5. **Dual reminder fields create ambiguous state** — Both `reminder_minutes` (legacy int) and `reminder_minutes_list` (new list) coexist. UI must write exclusively to `reminder_minutes_list` and null out the legacy field. Migrate existing data.
 
-External: Google Calendar API (OAuth2, Event CRUD)
-```
+6. **Private event import doesn't enforce ownership** — Google Calendar import attributes all events to the importing user, bypassing `cp_owner_id`. Must validate ownership extended property on import to prevent partner claiming private events.
 
-**Key components:**
-1. **EventService** — CRUD operations, validation, recurrence expansion
-2. **RecurrenceService** — RFC5545 RRULE parsing and instance generation (handles DST/timezone)
-3. **GoogleSyncService** — OAuth2 flow, token management, push/pull events
-4. **CalendarService** — Two-user shared calendar model, access control
-5. **NLPService** — Natural language → event fields (uses dateparser + spaCy)
-6. **OCRService** — Image extraction → text → event fields (uses EasyOCR)
+## Implications for Roadmap
 
-**Build order by dependency:**
-1. Database schema (events, users, sync state)
-2. EventService + Recurrence (core calendar logic)
-3. CalendarService + auth (two-user sharing model)
-4. REST API endpoints (CRUD, views)
-5. GoogleSyncService (OAuth + sync)
-6. Frontend (Jinja2 templates + HTMX)
-7. NLPService (natural language input)
-8. OCRService (image extraction)
+Based on combined research, dependency analysis, and pitfall ordering:
 
----
+### Phase 1: Event Privacy — Validate & Harden
+**Rationale:** Already ~90% complete; needs verification, Google sync cleanup path, and import guard. Lowest effort, highest immediate trust impact. No dependencies on other features.
+**Delivers:** Fully working private events — invisible to partner on web AND Google Calendar, safe through import/export round-trips.
+**Features:** Visibility toggle verification, private event filtering across all views, lock icon indicator, sync retraction on visibility change, import ownership validation.
+**Avoids:** Pitfall 1 (sync cleanup), Pitfall 2 (export_month leak), Pitfall 8 (import ownership), Pitfall 11 (form population on edit).
+**Research needed:** NO — code is reviewed, patterns are clear, changes are well-scoped.
 
-## Top Pitfalls to Avoid
+### Phase 2: Reminder UI — Wire Frontend to Existing Backend
+**Rationale:** Self-contained frontend task. Backend is complete (schema, validation, Google sync). No dependency on budget features. Clearing event-related work before moving to budget.
+**Delivers:** Reminder toggle with defaults, chip-based multi-reminder editor, Google Calendar sync of configured reminders.
+**Features:** Reminder on/off toggle, default presets (30 min + 2 days), add/remove custom entries (up to 5), i18n labels.
+**Avoids:** Pitfall 6 (max 5 overrides — enforce in schema + UI), Pitfall 7 (dual fields — write only to list, null legacy), Pitfall 9 (tri-state: none/default/custom), Pitfall 11 (populate reminders on edit).
+**Research needed:** NO — Google Calendar API constraints verified via Context7, UI pattern matches existing chip/pill design.
 
-### 1. Refresh Token Exhaustion
-**Prevention:** Store one refresh token per user permanently in encrypted DB field; reuse it for all API calls. Use "Production" consent screen (not "Testing") from day one. Implement graceful token failure handling (flag user for re-auth but don't crash). Monitor `invalid_grant` errors in logs.
+### Phase 3: Multi-Year Budget — Fix Data Integrity & Enable Navigation
+**Rationale:** Must fix carry-forward balance and recurring expense scoping BEFORE users can navigate years, otherwise they see incorrect data. This is a data-integrity prerequisite for Phase 4.
+**Delivers:** Accurate budget data for any past/future year, carry-forward balance computation, year-scoped recurring expenses, polished year navigation UX.
+**Features:** Budget carry-forward balance, multi-year navigation (verified), recurring expense year filtering, "Calculations use current rates" disclaimer.
+**Avoids:** Pitfall 3 (initial balance not year-scoped), Pitfall 4 (recurring expenses in wrong years), Pitfall 5 (rates not year-versioned — document limitation, defer full fix).
+**Research needed:** MAYBE — carry-forward computation strategy (dynamic vs snapshot) needs validation during planning. Likely straightforward for <5 years of data.
 
-### 2. Recurring Events + Timezone/DST Disasters
-**Prevention:** Always store times in UTC internally; render to users in local timezone only at UI layer. Use mature RRULE library (`dateutil`), never implement recurrence yourself. Hard-test DST boundaries (Nov 5, Mar 9). In v1, disallow editing single recurring instances; treat as separate events. Fetch full series from Google on each sync.
+### Phase 4: Year-over-Year Comparison — New Feature Build
+**Rationale:** Depends on Phase 3 (multi-year data must be accurate). The only genuinely new feature — new service method, new API endpoint, new UI section. Highest complexity.
+**Delivers:** Side-by-side annual summary comparison, delta calculations, expandable comparison panel in budget overview.
+**Features:** YoY comparison summary, delta indicators (color-coded), no-data vs zero distinction for empty years, i18n labels.
+**Avoids:** Pitfall 10 (misleading zeros — distinguish no-data from zero-value months).
+**Research needed:** NO — architecture doc provides complete service method design, API endpoint spec, and UI wireframe. Standard patterns.
 
-### 3. Concurrent Edit Conflicts & Lost Updates
-**Prevention:** Implement optimistic locking—store `last_edited_at` and `last_editor_user_id` with each event. When saving, check if event changed; if yes, show conflict dialog. Queue-based sync: lock event during editing (UI shows "B is editing this"). Log all conflicts for later conflict-resolution feature.
+### Phase Ordering Rationale
 
-### 4. OCR Accuracy & Fallback Failure
-**Prevention:** **Never auto-add OCR results**; always require human review. Show OCR confidence per field; highlight low-confidence (< 75%) in yellow. Display raw image + text input form if OCR fails entirely. Validate before sync: date in future, title not empty, location not garbage. Async background processing with user notification.
+- **Privacy before reminders:** Both touch the event form, but privacy is nearly complete and validates existing code. Shipping privacy first means the form infrastructure is verified before adding reminder controls.
+- **Reminders before budget:** Clears all event-pipeline work before context-switching to budget pipeline. Reduces cognitive overhead.
+- **Multi-year data integrity before comparison:** Comparison is presentation of multi-year data. If the underlying data is wrong (Pitfalls 3, 4, 5), the comparison is meaningless. Fix the foundation first.
+- **Features grouped by pipeline:** Phases 1–2 are event pipeline. Phases 3–4 are budget pipeline. This minimizes file-switching and context loss.
 
-### 5. NLP Date Parsing Edge Cases
-**Prevention:** In v1, limit NLP to explicit formats ("March 15, 2026") or dropdowns ("in X days"). If using relative dates, validate against user's timezone + current date. Validate future dates; if ambiguous (e.g., "March 15" in December), ask user: "Did you mean 2026 or 2027?". Pass user's timezone to NLP parser explicitly.
+### Research Flags
 
----
+**Phases likely needing deeper research during planning:**
+- **Phase 3 (Multi-Year Budget):** Carry-forward balance computation strategy and recurring expense year-scoping need validation. Edge cases around first-tracked-year and empty year handling.
 
-## Phase Recommendations
+**Phases with standard patterns (skip `/gsd-research-phase`):**
+- **Phase 1 (Event Privacy):** Code exists, just needs hardening and testing.
+- **Phase 2 (Reminder UI):** Backend complete, UI follows existing chip pattern, Google API constraints documented.
+- **Phase 4 (YoY Comparison):** Architecture doc provides implementation spec, API design, and UI wireframe. Service reuses existing method.
 
-Based on feature dependencies and risk mitigation:
+## Confidence Assessment
 
-### Phase 1: Foundation (Database, Auth, Event CRUD)
-Create core schema (events, users, recurring rules). Implement user authentication (OAuth2 with Google). Build EventService for create/edit/delete. Add basic Jinja2 templates for event list. Deploy to test instance. **Duration: 2-3 weeks**
-
-### Phase 2: Calendar Views & Sharing
-Implement month/week/day views. Add CalendarService for two-user sharing model. Build calendar grid UI. Add in-app notifications (polling at 5-10s intervals). Test multi-user editing workflow. **Duration: 2-3 weeks**
-
-### Phase 3: Recurring Events (With RFC5545 Support)
-Implement RecurrenceService using `dateutil.rrule`. Add UI for frequency/end date selection. Hard-test DST boundaries (Mar/Nov). Support EXDATE (skip instances). **Duration: 2-3 weeks**
-
-### Phase 4: Google Calendar Sync (Push-Only)
-Implement GoogleSyncService with OAuth2 refresh token handling. Add "Export to Google" button. Build sync state tracking. Monitor token health. Test two-user push workflow. **Duration: 2-3 weeks**
-
-### Phase 5: Real-Time Sync Optimization (Polling → SSE)
-Replace 5-10s polling with Server-Sent Events (one-way push). Add user attribution ("Sarah added event"). Build conflict detection UI. **Duration: 1-2 weeks**
-
-### Phase 6: Natural Language Event Creation
-Integrate `dateparser` for relative date parsing ("next Friday," "in 3 days"). Add NLP input box to UI. Validate parsed dates (future, valid time range). Fallback to form if parsing uncertain. **Duration: 2-3 weeks**
-
-### Phase 7: Image OCR for Event Extraction
-Integrate EasyOCR. Build image upload form. Extract text → parse with dateparser. **Human review step required** (never auto-add). Show OCR confidence per field. **Duration: 2-3 weeks**
-
-### Phase 8: Polish & Monitoring
-Add conflict resolution UI ("Edit yours" / "Use theirs"). Implement event search. Add color coding by person. Build email digests (optional). Add monitoring/alerting for token health, sync failures. Polish mobile UX. **Duration: 1-2 weeks**
-
----
-
-## Research Confidence Assessment
-
-| Area | Confidence | Basis |
+| Area | Confidence | Notes |
 |------|------------|-------|
-| **Stack** | HIGH | Official docs (FastAPI, SQLAlchemy), TechEmpower benchmarks, Google API client maturity |
-| **Features** | HIGH | Domain research (Cozi, Google Calendar, Apple Family Sharing), household calendar patterns well-established |
-| **Architecture** | HIGH | RFC5545 (RRULE standard), OAuth2 (Google docs), three-tier pattern is proven |
-| **Pitfalls** | MEDIUM-HIGH | Mix of official Google warnings (refresh tokens), known RRULE edge cases (timezone/DST), and common patterns |
+| Stack | HIGH | Zero changes needed — all versions verified against requirements.txt and codebase |
+| Features | HIGH | Feature inventory cross-referenced with existing schema, UI, and PROJECT.md requirements |
+| Architecture | HIGH | All claims verified against actual source code; file paths, method names, and data flows confirmed |
+| Pitfalls | HIGH | Each pitfall traced to specific code paths; Google API constraints verified via Context7 |
 
-**Gaps identified:**
-- **Specific NLP accuracy rates:** Research didn't test exact dateparser edge cases; Phase 6 should include test suite
-- **Refresh token behavior:** Google docs vague on exact rotation limits; implement monitoring early to detect issues
-- **OCR accuracy on household materials:** Research generic; Phase 7 should test on actual flyers/invitations
-- **Concurrent edit performance:** Research covered patterns but not benchmarks; Phase 4 should load-test
+**Overall confidence:** HIGH
 
----
+### Gaps to Address
+
+- **Budget settings rate versioning:** Research recommends deferring year-scoped rates (document limitation with UI disclaimer). If users report confusion about changed past-year data, escalate to v2.2.
+- **Sync error surfacing:** Silent exception swallowing in `sync_event_for_household` masks reminder and privacy sync failures. Not blocking for v2.1, but should be addressed soon.
+- **`export_month` privacy tightening:** Currently safe because `_sync_recipients` filters, but data is loaded into memory unfiltered. Strengthen by passing `requesting_user_id` during privacy phase.
+- **Empty year UX:** Navigating to years with no data should show a graceful empty state, not zeros. Needs design decision during Phase 3/4 planning.
 
 ## Sources
 
-- **STACK.md:** Official docs (FastAPI, SQLAlchemy, google-api-python-client), TechEmpower benchmarks, 2026 Python ecosystem survey
-- **FEATURES.md:** Cozi documentation, Google Calendar, Apple Family Sharing, household calendar market analysis
-- **ARCHITECTURE.md:** RFC5545 standard (RRULE), OAuth2 spec, three-tier architecture patterns, Google Calendar API reference
-- **PITFALLS.md:** Google OAuth2 limits, dateutil RRULE edge cases, household calendar UX patterns, concurrent edit consensus patterns
+### Primary (HIGH confidence)
+- `/googleapis/google-api-python-client` via Context7 — Calendar v3 Event.reminders spec: max 5 overrides, popup/email methods, 0–40320 minutes range
+- Direct codebase analysis — models.py, schemas.py, repository.py, service.py, sync/service.py, routes.py, templates, JS, locale files
+
+### Secondary (MEDIUM confidence)
+- Google Calendar, Apple Calendar, Outlook, YNAB, Toshl — competitor/domain analysis for feature patterns and defaults
 
 ---
-
-## Ready for Planning
-
-Research complete. **Roadmap can now proceed with 5-8 phases** structured by dependency:
-1. **Foundation** (auth + event CRUD)
-2. **Views + Sharing** (multi-user calendar)
-3. **Recurrence** (RRULE support)
-4. **Google Sync** (OAuth2 + push)
-5. **Real-time** (polling → SSE)
-6. **NLP** (natural language input)
-7. **OCR** (image extraction)
-8. **Polish** (monitoring, UX)
-
-Highest-risk items flagged for early attention: token exhaustion prevention (Phase 4), timezone edge cases (Phase 3), conflict handling (Phase 5).
+*Research completed: 2026-03-20*
+*Ready for roadmap: yes*

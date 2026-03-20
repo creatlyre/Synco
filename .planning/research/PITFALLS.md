@@ -1,438 +1,296 @@
-# Domain Pitfalls: Shared Household Calendar Web App
+# Pitfalls Research
 
-**Domain:** Shared household calendar (Python/Google Calendar)
-**Researched:** March 18, 2026
-**Confidence Level:** MEDIUM (mix of official docs, common patterns, and known issues)
+**Domain:** Adding event privacy, reminder UI, and multi-year budget to existing household calendar
+**Researched:** 2026-03-20
+**Confidence:** HIGH — based on direct codebase analysis and Google Calendar API documentation
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Refresh Token Exhaustion
+### Pitfall 1: Visibility change doesn't clean up partner's Google Calendar
 
 **What goes wrong:**
-Your app requests a new refresh token for each user session or authorization, silently discarding old tokens. After ~50-100 authorizations, Google hits its per-user-per-OAuth-client limit (100 refresh tokens max), and begins invalidating older tokens. Users start seeing "invalid_grant" errors unpredictably.
-
-Moreover, if a refresh token hasn't been used for 6 months, Google *automatically* revokes it. Combined with token rotation patterns, this causes surprise auth failures in production.
+When an event changes from `shared` to `private`, `sync_event_for_household` correctly limits `_sync_recipients` to just the owner — but the event _already exists_ in the partner's Google Calendar from a prior sync. The partner continues to see the now-private event indefinitely.
 
 **Why it happens:**
-- Developers assume unlimited refresh tokens (OAuth spec is vague)
-- Testing is localized; token expiration isn't visible in early phases
-- No monitoring on token state; failure detected only when users complain
-- Misunderstanding of "Testing" vs. "Production" consent screen (Testing mode tokens expire in 7 days)
+The sync service only handles the push-forward case (who gets the event now), not the cleanup case (who had it before and shouldn't anymore). The current `_sync_recipients` method filters recipients for the current sync, but doesn't compute the delta — users who were recipients but no longer are.
 
-**Consequences:**
-- Users get auth errors and can't access the app
-- App crashes if no fallback exists when refresh fails
-- Requires forcing users through re-authentication, disrupting household workflow
+**How to avoid:**
+When visibility changes from `shared` to `private`: (1) identify household users who are NOT the owner, (2) find and delete the event from their Google Calendars. Add a `_retract_from_non_recipients` step in `sync_event_for_household` that runs when `cp_visibility` extended property differs from the event's current visibility.
 
-**Prevention:**
-- **Store one refresh token per user permanently** in secure database (encrypted field)
-- **Reuse the same refresh token** for all API calls; never request a new one unless explicitly revoked
-- Implement **token refresh error handling:** if refresh fails, flag user for re-authentication but don't throw
-- Monitor/alert on `invalid_grant` errors (sign of token expiration)
-- Use **"Production" consent screen** (not "Testing") from day one—changes token lifetime from 7 days to indefinite
-- Implement **graceful degradation:** if Google auth fails, show calendar read-only or queue edits for later sync
+**Warning signs:**
+- Partner still sees private events on their phone after sync
+- Only the web UI filters correctly; Google Calendar shows stale state
+- No `events().delete()` call path exists for visibility-change scenarios
 
-**Detection (warning signs):**
-- Users reporting "Please log in again" errors after weeks of normal use
-- Logs showing 401 Unauthorized → 400 invalid_grant in cascades
-- Higher auth failure rates as user population grows
-
-**Phase mapping:**
-- **Phase 2-3 (Core OAuth/Sync):** Implement secure token storage and refresh error handling
-- **Phase 8+ (Monitoring):** Add token health alerts and rotation strategy
+**Phase to address:**
+Event privacy phase — must ship alongside the visibility toggle, not as a follow-up.
 
 ---
 
-### Pitfall 2: Recurrence Rule Timezone & DST Disasters
+### Pitfall 2: `export_month` syncs private events through the full pipeline
 
 **What goes wrong:**
-You store a recurring event in User A's timezone (EST). When User B views from PST or User B checks the calendar after DST flip, the event times shift unexpectedly. Worse: modifying a single instance of a recurring event can cause duplicates or deletions if your logic doesn't account for timezone-adjusted recurrences.
-
-Example: Weekly Tuesday at 9am EST. DST ends (EST → EDT jump). Google Calendar's recurrence engine recalculates; your local cache shows it at 8am instead of showing no change at all. If you try to sync this back, you create a spurious "changed" event.
+`export_month` in `app/sync/service.py` calls `service.list_month_expanded(user.calendar_id, year, month)` **without** `requesting_user_id`. This returns ALL events including the partner's private ones. Each event then goes through `sync_event_for_household`, where `_sync_recipients` correctly filters — but the full event object (including private titles and descriptions) is loaded into memory and passed through the pipeline before filtering.
 
 **Why it happens:**
-- RRULE (RFC 5545 recurrence rules) assume UTC, but most user calendars are timezone-bound
-- Timezone database (tzdata) changes yearly; library versions may be stale
-- Editing "this and following" occurrences requires recalculating the entire series
-- Google Calendar API sometimes returns times in different formats (floating vs. fixed timezone)
+`export_month` was written before privacy existed. It bulk-fetches all calendar events, relying on downstream `_sync_recipients` for filtering. The filtering is correct for who receives the push, but the data is already loaded.
 
-**Consequences:**
-- Events show at wrong times for different users
-- Daylight saving transitions cause "phantom" events or shifted times
-- Modifying one instance breaks subsequent instances or creates duplicates
-- Sync loops where the same event gets pushed back-and-forth between app and Google Calendar
+**How to avoid:**
+This is currently safe because `_sync_recipients` prevents the push. However: (1) Never add logging/debugging that dumps event bodies before the recipient filter. (2) If adding batch operations, always filter events BEFORE constructing payloads. (3) Consider passing `requesting_user_id` to `list_month_expanded` in `export_month` so each user only iterates over events they should see.
 
-**Prevention:**
-- **Always store times in UTC internally.** Render to users in their local timezone only at UI layer
-- **Use a mature RRULE library** (e.g., `dateutil` in Python or `rrule.js`)—don't implement recurrence yourself
-- **Test with DST boundaries explicitly:** e.g., Nov 5, 2025 (fall back), Mar 9, 2025 (spring forward)
-- **Never edit a single occurrence of a recurring event** in v1; disallow it or refactor to use Google's VEVENT model (exception instances)
-- **Sync strategy:** Always fetch the full series from Google when syncing, don't assume local copies are current
-- **Timezone canon:** Store user's home timezone in DB (not inferred from browser); use it consistently for all recurrence math
-- **Document the rule:** When showing "Repeats weekly on Tuesday," explicitly state timezone (e.g., "EST") if it's user-specific
+**Warning signs:**
+- Private event titles appearing in server logs
+- Debug middleware exposing event bodies to response headers
+- Adding a sync report feature that lists all synced event titles
 
-**Detection (warning signs):**
-- Users reporting times off by 1 hour around DST transitions
-- Recurring events appearing twice (both old and new calculation)
-- App logs showing RRULE parse errors or "UTC offset mismatch"
-
-**Phase mapping:**
-- **Phase 3 (Recurring Events):** Use dateutil or proven library; hard test DST boundaries
-- **Phase 5 (Sync):** Fetch full series on each sync; prefer read-only recurring in v1
+**Phase to address:**
+Event privacy phase — tighten `export_month` to filter per-user before sync loop.
 
 ---
 
-### Pitfall 3: Concurrent Edit Conflicts & Lost Updates
+### Pitfall 3: Initial balance is not year-scoped — multi-year running balance starts wrong
 
 **What goes wrong:**
-User A changes an event description in the webapp (9:01 am). User B edits the same event on their phone (9:02 am). Whichever sync runs second wins; the other's change is silently lost. No merge, no warning.
-
-Worse: A adds "Bring passport" to a trip event. B changes the time. Your app syncs A's description to Google, then B's time—but Google sees it as edits to the same event and may apply both (correct by accident) or only one (silent conflict).
+`BudgetSettings.initial_balance` is a single float value per calendar. The `get_year_overview` service uses it as the starting balance for ANY year requested. Navigating to 2024 uses the same initial balance as 2026, producing incorrect running balances for every past and future year.
 
 **Why it happens:**
-- Two-user household model implies single calendar, but updates can arrive out-of-order
-- Last-write-wins (LWW) is simple but loses data
-- No concept of "version" or "edited_at" to detect conflicts
-- Google Calendar API doesn't support ETags or conditional updates in v1
+Budget was designed as current-year-only. The initial balance was intended as account balance at start of this year. Extending to multi-year without computing year-start balances from the prior year's ending balance creates incorrect data.
 
-**Consequences:**
-- Users lose edits without realizing it
-- Inconsistency between app and Google Calendar
-- Trust erosion ("Why did my change disappear?")
-- Silent data loss is worse than failed request
+**How to avoid:**
+For year Y, the starting balance should be: `initial_balance + sum of monthly_balance for every month in years before Y`. Two approaches:
+1. **Compute dynamically**: When loading year Y overview, first calculate ending balance of year Y-1 (recursively). Cache aggressively.
+2. **Snapshot yearly**: Store a `year_opening_balance` table with one row per calendar per year. Recompute when prior year data changes.
 
-**Prevention:**
-- **Implement optimistic locking with edit timestamps:**
-  - Store `last_edited_at` and `last_editor_user_id` with each event
-  - When User A tries to save, check if `last_edited_at` hasn't changed since they loaded it
-  - If changed, show conflict dialog: "B edited this while you were typing. Compare versions?" (not auto-merge)
-- **Queue-based sync for v1:** Don't allow simultaneous edits to the same event
-  - Lock event for editing by one user at a time (add UI indicator "B is editing this")
-  - Serialize writes: if A saves, B's pending save fails with "event changed" and reloads
-- **Separate conflicts for recurring events:** If A edits the series and B edits one instance, treat as non-conflicting
-- **Log all conflicts:** Track where conflicts occur; use as input to future undo/history feature
-- **Scope creep:** Avoid full collaborative editing in v1 (like Google Docs). Household calendar doesn't need simultaneous collaborative typing.
+Option 1 is simpler for a two-user household app with limited history depth.
 
-**Detection (warning signs):**
-- Users report missing edits or changes
-- Discrepancy between app event and Google Calendar event (same event_id, different fields)
-- Database logs showing multiple saves to same event in < 1 second
+**Warning signs:**
+- Year overview shows same starting balance regardless of which year is selected
+- Running balance in 2025 doesn't match ending balance of 2024
+- Users report budget seems wrong for previous years
 
-**Phase mapping:**
-- **Phase 2 (Core DB):** Add `last_edited_at`, `last_editor_user_id`
-- **Phase 4 (Sync):** Implement conflict detection; lock editing during sync
-- **Phase 7+ (UX):** Show "X is editing" indicator and conflict dialogs
+**Phase to address:**
+Multi-year budget phase — must fix before enabling year navigation.
 
 ---
 
-### Pitfall 4: OCR Accuracy and Fallback Failure
+### Pitfall 4: Recurring expenses appear in all years regardless of when created
 
 **What goes wrong:**
-User uploads a flyer image with an event: "Annual Company Picnic—June 15 at Central Park." OCR reads it as "Annual Campany Picinc—June 15 at Central Bark" (misread 'o'→'a', 'P'→'B'). Event title is now wrong. Worse: OCR completely fails on low-contrast text, but the app doesn't degrade gracefully—it either crashes or creates blank events.
-
-Even working OCR confidence is unreliable: scanned text often has 75-85% confidence, leading to random character substitutions that break event parsing.
+`ExpenseRepository.get_by_calendar_year` fetches recurring expenses (`month=0`) with a query that has no year filter: `{"calendar_id": ..., "month": "eq.0"}`. A recurring expense created in 2026 appears when viewing 2024, even though it didn't exist then.
 
 **Why it happens:**
-- OCR tools (Tesseract, cloud APIs) aren't 100% accurate, especially on real-world images
-- No fallback: app either shows OCR result or fails silently
-- Confidence scores aren't displayed to users for validation
-- Relying on OCR for dates is risky (date parsing is separate error source)
+Recurring expenses were designed as same every month, same every year for the current-year-only model. The `year` field on recurring expenses is set to creation year but never used for filtering — the query ignores it.
 
-**Consequences:**
-- Malformed events added to calendar (wrong title, date, or location)
-- Users don't notice until they check the calendar later
-- If auto-synced to Google Calendar, bad events are hard to find and delete
-- Trust erodes: "I took a photo, why is the event wrong?"
+**How to avoid:**
+Two options:
+1. **Add effective date range**: Add `effective_from_year` and optional `effective_until_year` fields to expenses. Filter recurring expenses where `effective_from_year <= requested_year`.
+2. **Filter by creation year**: For recurring rows, filter `year <= requested_year` meaning this is the first year they apply.
 
-**Prevention:**
-- **Human-in-the-loop for v1:** Never auto-add OCR results directly
-  - OCR extracts text; user reviews and edits before confirmation
-  - Show OCR confidence per field; highlight low-confidence extractions in yellow/red
-  - Example: "Title (92% confident): [text field]" with "Title seems unclear, re-read this part?" hint
-- **Fallback extraction:** If OCR fails entirely, show raw image + text input form ("I can't read this image. Please type the event details")
-- **Structured OCR:** Use form-based extraction (ask "Date?" "Title?" "Location?") instead of free-form text
-- **Validate before sync:** Before pushing to Google Calendar, validate:
-  - Date is in future (or user's intended range)
-  - Title is not empty and > 2 characters
-  - Location is optional but if present, not obviously garbage (e.g., "Bark" unlikely for park)
-- **Confidence threshold:** Set minimum OCR confidence (e.g., 80%); below threshold, require manual review
-- **Async processing:** Offload OCR to background job with user notification ("Processed your image, please review")
+Option 2 is simpler but requires the `year` field on recurring expenses to mean first year this applies.
 
-**Detection (warning signs):**
-- Low OCR confidence reported in logs (< 75%)
-- Users editing events immediately after OCR creation
-- Events with obviously wrong titles/dates from OCR source
+**Warning signs:**
+- Viewing past years shows expenses that didn't exist yet
+- Year-over-year comparison shows identical recurring expense totals for years before the user even started tracking
+- Deleting a recurring expense removes it from all historical years too
 
-**Phase mapping:**
-- **Phase 6 (Image Upload):** Implement OCR + human review flow (block auto-add)
-- **Phase 8 (Refinement):** Improve OCR selection (better library) and add confidence scoring UI
+**Phase to address:**
+Multi-year budget phase — resolve before shipping year navigation.
 
 ---
 
-### Pitfall 5: NLP Date Parsing Edge Cases
+### Pitfall 5: Budget settings (rates, ZUS, accounting) are not year-versioned
 
 **What goes wrong:**
-User types "next Tuesday" expecting an event a week from now. Your NLP parser interprets "next Tuesday" as tomorrow (if today is Monday) or 8 days away depending on the NLP library's definition. User types "March 15" without a year; parser assumes current year, but it's December, so the event is created for March 15, 1970 (or the far past).
-
-Relative dates ("in 3 days," "next month") are especially brittle. Recurring patterns ("every other Thursday") are parsed incorrectly if the NLP library doesn't support open-ended recurrence.
+`BudgetSettings` stores a single set of rates per calendar. If hourly rates change from 2025 to 2026, viewing the 2025 overview uses the current (2026) rates — retroactively changing all 2025 calculations. Year-over-year comparison becomes meaningless because both years use identical rates.
 
 **Why it happens:**
-- NLP libraries (e.g., `dateutil.parser`, NLTK, commercial APIs) have different heuristics
-- Ambiguous input: "March 15" could mean this year or next; "next Tuesday" varies by library definition
-- User context isn't captured: "next Tuesday" means different things on Monday vs Thursday
-- Timezone handling in NLP is rare; no library knows your user's timezone implicitly
+Settings were designed as current configuration for single-year use. No historical versioning was needed.
 
-**Consequences:**
-- Events created with wrong dates, silently (user doesn't notice until calendar view)
-- Recurring events with wrong frequency or end date
-- User frustration: "I said 'next Tuesday' and it created it for next year!"
+**How to avoid:**
+Two approaches:
+1. **Year-scoped settings**: Add a `year` column to `budget_settings` or create a `budget_settings_yearly` table. Each year has its own rates. When navigating to a new year for the first time, copy forward from the previous year.
+2. **Settings changelog**: Store settings changes with timestamps and compute the effective settings for any given year. Over-engineered for this use case.
 
-**Prevention:**
-- **Limit NLP scope in v1:** Accept only explicit formats initially
-  - Supported: "March 15, 2026," "15-Mar-2026," "Mar 15, 2026"
-  - Supported: User selects "in X days" from dropdown (not free text)
-  - Supported: "Repeats weekly on Tuesday" (Google Calendar UI pattern, not free text)
-- **Relative date validation:** If NLP is used, validate relative dates against user's timezone + current date
-  - "next Tuesday" → parse with dateutil, then validate it's > today
-  - If ambiguous, ask user: "Did you mean March 15, 2026 or 2027?" (show future date highlighted)
-- **Timezone context:** Pass user's timezone to NLP parser (dateutil supports this)
-- **No year inferred:** If user says "March 15", always ask "This year or next?" before creating
-- **Recurring recurrence validation:** Don't parse "every other Thursday" unless fully supported; show a form instead
-  - Form: "Repeats: Weekly | Bi-weekly | Monthly | Yearly" + "On: [day selection]" + "Until: [date picker]"
-- **Test suite:** Create explicit test cases:
-  - "next Tuesday" on Monday (should be 1 day away, not 8)
-  - "March 15" in December (should be next year, not this)
-  - "in 3 weeks" (should be 21 days from now)
+Option 1 is recommended. A copy-forward mechanism when the user first navigates to a new year provides a natural workflow.
 
-**Detection (warning signs):**
-- Events created with dates far in past or future unexpectedly
-- Users immediately editing event dates after NLP creation
-- NLP parser errors in logs (parsing failures, ambiguous input)
+**Warning signs:**
+- Changing current year rates retroactively alters past year summaries
+- Year-over-year comparison shows identical gross income with identical rates
+- Users confused why past year data changed
 
-**Phase mapping:**
-- **Phase 4 (NLP Event Creation):** Use form-based inputs, not free-text NLP; validate before sync
-- **Phase 8+ (Advanced):** Add optional NLP with user confirmation step
+**Phase to address:**
+Multi-year budget phase — core data model change, must precede year-over-year comparison.
+
+---
+
+### Pitfall 6: Google Calendar API rejects more than 5 reminder overrides
+
+**What goes wrong:**
+The Google Calendar API enforces a maximum of 5 reminder overrides per event. The current Pydantic schema validates each reminder is 0–40320 minutes but does not validate the list length. If the UI allows adding 6+ reminders, `events().insert()` or `events().update()` throws a 400 error, and the event fails to sync silently (caught by the generic `except Exception` in `sync_event_for_household`).
+
+**Why it happens:**
+The backend validation was written for the reminder data model (valid minute ranges) without consulting the Google Calendar API constraint on list length. The sync service catches all exceptions, so the failure is invisible to the user.
+
+**How to avoid:**
+1. Add `max_length=5` validation on `reminder_minutes_list` in `EventCreate` and `EventUpdate` schemas.
+2. Surface sync errors to the user rather than silently swallowing them.
+3. In the UI, disable add reminder button after 5 entries.
+
+**Warning signs:**
+- Sync reports showing errors like invalid value for reminders
+- Events with 6+ reminders sync successfully to CP but never appear in Google Calendar
+- Users report reminders work in browser but not on phone
+
+**Phase to address:**
+Reminder UI phase — enforce limit in schema AND UI simultaneously.
 
 ---
 
 ## Moderate Pitfalls
 
-### Pitfall 6: Google Calendar API Quota Exhaustion
+### Pitfall 7: Dual reminder fields create ambiguous state
 
 **What goes wrong:**
-Your app makes one API call per user action (edit event, view month, sync). With 2 users, each opening the app multiple times per day, you hit Google Calendar API quota limits faster than expected. Free tier limits are ~1M requests/day for the entire project. You're throttled, users see slow sync.
-
-Worse: No queue management, so sync requests pile up and timeout.
+The `Event` model has both `reminder_minutes` (single int, legacy) and `reminder_minutes_list` (list[int], new). The `effective_reminders` property provides fallback logic (prefer list, then single, then empty). If the UI writes to `reminder_minutes_list` but old code or imports write to `reminder_minutes`, events end up with both fields set, and the behavior depends on which the `effective_reminders` property prioritizes.
 
 **Why it happens:**
-- Apps don't batch API calls (e.g., get all events in one call instead of N calls)
-- No caching: every page view queries Google Calendar (wasteful)
-- Overly aggressive sync: app syncs on every event edit + periodic background sync + manual user sync
-- Free tier quotas are per-project, not per-user; small mistake scales badly
+`reminder_minutes` was the v1.1 backend-only field. `reminder_minutes_list` was added for multi-reminder support. Both coexist without a clear migration path.
 
-**Consequences:**
-- "Quota exceeded" errors; users see blank calendar or sync failures
-- Unpredictable performance (throttled to 1-2 requests/sec after hitting limit)
-- Requires backoff/retry logic that users don't understand
+**How to avoid:**
+1. UI should exclusively write to `reminder_minutes_list` and set `reminder_minutes = None` when saving.
+2. On import from Google Calendar, populate only `reminder_minutes_list`.
+3. Add a one-time migration to move any existing `reminder_minutes` values into `reminder_minutes_list` and null out the single field.
 
-**Prevention:**
-- **Batch API calls:** Fetch all events for a date range in one call, not one call per event
-- **Local cache with TTL:** Store recent calendar state in DB; expire after 15-30 min
-  - Only sync if user explicitly clicked "Refresh" or TTL expired
-  - Full monthly sync once per day (background job, not on every page load)
-- **Incremental sync:** Use Google Calendar's `syncToken` to fetch only changed events since last sync, not the whole calendar
-- **Smart retry:** Implement exponential backoff (1s, 2s, 4s, 8s) when quota exhausted; don't retry immediately
-- **Quota monitoring:** Track API calls per day; alert if approaching limit (e.g., 80% of 1M)
-- **v1 constraint:** Sync to Google once per day (batch), not per edit
-  - Accept eventual consistency: events sync in the next batch, not immediately
+**Warning signs:**
+- Event has `reminder_minutes=30` AND `reminder_minutes_list=[60, 1440]` — which reminder set does the user get?
+- Editing an event in UI shows different reminders than what syncs to Google
+- Import/export round-trip changes reminder values
 
-**Detection (warning signs):**
-- Google API error logs showing `rateLimitExceeded` or `quotaExceeded`
-- Calendar appears blank or stale (syncing stopped)
-- App response times spike to seconds (quota throttled)
-
-**Phase mapping:**
-- **Phase 3 (Google Sync):** Implement caching + incremental sync + syncToken
-- **Phase 5 (Daily Batch):** Background job for nightly Google Calendar export
-- **Phase 9 (Monitoring):** Alert on quota approaching
+**Phase to address:**
+Reminder UI phase — resolve before shipping the UI, as users will be confused by phantom reminders.
 
 ---
 
-### Pitfall 7: One-Way Sync Hidden Complexity
+### Pitfall 8: Private event import from Google doesn't enforce ownership
 
 **What goes wrong:**
-You plan "push events from app → Google Calendar only" (not two-way in v1). But users also edit events directly in Google Calendar on their phones, and expect those to show in the web app. Your app doesn't pull from Google, so the web app is stale. Users see old data and get confused.
-
-Alternatively, your "one-way" sync design doesn't account for deletions: User deletes an event in Google Calendar on their phone, but the web app still shows it. Sync now becomes "broken" and either deletes from app or recreates a ghost event from app into Google.
+`_upsert_google_event` creates new events with `visibility: self._extract_cp_visibility(google_event)` from extended properties. But the import runs as the importing user, so `created_by_user_id` is set to whoever triggers the import. If User B imports and a private event from User A comes through via a shared Google Calendar, it gets created with `created_by_user_id = User B` — now User B owns a private event that was supposed to be hidden from them.
 
 **Why it happens:**
-- "One-way" is stated as v1 design, but the real world is two-way (users expect both directions)
-- "Push only" ignores the fact that users will edit on Google Calendar phone app
-- Deletion handling is non-obvious: does "one-way" mean app→Google, but also remove from app if deleted in Google?
+The import path was designed before privacy. It attributes all imported events to the importing user. Extended properties are private in Google's sense (app-scoped), but the `cp_owner_id` field is only used in the sync body, not validated on import.
 
-**Consequences:**
-- Users see stale data in web app (events deleted on phone still show on web)
-- Sync becomes "one-way" in design but actually two-way in practice, leading to complex edge cases
-- Requires designing deletion sync separate from creation/update sync
+**How to avoid:**
+1. On import, check `cp_owner_id`: if the extended property exists and doesn't match the importing user, skip the event (it's someone else's private event).
+2. Never import events with `cp_visibility=private` unless `cp_owner_id` matches the importing user.
+3. If no extended properties exist (external events), default to `shared`.
 
-**Prevention:**
-- **Clearly define scope:** 
-  - v1: "Users manage events in the web app only; phone users view via Google Calendar"
-  - If two-way wanted: plan as separate phase
-- **Read-only phone access:** Document that events should NOT be edited on phone; edits will be lost
-- **Enforce at app layer:** Disable user edits on Google Calendar directly; all edits go through web app
-  - Impractical for household use, so pick simpler scope
-- **Deletion strategy:** Decide:
-  - Option A: One-way deletion (app→Google only; user can't delete from phone)
-  - Option B: Accept two-way deletion (hard to implement correctly)
-  - v1 recommendation: Option A (or disable deletions in phone until v2)
-- **Status quo:** Accept that v1 is "app-primary" and phone is "view-only via Google Calendar read-only"
+**Warning signs:**
+- User B imports and suddenly owns User A's private events
+- Private events appear as created by the wrong user
+- Circular sync: User A creates private event → syncs to Google → User B imports → now both see it
 
-**Detection (warning signs):**
-- Users reporting deleted events reappearing
-- Users editing on phone, changes missing from web app
-- Sync conflicts between app and Google Calendar
-
-**Phase mapping:**
-- **Phase 2 (Requirements Fidelity):** Clarify scope; document that phone edits aren't synced back
-- **Phase 5 (Sync):** Implement one-way only; clearly explain in UI/docs
-- **Phase future (Two-way):** Plan as separate phase with explicit conflict resolution
+**Phase to address:**
+Event privacy phase — must be fixed together with the visibility toggle.
 
 ---
 
-### Pitfall 8: Over-Engineering v1 (Scope Creep)
+### Pitfall 9: No reminders-disabled vs use-defaults distinction in UI
 
 **What goes wrong:**
-You plan to build "full two-way sync with Google Calendar" in v1. You design for multi-tenant setups (in case you resell later). You build a complex event merging engine to handle conflicts. You plan to support shared calendars (not just two-person). By the time you're halfway through Phase 2, you've written 10K lines of code and still don't have a working calendar to show users.
-
-Real outcome: Project stalls, users never see anything, features get cut at the last moment.
+The reminders system has three meaningful states: (1) use defaults (30 min + 2 days), (2) custom reminders, (3) no reminders. The `effective_reminders` property returns `[]` for both no reminders explicitly set and never configured. In Google Calendar, `useDefault: true` and `useDefault: false, overrides: []` are different behaviors.
 
 **Why it happens:**
-- "Wouldn't it be nice if..." features sound easy before implementation
-- Designer over-generalizes (one app for any household size, not just 2 users)
-- No clear definition of "minimum," just "v1 should support..."
+The backend maps empty reminders to `useDefault: true` (Google Calendar defaults). The UI needs a way to say I explicitly want NO reminders which requires `useDefault: false, overrides: []`. There's no field for this distinction.
 
-**Consequences:**
-- Project takes 4x longer than estimated
-- Code complexity makes testing harder
-- Bugs are harder to isolate
-- User feedback delayed indefinitely
+**How to avoid:**
+Add a `reminders_enabled` boolean (or a `reminder_mode` enum: `default`, `custom`, `none`) to the Event model. The UI toggle maps to this field:
+- Toggle OFF → `reminder_mode = none` → sync with `useDefault: false, overrides: []`
+- Toggle ON + empty list → `reminder_mode = default` → sync with `useDefault: true`
+- Toggle ON + custom list → `reminder_mode = custom` → sync with overrides
 
-**Prevention:**
-- **Define MVP rigorously:** Two users, single calendar, manual + image + NLP input, export to Google (no import), recurring basic support
-- **Explicitly defer hard problems to v2:**
-  - Full two-way sync (v2)
-  - Shared calendars with > 2 users (v2)
-  - Conflict merging (v2, if needed)
-  - Advanced recurrence (v2)
-  - Undo/history (v2)
-- **Ship earliest possible incomplete feature:** Get a working calendar UI and one event creation path (manual) in front of users by end of Phase 3
-- **Layer, don't generalize:** Build for 2-user household, not parameterized for N users
-- **Ruthless cutting:** If a feature isn't on MVP list, it ships in v2 (same day decision rule)
+**Warning signs:**
+- Users toggle no reminders but still get default Google Calendar notifications
+- Toggling reminders on shows empty list instead of defaults
+- Round-trip through sync changes reminder behavior
 
-**Detection (warning signs):**
-- Design documents describe 10+ features for v1
-- Technical discussions about "flexibility" and "future-proofing"
-- Phases scheduled beyond 6-8 weeks
-- Debate over feature prioritization (sign of unclear MVP scope)
-
-**Phase mapping:**
-- **Phase 1 (Requirements):** Lock "two users only, manual input + Google export"
-- **Phase 2-6 (Core):** Stick to locked scope; defer all "nice-to-haves" to v2 explicitly
-- **Phase 7+ (Polish):** Do not add major features
+**Phase to address:**
+Reminder UI phase — define the tri-state before building the toggle component.
 
 ---
 
-## Minor / Domain-Specific Pitfalls
-
-### Pitfall 9: Testing Calendar Apps is Deceptively Hard
+### Pitfall 10: Year-over-year comparison with missing data shows misleading zeros
 
 **What goes wrong:**
-You test with today's date (March 18, 2026). Tests pass. Then a month later, you realize your "show upcoming events for this month" view was only correct for March; it's broken in April because you hardcoded month logic. You never tested DST transitions, timezone changes, or leap year edge cases.
+Viewing a comparison between 2026 (with data) and 2024 (no data) shows 2024 as all zeros — identical to user tracked nothing vs user earned nothing. Users can't distinguish between I didn't enter data and there was no income.
 
 **Why it happens:**
-- Date/time logic appears simple until you test edge cases
-- Tests often run in current year and month; edge cases aren't covered
-- CI/CD doesn't vary the system date, so timezone/DST tests are missed
-- "Just check if event date > today" seems right but fails on month boundaries
+The overview service returns `{ net: 0, additional_earnings: 0, ... }` for months with no data. There's no concept of no data recorded vs data recorded as zero.
 
-**Prevention:**
-- **Parametrize tests by date:** Run the same tests on:
-  - March 18 (current)
-  - March 1 (start of month)
-  - March 31 (end of month)
-  - Feb 29 (leap year)
-  - Nov 5, 2025 (DST end)
-  - Mar 9, 2025 (DST start)
-  - Dec 31 → Jan 1 (year boundary)
-- **Mock system date in tests:** Don't rely on actual date; set test clock explicitly
-- **Test recurring events near boundaries:**
-  - Event: "Every Tuesday at 2pm EST", run from Oct 1 to Nov 15 (crosses DST)
-  - Assert times are correct post-DST
-- **Test edge case months:** Feb (28-29 days), months with 30 vs 31 days
+**How to avoid:**
+1. Track which months have been touched (have any hours or expenses entered).
+2. In the comparison view, show a distinct state for months with no data (e.g., dash or No data) vs months with explicit zeros.
+3. Check if `MonthlyHours` rows exist for that month to determine if data was entered.
 
-**Detection (warning signs):**
-- Bug reports arriving monthly or seasonally (DST/month boundary related)
-- "It worked in March but broke in April"
-- Recurrence-related bugs clustered around DST transitions
+**Warning signs:**
+- Comparison shows 2024 with identical zeroes across all months
+- Users interpret 0 as I earned nothing rather than I didn't track
+- Historical comparison suggests dramatic income changes that are actually data gaps
 
-**Phase mapping:**
-- **Phase 3 (Recurring):** Write parametrized date tests with DST/month boundaries
-- **Ongoing:** Add one boundary test for each bug fix
+**Phase to address:**
+Year-over-year comparison phase — distinguish empty from zero in the comparison UI.
 
 ---
 
-### Pitfall 10: Forgetting Timezone in Every UI Display
+### Pitfall 11: Event form doesn't populate visibility/reminders when editing existing events
 
 **What goes wrong:**
-Event created "Sept 15 at 2pm". No timezone shown. User A from EST thinks it's 2pm eastern. User B from PST thinks it's 2pm pacific. They show up at events an hour apart.
+The event entry modal has a visibility `<select>` but the JavaScript that populates the form for editing (pre-filling fields from existing event data) may not set visibility or reminder fields. The user opens an existing private event for editing, sees shared selected (the default), saves, and the event silently becomes shared.
 
 **Why it happens:**
-- Developers store times in UTC but forget to store/display timezone
-- UI displays "2:00 PM" without timezone context
-- Multi-user household with same timezone assumption breaks when one user travels
+The form template exists but the populate/edit JavaScript path needs to read `visibility` and `reminder_minutes_list` from the API response and set the form controls. If this mapping is missed, defaults overwrite existing values.
 
-**Prevention:**
-- **Store timezone with event:** Event record includes `timezone` field (e.g., "US/Eastern")
-- **Display always with timezone:** UI shows "2:00 PM EST" or "2:00 PM (your time)" 
-- **Allow per-event timezone:** Some events are "9am Pacific" (for call with west coast friend), others "9am Eastern" (local time)
+**How to avoid:**
+1. When populating the edit form, always read `visibility` from the event response and set the `<select>` value.
+2. For reminders, populate the reminder list UI from `reminder_minutes_list` in the event response.
+3. Add an integration test: create private event → open edit form → save without changes → verify still private.
 
-**Detection (warning signs):**
-- Users confused about event times, especially after travel or DST
-- "What time is this event for me?" in support requests
+**Warning signs:**
+- Editing a private event and saving without changing anything makes it shared
+- Editing an event with custom reminders resets them to defaults
+- No test coverage for the edit-and-save-unchanged round-trip
 
-**Phase mapping:**
-- **Phase 3 (Core Events):** Include timezone in event model and UI display
-
----
-
-## Phase-Specific Warning Matrix
-
-| Phase Topic | Likely Pitfall | Primary Mitigation |
-|---|---|---|
-| OAuth Setup (Phase 2) | Refresh token exhaustion | Store one token per user, reuse it, use Production consent screen |
-| Core DB Schema (Phase 2) | Concurrent edit conflicts | Add `last_edited_at`, `last_editor_user_id` |
-| Google Calendar Sync (Phase 3) | Quota exhaustion | Cache + batch API calls + syncToken for incremental sync |
-| Recurring Events (Phase 3) | Timezone & DST disasters | Store times in UTC, use dateutil, test DST boundaries |
-| NLP Event Creation (Phase 4) | Date parsing edge cases | Use form inputs, not free-text NLP; validate before creating |
-| Image Upload (Phase 6) | OCR accuracy failures | Human review before adding; show confidence scores |
-| Sync Strategy (Phase 5) | One-way sync hidden complexity | Clearly define scope (app-primary, phone read-only) |
-| Architecture (Phase 1) | Over-engineering v1 | Lock scope to 2 users, manual + image + NLP, export only, defer multi-user |
-| Testing (Phases 3-7) | Calendar logic edge cases | Parametrize tests with DST, month boundaries, leap years |
-| UI Display (Phases 3-5) | Timezone ambiguity | Always display timezone with times |
+**Phase to address:**
+Both event privacy and reminder UI phases — the form population logic is shared.
 
 ---
 
-## Key Sources
+## Technical Debt Patterns
 
-- **Google OAuth 2.0 docs:** Refresh token limits, expiration, error handling (official)
-- **RFC 5545 (iCalendar spec):** RRULE timezone and DST handling (authoritative)
-- **dateutil Python library:** Proven recurrence rule + timezone support
-- **Google Calendar API sync patterns:** Batch vs. incremental, syncToken strategy (official docs)
-- **Common pitfalls from Slack/Stack Overflow discussions:** OCR accuracy, NLP date parsing edge cases, two-user sync (community)
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Single `BudgetSettings` row for all years | No schema migration needed | Can't compare years accurately; rate changes rewrite history | Never — must fix for multi-year |
+| Both `reminder_minutes` and `reminder_minutes_list` fields | Backwards compat with v1.1 | Ambiguous state, dual code paths, confusion in sync | Only during migration; deprecate single field within this milestone |
+| Recurring expenses with no year scope | Simple model for current-year view | Historical views show future recurring costs | Never for multi-year — corrupt historical data |
+| Swallowing sync exceptions silently | Sync never fails from user perspective | Users don't know their reminders or privacy didn't sync | Acceptable short-term; add user-facing sync status feedback soon |
 
----
+## Integration Gotchas
 
-*Last updated: March 18, 2026*
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| Google Calendar — Reminders | Allowing >5 overrides (API rejects silently when caught) | Enforce max 5 in schema AND UI; surface sync errors |
+| Google Calendar — Private events | Syncing private event to all users, relying only on `_sync_recipients` | Must also DELETE from ineligible users' calendars on visibility change |
+| Google Calendar — Import | Importing private events and setting `created_by_user_id` to importer | Validate `cp_owner_id` extended property; skip events owned by other users |
+| Google Calendar — Reminder methods | Only using `popup` method; Google also supports `email` | Document that only popup is supported; consider email as future option |
+| Supabase — Recurring expense query | Fetching `month=0` without year filter returns ALL recurring expenses across years | Add year-scoping to recurring expense queries |
+| Supabase — Budget settings | Single settings row means UPDATE affects all year views | Version settings per year or snapshot on year transition |
+
+## Performance Traps
+
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Computing year-start balance by replaying all prior years | Slow page load when navigating to distant past years | Cache or snapshot yearly opening balances | When budget history exceeds ~5 years |
+| `_all_active_for_calendar` fetching ALL events for privacy filtering | Slow calendar views as event count grows | Push visibility filter into Supabase query (add `or` filter for visibility=shared OR created_by_user_id=requesting_user) | When calendar exceeds ~500 events |
+| Year-over-year comparison querying two full years of data | Double the budget queries per page load | Parallel fetch both years; consider a summary/aggregate table | Noticeable if budget data grows significantly per year |
+| Sync cleanup scanning all household users' Google Calendars on visibility change | Slow save when changing visibility | Batch calendar cleanup; run async if possible | Always slow (Google API round-trips) but acceptable for rare visibility changes |

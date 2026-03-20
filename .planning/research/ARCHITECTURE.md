@@ -1,730 +1,394 @@
-# Architecture Patterns
+# Architecture Research: v2.1 Feature Integration
 
-**Domain:** Shared household calendar with Google Calendar integration
-**Researched:** March 18, 2026
-**Confidence:** HIGH
+**Domain:** Household calendar + budget planner — event privacy, reminder UI, multi-year budget
+**Researched:** 2026-03-20
+**Confidence:** HIGH (all findings verified against source code)
 
-## System Architecture Overview
-
-The CalendarPlanner follows a **three-tier layered architecture** with event sync coordination:
+## Current System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        WEB FRONTEND                               │
-│  (Flask/FastAPI templates, Vue/React for reactive UI)            │
-└────────────────────────┬────────────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────────────┐
-│                     API LAYER (REST)                              │
-│  ├─ Event endpoints (CRUD)                                        │
-│  ├─ Calendar endpoints                                            │
-│  ├─ Google sync endpoints                                         │
-│  ├─ NLP processing endpoint                                       │
-│  └─ OCR upload endpoint                                           │
-└────────────┬─────────────────────────────────────────────────────┘
-             │
-┌────────────▼────────────────────────────────────────────────────┐
-│                    SERVICE LAYER                                  │
-│  ├─ EventService (create, update, delete, query)                │
-│  ├─ CalendarService (shared calendar mgmt)                       │
-│  ├─ RecurrenceService (RRULE processing)                         │
-│  ├─ GoogleSyncService (OAuth2, API integration)                 │
-│  ├─ NLPService (text parsing, intent extraction)                 │
-│  └─ OCRService (image processing, text extraction)              │
-└────────────┬─────────────────────────────────────────────────────┘
-             │
-┌────────────▼────────────────────────────────────────────────────┐
-│                    DATA ACCESS LAYER                              │
-│  ├─ EventRepository (persistence)                               │
-│  ├─ UserRepository                                               │
-│  ├─ CalendarRepository                                           │
-│  └─ GoogleSyncStateRepository (sync metadata)                   │
-└────────────┬─────────────────────────────────────────────────────┘
-             │
-┌────────────▼────────────────────────────────────────────────────┐
-│                        DATABASE                                   │
-│  (SQLite for v1, PostgreSQL recommended for production)          │
-└─────────────────────────────────────────────────────────────────┘
-
-         External Integration
-┌──────────────────────────────┐
-│   Google Calendar API (v3)   │
-│  ├─ OAuth2 authentication   │
-│  ├─ Event push/pull          │
-│  └─ Access control list (ACL)│
-└──────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────┐
+│                     Jinja2 Templates + HTMX + JS                  │
+│  ┌──────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────┐  │
+│  │ calendar │  │ event_entry  │  │ budget_over  │  │ day_evts │  │
+│  │  .html   │  │  _modal.html │  │  view.html   │  │  .html   │  │
+│  └────┬─────┘  └──────┬───────┘  └──────┬───────┘  └────┬─────┘  │
+├───────┴────────────────┴────────────────┴────────────────┴────────┤
+│                    FastAPI Route Layer                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐   │
+│  │ events/      │  │ budget/      │  │ views/ + budget/*_views│   │
+│  │  routes.py   │  │  *_routes.py │  │  calendar_routes.py    │   │
+│  └──────┬───────┘  └──────┬───────┘  └────────────┬───────────┘   │
+├─────────┴──────────────────┴──────────────────────┴───────────────┤
+│                    Service Layer                                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐     │
+│  │ EventService │  │ OverviewSvc  │  │  GoogleSyncService   │     │
+│  └──────┬───────┘  └──────┬───────┘  └──────────┬───────────┘     │
+├─────────┴──────────────────┴────────────────────┴─────────────────┤
+│                    Repository Layer                                │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐             │
+│  │ EventRepo    │  │ ExpenseRepo  │  │ HoursRepo    │             │
+│  │              │  │ EarningsRepo │  │ SettingsRepo │             │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘             │
+├─────────┴──────────────────┴────────────────┴─────────────────────┤
+│                    SupabaseStore (httpx singleton)                 │
+│  select / insert / update / delete → Supabase REST (PostgREST)    │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
-## Component Boundaries
+### Existing Layer Pattern (all modules follow this)
 
-### 1. **Web Frontend** (User Interface)
-- **Responsibility:** Display calendar view, month/day views, event creation UI
-- **Communicates with:** REST API Layer only
-- **Technology:** HTML/CSS/JavaScript (Vue.js or vanilla JS recommended for simplicity)
-- **Key features:**
-  - Calendar month view with events
-  - Event creation/editing modal
-  - NLP input box for natural language events (e.g., "Dinner Friday 7pm")
-  - Image upload area for OCR events
-  - User authentication (two-user model)
-  - Settings/sync status indicator
-
-### 2. **REST API Layer**
-- **Responsibility:** Route HTTP requests to services, validate input, return JSON responses
-- **Technology:** Flask or FastAPI (FastAPI recommended for async tasks)
-- **Endpoints:**
-  ```
-  GET    /api/events              # List events for date range
-  POST   /api/events              # Create event
-  GET    /api/events/{id}         # Get event details
-  PUT    /api/events/{id}         # Update event
-  DELETE /api/events/{id}         # Delete event (soft delete recommended)
-  
-  POST   /api/events/nlp          # Create event from natural language
-  POST   /api/events/ocr          # Create event from image upload
-  
-  GET    /api/calendar            # Get shared calendar metadata
-  POST   /api/calendar/sync       # Trigger sync with Google Calendar
-  GET    /api/calendar/sync-status # Check last sync status
-  
-  GET    /api/auth/login         # OAuth2 callback redirect
-  POST   /api/auth/logout        # Sign out
-  ```
-
-### 3. **EventService** (Core event logic)
-- **Responsibility:** Event CRUD operations, validation, recurrence expansion
-- **Communicates with:** EventRepository, RecurrenceService, CalendarService
-- **Key methods:**
-  ```python
-  create_event(title, start, end, rrule=None, user_id)
-  update_event(event_id, changes)
-  delete_event(event_id, cascade_to_google=True)
-  get_events_for_range(start_date, end_date)
-  get_recurrence_instances(event_id, start, end)
-  create_exception(event_id, instance_date, new_start, new_end)
-  ```
-- **Validation:** Ensures DTSTART < DTEND, time zones handled correctly, RRULE is valid
-
-### 4. **RecurrenceService** (RFC5545 RRULE processor)
-- **Responsibility:** Parse, validate, and expand RRULE patterns
-- **Communicates with:** Database (reads RRULE strings)
-- **Algorithms needed:**
-  - Parse RRULE string into structured format: `FREQ=daily;COUNT=10;INTERVAL=2`
-  - Generate recurrence instances: Given DTSTART + RRULE, compute all occurrences within a date range
-  - Handle EXDATE (exceptions): Remove specific instances from recurrence set
-  - Handle RDATE (recurrence dates): Add manual override dates
-  - Handle time zones in recurrence (DST transitions can affect times)
-  - Modify "this and future" instances (RANGE=THISANDFUTURE parameter)
-- **Implementation approach:**
-  - Use `dateutil.rrule` library (Python, RFC5545 compliant) OR
-  - Implement custom parser if simpler control needed
-- **Key RFC5545 concepts:**
-  - DTSTART: Event start time (serves as anchor for RRULE)
-  - RRULE: Defines repetition pattern
-  - EXDATE: Dates to exclude (e.g., skip a holiday)
-  - RDATE: Manual dates to include (e.g., add makeup meeting)
-  - RECURRENCE-ID: Identifies specific instance in recurrence set (for exceptions)
-
-### 5. **GoogleSyncService** (Google Calendar API integration)
-- **Responsibility:** OAuth2 auth, bi-directional sync with Google Calendar
-- **Communicates with:** EventService, GoogleSyncStateRepository, external Google API
-- **Tech stack:** `google-auth-oauthlib`, `google-auth-httplib2`, `google-api-python-client`
-- **Key operations:**
-  ```python
-  authorize_user(user_id)                     # OAuth2 login flow
-  push_event_to_google(event_id)              # Create/update event on Google
-  pull_events_from_google(user_id, date_range) # Fetch Google events (one-way for v1)
-  delete_event_from_google(event_id)         # Remove from Google Calendar
-  sync_all_events(user_id, month)            # Batch sync for a month
-  ```
-- **Sync strategy (v1 - Push only):**
-  - App is source of truth (shared calendar)
-  - All changes push → Google Calendar via API
-  - Google Calendar acts as notification/mobile access tier
-  - No conflict resolution needed (no pull overwrites)
-  - Store last sync timestamp to detect if app and Google drift
-- **OAuth2 flow:**
-  1. User clicks "Connect Google Calendar"
-  2. Redirected to Google auth consent screen
-  3. Google returns auth code
-  4. Exchange code for access token + refresh token
-  5. Store refresh token in secure DB (for long-lived access)
-  6. Use access token for API calls, refresh when expired
-
-### 6. **CalendarService** (Shared calendar management)
-- **Responsibility:** Manage two-user sharing model, access control
-- **Communicates with:** CalendarRepository, GoogleSyncService
-- **Key concepts:**
-  - One calendar per household pair (2 users)
-  - Calendar is bound to User 1's Google Calendar (single source of truth externally)
-  - User 2 accesses via shared link or app login (internal auth only)
-  - Both users can create/edit events in shared calendar
-  - Both users sync to same Google Calendar (User 1's)
-- **Key methods:**
-  ```python
-  create_shared_calendar(user1_id, user2_id)
-  add_user_to_calendar(user_id, calendar_id)
-  remove_user_from_calendar(user_id, calendar_id)
-  get_users_for_calendar(calendar_id)
-  get_calendar_color_preferences(user_id)
-  ```
-
-### 7. **NLPService** (Natural Language Event Creation)
-- **Responsibility:** Parse natural language input into event components
-- **Communicates with:** EventService
-- **Tech stack:** `spacy` or `textblob` (lightweight) for NER, or `openai` API (GPT-3.5) for smarter parsing
-- **Input → Output transformation:**
-  ```
-  "Dinner Friday 7pm" → {title: "Dinner", date: <next Friday>, time: "19:00"}
-  "Team meeting Tuesday 2-3pm" → {title: "Team meeting", date: <Tuesday>, start: "14:00", end: "15:00"}
-  "Every Monday 9am sync" → {title: "sync", rrule: "FREQ=weekly;BYDAY=MO", time: "09:00"}
-  ```
-- **Fallback strategy:** If parsing uncertain, return partial event + ask user to confirm
-- **Placement in flow:**
-  - Run on client or server? (Server recommended for security & consistency)
-  - Async processing? (Yes, if using AI API to avoid delays)
-
-### 8. **OCRService** (Image-based event extraction)
-- **Responsibility:** Extract event info from images (flyers, screenshots)
-- **Communicates with:** EventService
-- **Tech stack:** `pytesseract` (Tesseract OCR) or `paddleocr` for text extraction; `OpenAI Vision API` for semantic understanding
-- **Pipeline:**
-  1. User uploads image
-  2. OCR extracts text
-  3. NLP parses extracted text for dates, times, event names
-  4. Create event from parsed data (with user confirmation)
-- **Use cases:**
-  - Extract date/location from physical flyer
-  - Screenshot of email with event details
-  - Photo of whiteboard with meeting schedule
+```
+routes.py       → FastAPI router, input validation, auth dependency
+service.py      → Business logic, cross-repo coordination
+repository.py   → SupabaseStore CRUD, row↔dataclass mapping
+schemas.py      → Pydantic models for request/response
+views.py        → HTML template rendering routes (Jinja2)
+```
 
 ---
 
-## Data Model
+## Feature-by-Feature Integration Analysis
 
-### Core Entities
+### Feature 1: Event Privacy Controls (Visibility Toggle)
 
-#### **Event**
-Represents a calendar event (single or recurring instance).
+**Status: ALREADY FULLY IMPLEMENTED — no new components needed**
+
+The entire privacy pipeline is wired end-to-end across all layers:
+
+| Layer | File | What Exists |
+|-------|------|-------------|
+| Model | `app/database/models.py` | `Event.visibility: str = "shared"` field |
+| Schema | `app/events/schemas.py` | `visibility: Literal["shared", "private"]` on Create, Update, Response |
+| Repository | `app/events/repository.py` | `_visible_to()` static method filters private events on all list queries |
+| Service | `app/events/service.py` | Privacy guard in `update_event()` and `delete_event()` — returns "Event not found" for unauthorized access |
+| Sync | `app/sync/service.py` | `_sync_recipients()` routes private events only to owner's Google Calendar; `_event_body()` stores `cp_visibility` in extended properties |
+| UI Modal | `partials/event_entry_modal.html` | `<select id="event-entry-visibility">` with shared/private options + help text |
+| UI Day View | `partials/day_events.html` | Passes `event.visibility` to `prefillEvent()` edit callback |
+| JS Submit | `calendar.html` | `submitEventEntry()` includes `visibility` in POST/PUT payload; `prefillEvent()` restores select value on edit |
+| i18n | `locales/en.json`, `pl.json` | `qa.visibility`, `qa.visibility_shared`, `qa.visibility_private`, `qa.visibility_help` keys |
+
+**Conclusion:** This feature is complete. Validate with existing tests. No architecture changes needed.
+
+---
+
+### Feature 2: Reminder Configuration UI
+
+**Status: Backend fully wired, UI controls missing — modify 3 existing files**
+
+#### Existing Backend (complete, no changes needed)
+
+| Layer | File | What Exists |
+|-------|------|-------------|
+| Model | `app/database/models.py` | `reminder_minutes: int \| None`, `reminder_minutes_list: list[int]`, `effective_reminders` property |
+| Schema | `app/events/schemas.py` | `reminder_minutes_list: Optional[List[int]]` with boundary validation (0–40320 min = 4 weeks max) |
+| Repository | `app/events/repository.py` | `create()` and `update()` read/write `reminder_minutes_list`; `_to_event()` maps from DB row |
+| Sync | `app/sync/service.py` | `_event_body()` builds Google Calendar `reminders: { useDefault: false, overrides: [{method: "popup", minutes: N}] }` from `effective_reminders` |
+| API | `app/events/routes.py` | `POST /api/events` and `PUT /api/events/{id}` accept `reminder_minutes_list` in JSON body |
+
+#### Missing: UI Layer Only (3 files to modify)
+
+**1. `app/templates/partials/event_entry_modal.html`** — Add reminder section to the form:
+- Toggle checkbox: "Reminders" / "Przypomnienia"
+- When toggled ON: render default chips (30 min + 2880 min / 2 days)
+- Each chip: removable pill with `✕` button
+- "Add reminder" button opens inline select/input for custom value
+- Place after the visibility field, before the recurrence fields
+
+**2. `app/templates/calendar.html`** (JS section) — Wire reminder data into existing flow:
+- `submitEventEntry()`: collect reminder values from chips, include `reminder_minutes_list: [30, 2880]` in payload
+- `prefillEvent()`: accept `reminder_minutes_list` parameter, populate chips when editing existing event
+- `resetEventEntryForm()`: clear reminder chips
+- New helper: `addReminderChip(minutes)`, `removeReminderChip(index)`, `getReminderList()`
+
+**3. `app/templates/partials/day_events.html`** — Show reminder indicator (optional, low priority):
+- Small 🔔 icon or text when `event.effective_reminders` is non-empty
+
+#### Data Flow (unchanged API contract)
+
+```
+User toggles reminders ON → default chips appear [30min, 2 days]
+User adds/removes chips → UI state updates
+User clicks Save → submitEventEntry()
+  → POST/PUT /api/events { ..., reminder_minutes_list: [30, 2880] }
+    → EventService.create_event() / EventRepository.create()
+      → INSERT/UPDATE in Supabase events table
+    → GoogleSyncService.sync_event_for_household()
+      → _event_body() reads effective_reminders
+      → Google Calendar API: reminders.overrides = [{popup, 30}, {popup, 2880}]
+```
+
+**No database migration.** Column `reminder_minutes_list` (JSONB array) already exists in events table.
+**No new Python files.** Backend API already accepts and processes the data.
+
+---
+
+### Feature 3: Multi-Year Budget Browsing
+
+**Status: Core functionality already works — verify and refine UX**
+
+#### What Already Works
+
+| Component | File | Status |
+|-----------|------|--------|
+| API endpoint | `app/budget/overview_routes.py` | `GET /api/budget/overview?year=N` — accepts any integer year |
+| Service | `app/budget/overview_service.py` | `get_year_overview(calendar_id, year)` — fully year-parameterized |
+| Expense repo | `app/budget/expense_repository.py` | `get_by_calendar_year(calendar_id, year)` — queries by year + unions recurring (month=0) |
+| Income repos | `app/budget/income_repository.py` | `get_by_calendar_year(calendar_id, year)` — queries by year |
+| Year picker UI | `app/templates/budget_overview.html` | `year-prev`/`year-next` buttons, `currentYear` JS state, fully event-wired |
+| Year display | `app/templates/budget_overview.html` | `#year-display` updates on navigation, `reload()` re-fetches and re-renders |
+
+#### Architecture Concern: BudgetSettings Not Year-Scoped
+
+`BudgetSettings` has one row per `calendar_id` with `rate_1`, `rate_2`, `rate_3`, `zus_costs`, `accounting_costs`, `initial_balance` — **no year column**. Viewing past years applies current rates retroactively.
+
+| Approach | Complexity | Accuracy | Recommendation |
+|----------|-----------|----------|----------------|
+| A: Keep single settings, document limitation | None | Approximate for past years | **Use this for v2.1** |
+| B: Add `year` column to BudgetSettings | DB migration + per-year UI | Historically accurate | Defer to v3+ if users request it |
+
+**Decision: Approach A.** The core multi-year navigation already works. The rates issue is an edge case (rates rarely change for this household use case). Document it in the UI with a note like "Calculations use current rates."
+
+#### Modifications Needed
+
+**1. `app/templates/budget_overview.html`** — Minor UX polish:
+- Highlight current year in the year picker (bold/distinctive styling)
+- Optional: limit backward navigation to a sensible range (e.g., current year − 5)
+
+**2. Income/Expense view pages** — Verify year consistency:
+- Check if `budget_income.html` and `budget_expenses.html` handle year navigation
+- If they hardcode current year, add year param support to match overview
+
+**No new Python files. No database migration.**
+
+---
+
+### Feature 4: Year-over-Year Summary Comparison
+
+**Status: COMPLETELY NEW — extend 3 existing files**
+
+This feature requires a new service method, a new API endpoint, and a new UI section. All added to existing files.
+
+#### Components to Add
+
+| Type | File to Modify | What to Add |
+|------|---------------|-------------|
+| Service method | `app/budget/overview_service.py` | `get_year_comparison(calendar_id, years: list[int])` |
+| API endpoint | `app/budget/overview_routes.py` | `GET /api/budget/overview/compare?years=2025,2026` |
+| UI section | `app/templates/budget_overview.html` | Comparison panel below the main overview table |
+| i18n keys | `app/locales/en.json`, `pl.json` | Comparison labels |
+
+#### Service Method Design
 
 ```python
-class Event:
-    id: UUID                  # Unique identifier
-    calendar_id: UUID         # Which calendar
-    created_by: UUID          # User who created
-    title: str                # Event name
-    description: Optional[str]
-    
-    # Time info
-    dtstart: datetime         # Start time (with timezone)
-    dtend: datetime           # End time (with timezone)  
-    all_day: bool             # All-day event flag
-    
-    # Recurrence
-    rrule: Optional[str]      # RFC5545 RRULE (e.g., "FREQ=WEEKLY;BYDAY=MO")
-    exdate: Optional[list]    # Excluded dates for exceptions
-    rdate: Optional[list]     # Extra dates to include
-    recurrence_id: Optional[datetime]  # Identifies instance in recurrence set
-    
-    # Metadata
-    location: Optional[str]
-    color: Optional[str]      # Display color
-    status: str               # "CONFIRMED", "TENTATIVE", "CANCELLED"
-    transparency: str         # "OPAQUE" (busy) or "TRANSPARENT" (free)
-    
-    # Sync state
-    google_event_id: Optional[str]    # Google Calendar event ID
-    last_synced_at: Optional[datetime]
-    pending_google_sync: bool
-    
-    # Change tracking
-    created_at: datetime
-    updated_at: datetime
-    deleted_at: Optional[datetime]    # Soft delete
+# In overview_service.py — reuses existing get_year_overview()
+def get_year_comparison(self, calendar_id: str, years: list[int]) -> dict:
+    summaries = []
+    for year in sorted(years):
+        overview = self.get_year_overview(calendar_id, year)
+        months = overview["months"]
+        summaries.append({
+            "year": year,
+            "total_net": round(sum(m["net"] for m in months), 2),
+            "total_additional": round(sum(m["additional_earnings"] for m in months), 2),
+            "total_recurring_expenses": round(sum(m["recurring_expenses"] for m in months), 2),
+            "total_onetime_expenses": round(sum(m["onetime_expenses"] for m in months), 2),
+            "total_balance": round(sum(m["monthly_balance"] for m in months), 2),
+            "final_account_balance": months[-1]["account_balance"] if months else 0,
+            "initial_balance": overview["initial_balance"],
+        })
+    return {"summaries": summaries}
 ```
 
-#### **User**
-Represents a household member.
+**Key design decision:** Reuse `get_year_overview()` rather than duplicating calculation logic. Each call makes ~4 DB queries (settings, hours, earnings, expenses), so comparing 2–3 years = 8–12 queries total. Acceptable for this two-user app.
+
+#### API Endpoint Design
 
 ```python
-class User:
-    id: UUID
-    username: str
-    email: str
-    password_hash: str        # Hashed password
-    
-    # Google integration
-    google_oauth_token: Optional[str]        # Access token
-    google_oauth_refresh_token: Optional[str] # Refresh token
-    google_calendar_id: Optional[str]         # Their Google Calendar ID
-    google_auth_expires_at: Optional[datetime]
-    
-    # Preferences
-    timezone: str             # "America/New_York", etc.
-    created_at: datetime
+# In overview_routes.py — parse comma-separated years, cap at 5
+@router.get("/compare")
+async def compare_years(
+    years: str = Query(...),
+    user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    year_list = [int(y) for y in years.split(",") if y.strip().isdigit()][:5]
+    if len(year_list) < 2:
+        raise HTTPException(status_code=400, detail="At least 2 years required")
+    service = _service(db)
+    data = service.get_year_comparison(user.calendar_id, year_list)
+    return {"data": data}
 ```
 
-#### **Calendar**
-Represents a shared calendar (household).
+**Note:** Register this endpoint BEFORE the parameterized `/compare` won't conflict with existing routes since there's no `GET /api/budget/overview/{param}` pattern.
+
+#### UI Design
+
+Comparison renders as an expandable section below the year overview table:
+
+```
+[← 2025 →]                              [Compare ▼]
+
+| Month | Net | Additional | Rec.Exp | One-time | Balance | Account |
+|-------|-----|------------|---------|----------|---------|---------|
+| Jan   | ... | ...        | ...     | ...      | ...     | ...     |
+...
+
+── Year Comparison ────────────────────────────────────────
+| Year | Net Income | Additional | Expenses | Balance | Final Account |
+|------|------------|------------|----------|---------|---------------|
+| 2025 | 120,000    | 5,000      | 80,000   | 45,000  | 95,000        |
+| 2026 | 130,000    | 6,000      | 85,000   | 51,000  | 146,000       |
+| Δ    | +10,000    | +1,000     | +5,000   | +6,000  | +51,000       |
+```
+
+The comparison button toggles this section. By default it compares current year with previous year. Color-code deltas: green for improvements, red for regressions.
+
+#### Data Flow
+
+```
+User clicks "Compare" → JS fetches comparison
+  → GET /api/budget/overview/compare?years=2025,2026
+    → OverviewService.get_year_comparison()
+      → get_year_overview(cal_id, 2025)  # reuses existing
+      → get_year_overview(cal_id, 2026)  # reuses existing
+      → aggregates totals, returns summaries
+    → Returns { summaries: [{year: 2025, ...}, {year: 2026, ...}] }
+  → JS renders comparison table with delta row
+```
+
+---
+
+## Summary: New vs Modified Components
+
+| Feature | New Files | Modified Files | DB Migration |
+|---------|-----------|----------------|--------------|
+| Event privacy | 0 | 0 (already complete) | None |
+| Reminder UI | 0 | 3 (modal HTML, calendar JS, day events HTML) | None |
+| Multi-year budget | 0 | 1–3 (overview HTML, possibly income/expense views) | None |
+| YoY comparison | 0 | 3 (overview_service.py, overview_routes.py, overview HTML) | None |
+| i18n keys | 0 | 2 (en.json, pl.json) | None |
+
+**Total: 0 new files created, 5–7 existing files modified, 0 database migrations.**
+
+### i18n Additions Required
+
+Both `app/locales/en.json` and `app/locales/pl.json` need keys for:
+
+- **Reminder UI:** toggle label, default reminder descriptions (e.g., "30 minutes", "2 days"), add button, chip display format
+- **Comparison UI:** compare button label, table headers, delta row label, "no data" state
+- **Budget year note:** "Calculations use current rates" disclaimer (if shown)
+
+---
+
+## Recommended Build Order
+
+Dependencies determine the sequence:
+
+```
+Phase 1: Event Privacy (tests only — validate existing implementation)
+  └── Depends on: nothing
+  └── Risk: LOW — code reviewed, appears complete
+
+Phase 2: Reminder UI (frontend wiring to existing backend)
+  └── Depends on: nothing new in backend
+  └── Touches: event_entry_modal.html, calendar.html JS, day_events.html
+  └── Risk: LOW — backend contract is stable
+
+Phase 3: Multi-Year Budget Browsing (verify/polish existing)
+  └── Depends on: nothing new
+  └── Touches: budget_overview.html (minor UX), verify income/expense views
+  └── Risk: LOW — year picker already functional
+
+Phase 4: Year-over-Year Comparison (new service + API + UI)
+  └── Depends on: multi-year browsing working correctly (Phase 3)
+  └── Touches: overview_service.py, overview_routes.py, budget_overview.html
+  └── Risk: MEDIUM — new API endpoint, new JS rendering
+```
+
+**Phase ordering rationale:**
+1. Privacy first — zero effort if already done, just validate.
+2. Reminders — self-contained frontend task, backend ready, clears the event feature work.
+3. Multi-year browsing — must work correctly before comparison builds on top of it.
+4. YoY comparison — highest complexity, uses `get_year_overview()` which must be solid for arbitrary years.
+
+---
+
+## Patterns to Follow
+
+### Pattern: Chip-Based Multi-Value Input (Reminders)
+
+Match existing glass UI design system. Use removable pill/chip components:
+
+```html
+<div id="reminder-chips" class="flex flex-wrap gap-1">
+  <span class="rounded-full bg-white/10 px-2 py-0.5 text-xs border border-white/20">
+    30 min <button class="ml-1 opacity-60 hover:opacity-100">✕</button>
+  </span>
+</div>
+```
+
+Consistent with the date badge style in `day_events.html` (`rounded-full bg-white/10 px-3 py-1 text-xs`).
+
+### Pattern: Reuse Service Methods for Aggregation
+
+Don't duplicate budget calculation logic. The comparison endpoint calls `get_year_overview()` per year:
 
 ```python
-class Calendar:
-    id: UUID
-    name: str                 # e.g., "Household"
-    description: Optional[str]
-    
-    # Users in this calendar
-    user_ids: list[UUID]      # Always exactly 2 for v1
-    
-    # Google sync target
-    primary_user_id: UUID     # Whose Google Calendar we sync to
-    google_calendar_id: Optional[str]
-    
-    # Metadata
-    created_at: datetime
-    color: str                # Display color
-    
-    # Sync tracking
-    last_full_sync_at: Optional[datetime]
-    next_sync_at: Optional[datetime]
+# Good: reuse
+summaries = {y: self.get_year_overview(cal_id, y) for y in years}
+
+# Bad: copy-paste monthly calculation loop into comparison method
 ```
 
-#### **GoogleSyncState** (Metadata for sync coordination)
-```python
-class GoogleSyncState:
-    id: UUID
-    calendar_id: UUID
-    user_id: UUID
-    
-    # Sync metadata
-    last_sync_token: Optional[str]      # Google's sync token for incremental sync
-    last_synced_at: datetime
-    pending_events: list[UUID]          # Events waiting to push
-    pending_deletes: list[str]          # Google event IDs to delete
-    
-    # Error tracking
-    last_sync_error: Optional[str]
-    sync_error_count: int
-    retry_after: Optional[datetime]
-```
+### Pattern: Follow Existing Budget JS Structure
 
-#### **EventException** (For handling "this and future" edits)
-```python
-class EventException:
-    id: UUID
-    parent_event_id: UUID     # Reference to base recurring event
-    recurrence_id: datetime   # Which instance this modifies
-    
-    # Modified fields
-    title: Optional[str]
-    dtstart: Optional[datetime]
-    dtend: Optional[datetime]
-    location: Optional[str]
-    
-    # Indicates range of effect
-    range: str                # "THISONLY" or "THISANDFUTURE"
-    
-    created_at: datetime
-```
+The budget overview uses an IIFE with internal `currentYear` state, `reload()` function, and event delegation. The comparison UI should follow the same pattern — add to the existing IIFE, not a separate script block.
 
 ---
 
-## Data Flow
+## Anti-Patterns to Avoid
 
-### 1. **Create Event (UI → App → Google)**
-```
-User enters event details (title, date, time)
-           ↓
-Browser POST /api/events {title, dtstart, dtend}
-           ↓
-API validates input
-           ↓
-EventService.create_event() → Database INSERT
-           ↓
-Event created with status="pending_sync"
-           ↓
-GoogleSyncService.push_event_to_google(event_id)
-           ↓
-API calls Google Calendar API:
-  - POST /calendar/v3/calendars/{calendarId}/events
-  - Body: iCalendar format with DTSTART, DTEND, RRULE (if recurring)
-           ↓
-Google returns event_id
-           ↓
-Store google_event_id in database, mark synced
-           ↓
-Return event to UI with confirmation
-```
+### Anti-Pattern: Year-Scoped BudgetSettings in v2.1
 
-### 2. **Create Recurring Event (Adding an RRULE)**
-```
-UI: User selects "repeat weekly"
-           ↓
-EventService.create_event(rrule="FREQ=WEEKLY;BYDAY=MO,WE,FR")
-           ↓
-RecurrenceService validates:
-  - FREQ is present ✓
-  - BYDAY format valid ✓
-  - No conflicting COUNT + UNTIL ✓
-           ↓
-Store event with rrule string
-           ↓
-GoogleSyncService pushes to Google with RRULE property:
-  SUMMARY:Meeting
-  DTSTART:20260401T090000Z
-  RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR
-           ↓
-Google interprets and creates recurrence set
-```
+Adding a `year` column to `BudgetSettings` would cascade into:
+- Database migration
+- Settings UI showing year selector ("which year's rates am I editing?")
+- Backfill logic for existing data
+- Every budget query needing year-aware settings lookup
+- Income calculation engine changes
 
-### 3. **Edit Exception (This and Future)**
-```
-User clicks "Edit this and future" on July 15 meeting
-           ↓
-UI sends: PUT /api/events/{id} with RANGE=THISANDFUTURE
-  {recurrence_id: "2026-07-15T09:00", title: "Team Sync (Hybrid)", location: "Zoom"}
-           ↓
-EventService detects:
-  - Base event has rrule
-  - This is exception (recurrence_id provided)
-           ↓
-Create EventException record with range=THISANDFUTURE
-           ↓
-RecurrenceService.modify_recurrence_range():
-  - Split old RRULE at July 15: UNTIL=20260715
-  - Copy base event, set DTSTART=July 15, new changes
-           ↓
-GoogleSyncService:
-  1. Modify original Google event: add UNTIL=20260714
-  2. Create new Google event: starts July 15, with changes
-           ↓
-UI shows updated calendar with new instance series
-```
+Excessive for v2.1. Defer if historical rate accuracy becomes a real user need.
 
-### 4. **Sync with Google Calendar (Monthly Export)**
-```
-User clicks "Sync to Google" or auto-sync timer fires
-           ↓
-GoogleSyncService.sync_all_events(calendar_id, month=March2026)
-           ↓
-Get all events in calendar for March
-           ↓
-For each event:
-  IF google_event_id exists:
-    - Call Google PUT endpoint (update)
-  ELSE:
-    - Call Google POST endpoint (create)
-           ↓
-Handle failures:
-  - Store in pending_events queue
-  - Retry on next sync
-           ↓
-Update last_synced_at timestamp
-           ↓
-UI shows "Synced March 1-31" notification
-```
+### Anti-Pattern: Separate Comparison Page
 
-### 5. **Create Event from NLP**
-```
-User types: "Dinner with Sarah Friday 7pm"
-           ↓
-POST /api/events/nlp {text: "Dinner with Sarah Friday 7pm"}
-           ↓
-NLPService.parse(text):
-  - Extract title: "Dinner with Sarah"
-  - Extract relative_date: "Friday" → next Friday's date
-  - Extract time: "7pm" → 19:00
-           ↓
-EventService.create_event(
-    title="Dinner with Sarah",
-    dtstart=26-04-04T19:00,
-    dtend=26-04-04T20:30,  # +1.5h default
-    status="TENTATIVE"       # User confirms before saving
-)
-           ↓
-Return partial event to UI for confirmation
-           ↓
-User clicks "Save" → full event creation pipeline
-```
+Don't create `/budget/comparison` with a new template. Keep it as an expandable section in `budget_overview.html`. Avoids:
+- New sidebar link and navigation complexity
+- Template duplication
+- State sync between pages (which year is selected where?)
 
-### 6. **Create Event from OCR**
-```
-User uploads image of event flyer
-           ↓
-POST /api/events/ocr {image_file}
-           ↓
-OCRService.extract_text(image):
-  - Use pytesseract to OCR → "Team Annual Retreat\nJune 15-17, 2026\nLocation: Mountain Lodge"
-           ↓
-NLPService.parse(text):
-  - title: "Team Annual Retreat"
-  - start: 2026-06-15 (all-day)
-  - end: 2026-06-17 (3-day event)
-  - location: "Mountain Lodge"
-           ↓
-Return suggested event to UI
-           ↓
-User edits and confirms
-           ↓
-Create event with all_day=true, multi-day span
-```
+### Anti-Pattern: Reminder Defaults in Database
+
+Default reminders (30 min + 2 days) should be UI-only defaults populated by JavaScript when the toggle is turned on. Don't add a user preferences table for reminder defaults. If a user unchecks reminders, send `reminder_minutes_list: []`.
+
+### Anti-Pattern: Creating New Reminder Service/Repository
+
+The reminder data is part of the Event model. No separate `ReminderService` or `ReminderRepository` — it flows through the existing `EventService` → `EventRepository` pipeline. The `reminder_minutes_list` is just another field on the event.
 
 ---
 
-## Recurrence Model (RFC5545 RRULE)
+## Scalability Considerations
 
-### RRULE Syntax
-```
-RRULE:FREQ=frequency;[INTERVAL=n];[COUNT=n];[UNTIL=datetime];[BYDAY=days];[BYMONTH=months];...
-```
-
-### Common Examples
-```
-# Every weekday, 10 times
-DTSTART:20260401T090000Z
-RRULE:FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR;COUNT=10
-
-# Every other week on Tue/Thu until end of year
-DTSTART:20260401T090000Z
-RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,TH;UNTIL=20261231T235959Z
-
-# First Monday of each month, forever
-DTSTART:20260401T090000Z
-RRULE:FREQ=MONTHLY;BYDAY=1MO
-
-# Last day of month, 12 times
-DTSTART:20260131T090000Z
-RRULE:FREQ=MONTHLY;BYMONTHDAY=-1;COUNT=12
-
-# Every year on anniversary
-DTSTART:20260620T100000Z
-RRULE:FREQ=YEARLY
-```
-
-### Key Implementation Details
-- **DTSTART drives the recurrence:** Time zone, day of week, time of day all derive from DTSTART if not explicitly overridden by BYDAY, BYHOUR, etc.
-- **EXDATE excludes instances:** If you mark an instance as "cancelled", add its datetime to EXDATE
-- **RANGE=THISANDFUTURE:** Creates two rules: old rule ends day before, new rule starts at exception date
-- **Time zone handling:** DTSTART can specify TZID (e.g., DTSTART;TZID=America/New_York:...)
-- **DST transitions:** Recurring events should use local time + explicit TZID to handle DST correctly
-
----
-
-## Google Calendar API Integration Pattern
-
-### OAuth2 Flow (Client-Side Authentication)
-```
-┌─────────────┐                                    ┌──────────────┐
-│   Web App   │                                    │ Google OAuth │
-└──────┬──────┘                                    └──────┬───────┘
-       │                                                  │
-       │ 1. Click "Login with Google"                   │
-       ├─────────────────────────────────────────────► │
-       │                                                │
-       │ 2. Redirect to Google consent screen          │
-       │ ◄────────────────────────────────────────────┤
-       │                                                │
-       │ 3. User approves (calendar.events scope)      │
-       │                                                │
-       │ 4. Authorization code redirect                │
-       │ ◄────────────────────────────────────────────┤
-       │                                                │
-       │ 5. Exchange code for access + refresh tokens  │
-       │                                                │
-       │ 6. Store refresh token securely in DB        │
-       │                                                │
-       └─────────────────────────────────────────────────┘
-
-Access Token: Short-lived (1 hour), used for API calls
-Refresh Token: Long-lived, used to get new access tokens
-```
-
-### Event Sync with Google (Push Model - v1)
-
-#### Create Event on Google
-```http
-POST /calendar/v3/calendars/{calendarId}/events
-Authorization: Bearer {accessToken}
-
-{
-  "summary": "Team Meeting",
-  "description": "Quarterly planning",
-  "start": {
-    "dateTime": "2026-04-15T14:00:00",
-    "timeZone": "America/New_York"
-  },
-  "end": {
-    "dateTime": "2026-04-15T15:00:00",
-    "timeZone": "America/New_York"
-  },
-  "recurrence": ["RRULE:FREQ=WEEKLY;BYDAY=WE;UNTIL=20260630"]
-}
-
-Response:
-{
-  "id": "abc123def456ghi789",
-  "etag": "...",
-  ...
-}
-```
-
-#### Update Event on Google
-```http
-PUT /calendar/v3/calendars/{calendarId}/events/{eventId}
-Authorization: Bearer {accessToken}
-
-{
-  "summary": "Team Meeting (Rescheduled)",
-  "start": {...},
-  "end": {...}
-}
-```
-
-#### Delete Event on Google
-```http
-DELETE /calendar/v3/calendars/{calendarId}/events/{eventId}
-Authorization: Bearer {accessToken}
-```
-
-### Incremental Sync (Future Enhancement)
-```python
-# Use sync token for efficient updates (don't fetch all events)
-events_page = service.events().list(
-    calendarId='primary',
-    syncToken='latest_sync_token_from_db'
-).execute()
-
-# Only returns changed events since last sync
-for event in events_page.get('items', []):
-    if event.get('status') == 'cancelled':
-        delete_from_db(event['id'])
-    else:
-        upsert_to_db(event)
-
-# Store new sync token
-new_sync_token = events_page.get('nextSyncToken')
-```
-
----
-
-## NLP & OCR Placement in Architecture
-
-### NLP Service Deployment
-- **Location:** Server-side (not client)
-- **Reasons:** 
-  - Consistency (same parser for all users)
-  - Security (no exposing parsing rules to client)
-  - Async capability (queue NLP jobs if slow)
-- **Process:**
-  ```
-  POST /api/events/nlp {text}
-    → Queue job (if using AI API)
-    → NLPService.parse()
-    → Return suggested event JSON
-    → User confirms
-    → EventService.create_event() (same as manual)
-  ```
-
-### OCR Service Deployment
-- **Location:** Server-side upload
-- **Process:**
-  1. User selects image file
-  2. Upload to server, store temporarily
-  3. OCRService.extract_text() using Tesseract/PaddleOCR
-  4. NLPService.parse() on extracted text
-  5. Return suggested event + image preview
-  6. User confirms or edits
-  7. Delete temporary image, create event
-
----
-
-## Build Order (Component Dependencies)
-
-**Phase 1: Foundation**
-1. Database schema + initialization
-2. User/Calendar/Event entities
-3. Data access layer (repositories)
-
-**Phase 2: Core Calendar (No sync yet)**
-4. EventService (CRUD)
-5. RecurrenceService (RRULE parsing/expansion)
-6. CalendarService (two-user sharing)
-7. REST API endpoints for events
-8. Basic frontend calendar views
-
-**Phase 3: Google Integration**
-9. GoogleSyncService (OAuth2, API calls)
-10. Sync state tracking
-11. Push-to-Google pipeline
-12. "Sync" button in UI
-
-**Phase 4: NLP & OCR (Enhancement)**
-13. NLPService
-14. OCRService
-15. Post-processing for confidence scores
-16. UI for NLP/OCR input methods
-
-**Phase 5: Polish**
-17. Error handling, retry logic
-18. Notifications
-19. Testing, performance optimization
-
----
-
-## Key Architectural Decisions
-
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| **Push-only sync (v1)** | Reduces complexity; no conflict resolution needed | App is source of truth; Google is read-on-mobile mirror |
-| **Single shared calendar** | Simplest model for household pair | No multi-calendar complexity, no permission matrix |
-| **RFC5545 RRULE** | Standard, Google Calendar uses it | Can exchange with any RFC5545-compliant system |
-| **Server-side NLP/OCR** | Consistency, security, easier to upgrade | Slightly higher latency but better UX/maintainability |
-| **SQLite → PostgreSQL path** | Fast initial development → production scaleability | Use SQLAlchemy ORM for portability |
-| **OAuth2 for Google** | Industry standard, secure | Users don't share passwords, long-lived refresh tokens |
-
----
-
-## Integration Points with External Systems
-
-### Google Calendar API
-- **Scope:** `calendar.events`, `calendar.readonly` (for future pull-sync)
-- **Rate limits:** 100 requests/second per user (safe for household use)
-- **Quota:** 1 million requests/day (easily sufficient)
-- **Retry strategy:** Exponential backoff on 429/500 errors
-
-### Dependencies for NLP/OCR
-- **NLP:** `spacy` (lightweight) or GPT API (smarter)
-- **OCR:** `pytesseract` (Tesseract) or `paddleocr` (no external deps)
-- **Async queue:** `Celery` + Redis (if background processing needed)
-
----
-
-## Hidden Complexity Flags
-
-| Area | Complexity | Mitigation |
-|------|-----------|-----------|
-| **Recurrence exceptions** | THISANDFUTURE splits base rule; sync requires careful merging | Document RANGE logic; test thoroughly |
-| **Time zone handling** | DST transitions, floating times vs. UTC | Always use explicit TZID; handle DST edge cases in tests |
-| **OAuth2 token refresh** | Refresh tokens expire; background jobs fail silently | Implement automatic refresh on 401; monitor token age |
-| **Sync conflicts** | If user edits on both Google & app (despite v1 design) | Add conflict detection; prefer app (source of truth) |
-| **Soft deletes** | Must respect deleted_at in all queries | Add filters to all queries; audit trail important |
-
----
-
-## Recommended Build Sequence for Phases
-
-1. **Phase 1:** Database + EventService (no recurrence yet)
-2. **Phase 2:** RecurrenceService (test RRULE expansion heavily)
-3. **Phase 3:** REST API + basic UI (month view)
-4. **Phase 4:** GoogleSyncService + OAuth2
-5. **Phase 5:** NLP (simple rule-based first, AI later)
-6. **Phase 6:** OCR (add last, most fragile)
-7. **Phase 7:** Exception handling + "this and future" edits
-
-Each phase represents 1-2 weeks of development for a single developer.
+| Concern | Current (2 users) | Notes |
+|---------|-------------------|-------|
+| Comparison API | 2–3 calls to `get_year_overview()` per request (~8–12 DB queries) | Acceptable; add caching only if >5 years compared |
+| Reminder storage | JSONB array column on events table | Fine for any reasonable reminder count per event |
+| Year navigation | Unbounded year picker | Limit to current year ± 10 in UI for UX |
+| Privacy filtering | In-memory filter via `_visible_to()` after full table load | Fine for household scale (~hundreds of events); add PostgREST filter if event count grows significantly |
+| Budget year queries | 4 DB round-trips per year view | Acceptable; batch into single RPC if latency becomes an issue |
 
 ## Sources
 
-- [Google Calendar API Overview](https://developers.google.com/workspace/calendar/api/guides/overview) - Official Google docs on Event, Calendar, ACL resources
-- [RFC 5545 - iCalendar Specification](https://datatracker.ietf.org/doc/html/rfc5545) - Authoritative RRULE, DTSTART, recurrence model definition
-- Confidence: **HIGH** — Both sources are authoritative (Google official docs + IETF standards)
+- Direct codebase analysis: all model, schema, repository, service, route, template, and JS files reviewed
+- Existing patterns verified against v1.0–v2.0 implementation
+- Confidence: HIGH — all claims verified against actual source code

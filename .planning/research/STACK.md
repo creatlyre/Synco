@@ -1,268 +1,168 @@
-# Technology Stack - 2026
+# Stack Research — v2.1 Additions
 
-**Project:** CalendarPlanner (Shared Household Calendar)
-**Researched:** March 18, 2026
-**Python Version:** 3.10+
+**Domain:** Event privacy, reminder UI, multi-year budget — additions to CalendarPlanner v2.1
+**Researched:** 2026-03-20
+**Confidence:** HIGH
 
-## Recommended Stack
+## Key Finding: No New Dependencies Required
 
-### Core Framework
+The existing stack fully supports all three v2.1 features. No new Python packages, no version upgrades, no new frontend libraries. This is a pure implementation milestone on existing infrastructure.
 
-| Technology | Version | Purpose | Why |
-|-----------|---------|---------|-----|
-| **FastAPI** | 0.135.1 | Web API Framework | Fastest Python async framework (per TechEmpower benchmarks), built-in OpenAPI docs, native async/await, excellent for two-user real-time sync. Significantly faster dev cycle than Flask/Django. |
-| **Uvicorn** | Latest | ASGI Server | Battle-tested async server, used by FastAPI, efficient for WebSocket/real-time operations. |
-| **Pydantic** | v2.x | Data Validation | FastAPI-native validation, strong typing, serialization to JSON. |
+## Existing Stack (Verified Sufficient)
 
-**Why NOT Django/Flask:**
-- Django: Over-engineered for small household app, slower development, ORM overhead unnecessary
-- Flask: Not built for async operations; websocket support requires add-on complexity
-- **FastAPI wins**: Async-first, fastest request handling, cleaner code
+### Core Technologies
 
-### Database
+| Technology | Version | Purpose | Why Sufficient for v2.1 |
+|------------|---------|---------|-------------------------|
+| FastAPI | 0.135.1 | HTTP routing, dependency injection | Query params for year nav, existing route patterns cover all new endpoints |
+| Pydantic | 2.10.6 | Schema validation | `EventCreate`/`EventUpdate` already validate `visibility`, `reminder_minutes_list` (0–40320 range), `Literal["shared", "private"]` |
+| google-api-python-client | 2.93.0 | Google Calendar sync | Reminder overrides (max 5, popup/email, 0–40320 min) already implemented in `_event_body()`. ExtendedProperties carry `cp_visibility` |
+| Jinja2 | 3.1.2 | Server-rendered templates | New UI sections (reminder editor, comparison table) are template additions only |
+| Supabase (via httpx) | httpx 0.25.2 | Database storage | `events` table already has `visibility`, `reminder_minutes`, `reminder_minutes_list` columns. No schema migration needed |
+| Tailwind CSS | Prebuilt 34KB | Styling | Existing utility classes cover all new UI elements. Rebuild with `npx @tailwindcss/cli` if new classes needed |
 
-| Technology | Version | Purpose | Why |
-|-----------|---------|---------|-----|
-| **SQLite** | 3.51.3 (March 2026) | Primary Database | Perfect for household app (two users, single household scope). No server required, file-based, transactions supported, ACID-compliant. Will store all events, recurring rules, user data. |
-| **SQLAlchemy** | 2.x | ORM | Lightweight Python ORM, excellent type hints, works seamlessly with FastAPI, supports SQLite migrations via Alembic. |
+### Supporting Libraries (Already Present, No Changes)
 
-**Why NOT PostgreSQL for v1:**
-- SQLite sufficient for two users on same household network
-- Zero infrastructure overhead
-- Can upgrade to PostgreSQL later if multi-household sync needed
+| Library | Version | Relevance to v2.1 |
+|---------|---------|-------------------|
+| PyJWT | 2.8.0 | Auth unchanged — `requesting_user_id` already flows through `get_current_user` dependency |
+| python-dateutil | 2.9.0 | Date math for year-over-year comparison (already imported) |
+| pydantic-settings | 2.7.1 | `GOOGLE_EVENT_REMINDER_MINUTES` default (30) already in config — used as UI default |
 
-### Google Calendar Integration
+## What Already Exists Per Feature
 
-| Library | Version | Purpose | Why |
-|---------|---------|---------|-----|
-| **google-api-python-client** | 2.193.0 | OAuth2 + Calendar API | Official Google client library, supports OAuth2 flow (two-user model), event CRUD operations, recurring events, full Calendar v3 API coverage. Discovery documents now cached (v2.x benefit). |
-| **PyJWT** | Latest | Token Management | Parse/verify OAuth2 tokens for session management. |
-| **python-dotenv** | Latest | Config Management | Store OAuth2 credentials safely in environment variables. |
+### 1. Event Privacy Controls — ~90% Complete
 
-### Frontend Approach
+| Component | Status | What Exists |
+|-----------|--------|-------------|
+| Data model | ✅ Done | `Event.visibility: str = "shared"` in models.py |
+| API schema | ✅ Done | `Literal["shared", "private"]` in EventCreate/EventUpdate |
+| Repository filtering | ✅ Done | `_visible_to()` filters private events by `created_by_user_id` |
+| Service enforcement | ✅ Done | Update/delete reject private events from non-owners |
+| Event form UI | ✅ Done | Visibility dropdown in event_entry_modal.html |
+| i18n keys | ✅ Done | `qa.visibility*` keys in both pl.json and en.json |
+| Google Calendar sync | ✅ Done | `cp_visibility` in extendedProperties, `_extract_cp_visibility()` on import |
+| Calendar view filtering | ⚠️ Verify | `requesting_user_id` param exists — confirm it's wired through calendar view routes |
 
-| Technology | Purpose | Why |
-|-----------|---------|-----|
-| **Jinja2Templates** (Built into FastAPI/Starlette) | Server-side HTML rendering | For v1, use server-rendered HTML forms with HTMX for lightweight interactivity. No JavaScript framework build step needed. Reduces complexity. |
-| **HTMX** | 1.9.x | Lightweight JavaScript | Progressive enhancement for forms (add event, edit event, delete). Real-time calendar updates without full page reloads. Integrates cleanly with Jinja2. |
-| **Tailwind CSS** | 3.x | Styling | Utility-first CSS, ships lean, handles responsive calendar view. Or Bootstrap 5 if less hip. |
+**Stack need:** None. Implementation is wiring `requesting_user_id` through calendar view routes and adding a visual indicator (e.g., lock icon) for private events on the calendar grid.
 
-**Why this approach:**
-- **v1 focus**: Two users on households network = no need for complex SPA
-- **Server-side rendering** simplifies date parsing, recurring rule validation (all server-side)
-- **HTMX**: Progressive enhancement, real-time event updates without WebSocket complexity
-- **Future upgrade**: To React/Vue if multi-tenancy added
+### 2. Reminder UI Configuration — Backend Done, UI Missing
 
-### Real-Time Updates Strategy
+| Component | Status | What Exists |
+|-----------|--------|-------------|
+| Data model | ✅ Done | `Event.reminder_minutes`, `Event.reminder_minutes_list`, `effective_reminders` property |
+| API schema | ✅ Done | Validated in EventCreate (0–40320 range, list support) |
+| Google sync | ✅ Done | `_event_body()` builds `reminders.overrides` with popup method |
+| Config default | ✅ Done | `GOOGLE_EVENT_REMINDER_MINUTES = 30` in Settings |
+| Event form UI | ❌ Missing | No reminder fields in event_entry_modal.html or event_form.html |
+| i18n keys | ❌ Missing | No reminder-related keys in locale files |
 
-| Mechanism | Use Case | Why |
-|-----------|----------|-----|
-| **polling (5-10 sec intervals)** | Initial implementation | Simple, works everywhere, no infrastructure. JS on page requests `GET /events/today` every 5 seconds. Sufficient for household calendar. |
-| **Server-Sent Events (SSE)** | Later optimization if polling feels slow | Unidirectional server-to-client streaming, built into FastAPI, no WebSocket complexity. Better than polling, simpler than WebSockets. |
-| **WebSockets** | Future: multi-household real-time collaboration | Only if scaling beyond two-person household. |
+**Stack need:** None — pure template/JS work. Add reminder toggle + multi-reminder editor to event form.
 
-**Decision:** Start with polling, migrate to SSE in Phase 2 if needed.
+**Google Calendar API constraints to respect in UI (verified via Context7, HIGH confidence):**
+- Maximum **5 reminder overrides** per event
+- Methods: `popup` (maps to phone notification) or `email`
+- Minutes range: **0–40320** (0 min to 4 weeks)
+- `useDefault: true` falls back to calendar-level defaults
+- CalendarPlanner defaults to implement in UI: **30 minutes** + **2 days (2880 minutes)**
 
-### Image Processing & OCR
+### 3. Multi-Year Budget Browsing — Already Functional
 
-| Library | Version | Purpose | Implementation |
-|---------|---------|---------|-----------------|
-| **EasyOCR** | 1.7.2 | Optical Character Recognition | Extract event name + date from festival flyers, screenshots. Supports 80+ languages, PyTorch backend, async-friendly. |
-| **Pillow** | Latest | Image Handling | Load, resize, preprocess images before OCR. |
-| **opencv-python** | 4.x | Image Processing | If advanced preprocessing needed (rotation detection, skew correction). Optional for v1. |
+| Component | Status | What Exists |
+|-----------|--------|-------------|
+| Service | ✅ Done | `get_year_overview(calendar_id, year)` accepts any year |
+| API | ✅ Done | `/api/budget/overview?year=YYYY` works for any integer year |
+| Year navigation | ✅ Done | ← / → arrows in budget_overview.html with `currentYear--/++` |
+| Year display | ✅ Done | `year-display` span updates on navigation |
 
-**Why NOT Google Vision API:**
-- EasyOCR: Off-line, no API costs, privacy (household data stays local)
-- Google Vision: Cloud dependency, latency, cost for household app seems overkill
-- Tesseract (pytesseract): Older, requires system library installation, harder deployment
+**Stack need:** None. Year navigation already works. Consider adding URL query param (`?year=2025`) for bookmarkable state, but that's a UX enhancement, not a stack concern.
 
-**Implementation Note:** OCR optional for v1, can defer to Phase 2. Requires GPU for real-time (or CPU + 2-3 sec delay).
+### 4. Year-over-Year Comparison — New Feature
 
-### Natural Language Processing
+| Component | Status | What's Needed |
+|-----------|--------|---------------|
+| Backend | 🆕 New endpoint | API to return two years' overview data in one response |
+| Service | ⚠️ Reusable | Call `get_year_overview()` twice — no new logic needed |
+| UI | 🆕 New template section | Side-by-side comparison table below main overview |
+| i18n keys | 🆕 Missing | Comparison-related labels (PL + EN) |
 
-| Library | Version | Purpose | Implementation |
-|---------|---------|---------|-----------------|
-| **dateparser** | 1.3.0 | Natural Language Date Extraction | Convert "tomorrow at 3pm", "next Friday", "in 2 weeks" → datetime objects. Supports 200+ locales, relative dates, timezone handling. |
-| **spaCy** | 3.7 | NLP Pipeline (optional) | Extract entities (person names, locations) from event descriptions. Supports NER (Named Entity Recognition). Use `en_core_web_sm` model (small, fast). Optional for v1. |
-| **PyDantic** | v2.x | Validation | Validate parsed dates/times have valid ranges (e.g., not hour 25). |
+**Stack need:** None. The existing `OverviewService.get_year_overview()` can be called for both years. No new computation library required — all math is addition/subtraction of already-computed yearly totals.
 
-**Why this stack:**
-- **dateparser**: Best-in-class for relative dates ("in 3 weeks" → calendar math)
-- **spaCy**: If later adding "Add meeting with John at work" → extract participant + location
-- **LLM approach NOT recommended yet**: Overkill for household calendar, latency, API costs
+## Alternatives Considered
 
-**Implementation:** dateparser required for v1 (natural language event requests). spaCy optional Phase 2 feature.
+| Recommended | Alternative | Why Not |
+|-------------|-------------|---------|
+| Vanilla JS reminder editor | Alpine.js for reactive form | Adding a JS framework for one form widget is overkill. The existing event form pattern (vanilla JS + event delegation) works and is consistent |
+| Server-side comparison computation | Client-side JS fetch + compare | Keep compute server-side for consistency with existing overview pattern. Client fetches rendered data |
+| `popup` as default reminder method | `email` reminders | Users want phone notifications via Google Calendar. `popup` maps to mobile push. `email` is secondary for household use |
+| Reuse `get_year_overview()` twice | New comparison-specific SQL query | Two calls to existing function is simpler, tested, and maintainable. Data volume (12 months × 2 years) is trivial |
+| Keep prebuilt Tailwind CSS | Switch to Tailwind runtime/CDN | Prebuilt approach was a v2.0 performance win (34KB vs 300KB). No reason to regress |
 
-### Authentication (Two-User Model)
+## What NOT to Add
 
-| Technology | Purpose | Why |
-|-----------|---------|-----|
-| **OAuth2 (via Google)** | User Authentication | Both users log in via Google, FastAPI's built-in OAuth2 + Security classes handle JWT tokens. |
-| **JWT** | Session Management | Stateless tokens, refresh tokens for persistent login (up to 7 days). |
-| **FastAPI Security** | Route Protection | `@app.get("/events", dependencies=[Depends(get_current_user)])` ensures only authenticated users access calendar. |
+| Avoid | Why | Do Instead |
+|-------|-----|------------|
+| Alpine.js / htmx / any JS framework | Adds build complexity for minimal gain. Existing vanilla JS + event delegation pattern is proven across the app | Continue vanilla JS pattern. The reminder editor is ~50 lines of JS |
+| Chart.js / D3 for comparison visualization | Year-over-year is a summary table (4 rows × 2 columns). Charts are premature for 8 data points | HTML table with color-coded deltas (green/red), matching existing `colorClass()` pattern |
+| Any ORM (SQLAlchemy, Tortoise) | Supabase REST API via httpx works. Adding an ORM now would require rewriting all repositories | Keep SupabaseStore pattern. No schema changes needed |
+| Celery / background task runner | Sync is already synchronous per-request. Reminders are handled by Google Calendar, not CalendarPlanner | Google Calendar pushes notifications to phones. CalendarPlanner just sets the reminder config |
+| WebSocket / SSE for live updates | Two-user household app. Page refresh on save is sufficient | Keep existing fetch + reload pattern |
+| New pip packages of any kind | Zero new dependencies needed. Every feature builds on existing FastAPI + Pydantic + Google API + Jinja2 + Supabase | Leverage what's already installed |
 
-**Two-User Setup:**
-1. User A logs in via Google → gets JWT token
-2. User B logs in via Google → gets JWT token  
-3. Both are verified via `get_current_user()` dependency
-4. All events stored under shared calendar ID (not per-user)
-5. Authorization: Simple check that user A/B privilege matches calendar owner
-
-**Why NOT local auth:**
-- Google OAuth2 integrates with Google Calendar API (same credentials)
-- No password hashing/storage overhead
-- Both users must have Google accounts anyway (Google Calendar requirement)
-
-### Supporting Libraries
-
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|------------|
-| **python-multipart** | Latest | Form parsing | Handle multipart/form-data from image upload form. |
-| **httpx** | Latest | HTTP requests | Used by google-api-python-client, test client in FastAPI. |
-| **pytest** | Latest | Testing | Write unit tests for event creation, parsing, Google sync logic. |
-| **freezegun** | Latest | Mock time in tests | Test recurring events, date edge cases. |
-| **python-cron** | Latest (APScheduler) | Background jobs | Export calendar to Google on interval (every hour), sync back. |
-
-### Installation Command
+## Installation
 
 ```bash
-# Core
-pip install fastapi[standard] uvicorn pydantic sqlalchemy alembic
+# No changes to requirements.txt
+# No new packages needed
 
-# Google Calendar
-pip install google-api-python-client PyJWT python-dotenv
-
-# Frontend
-pip install jinja2
-
-# OCR + NLP
-pip install easyocr dateparser spacy pillow opencv-python
-
-# Supporting
-pip install python-multipart httpx pytest freezegun apscheduler
-
-# Development
-pip install black flake8 mypy pytest-cov
+# Only action: rebuild Tailwind CSS if new utility classes are introduced
+npx @tailwindcss/cli -i public/css/input.css -o public/css/style.css
 ```
 
-## Frontend Approach: Server-Side Rendering vs SPA
+## Version Compatibility
 
-| Aspect | SSR (Jinja2 + HTMX) | SPA (React/Vue) |
-|--------|-------------------|-----------------|
-| Complexity | Low | High |
-| Bundle size | Minimal | 50KB+ gzipped |
-| Time to first render | Instant | 2-3 sec (JS download) |
-| Real-time updates | Polling / HTMX / SSE | WebSocket / REST |
-| Deployment | Python only | Node.js build step |
-| **Decision for v1** | ✅ Chosen | Later if needed |
+| Package | Current Version | Status | Notes |
+|---------|-----------------|--------|-------|
+| FastAPI | 0.135.1 | ✅ Current | No upgrade needed |
+| Pydantic | 2.10.6 | ✅ Current | v2 features fully utilized |
+| google-api-python-client | 2.93.0 | ✅ Sufficient | Calendar v3 API stable, reminder overrides supported |
+| httpx | 0.25.2 | ✅ Sufficient | Supabase REST calls unchanged |
+| Jinja2 | 3.1.2 | ✅ Current | Template inheritance working |
 
-**SSR Strategy:**
-- `/` → Jinja2 renders calendar month view + event list
-- `/add-event` → Form POST → server validates → returns updated calendar HTML (HTMX swap)
-- `/events/api` → JSON endpoint for HTMX to fetch updates
-- JavaScript minimal: HTMX for forms, vanilla JS for calendar interactions
+## Integration Points for Implementation
 
-## Alternatives Not Recommended
-
-### Framework Alternatives
-- **Starlette** _(too low-level, use FastAPI instead)_
-- **Django** _(over-engineered, slower development)_
-- **Flask** _(not async-first, requires add-ons for websockets)_
-
-### Database
-- **PostgreSQL** _(overkill for household v1, upgrade path exists)_
-- **MongoDB** _(no relational structure needed for events, don't use)_
-
-### OCR
-- **Google Cloud Vision API** _(privacy concern, costs, latency)_
-- **Tesseract + pytesseract** _(older, system dependency, harder deployment)_
-
-### NLP
-- **LLMs (GPT-4 API)** _(expensive, latency, overkill for simple date parsing)_
-- **NLTK** _(older, less maintained than spaCy)_
-
-### Frontend
-- **Django Templates + jQuery** _(coupling, slower)_
-- **Next.js** _(overkill for server-rendered calendar)_
-- **Vue.js** _(good but unnecessary for v1 requirements)_
-
-## Installation & Project Structure
-
-```bash
-# Create project
-python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
-pip install -r requirements.txt
-
-# Initialize database
-alembic init app/migrations
-alembic upgrade head
-
-# Run development server
-fastapi dev app/main.py
+### Reminder UI → Google Calendar Sync Chain
+```
+Event Form (new UI) → EventCreate schema (existing validation)
+  → EventRepository.create() (existing, stores reminder_minutes_list)
+  → GoogleSyncService._event_body() (existing, builds overrides)
+  → Google Calendar API (existing push sync)
+  → Phone notification (Google handles this)
 ```
 
-Project structure:
+### Privacy Filtering Chain
 ```
-CalendarPlanner/
-├── app/
-│   ├── main.py                 # FastAPI app initialization
-│   ├── database.py             # SQLAlchemy session
-│   ├── models/                 # SQLAlchemy models (Event, User, Calendar)
-│   ├── routes/                 # API endpoints (events, auth, sync)
-│   ├── schemas/                # Pydantic schemas
-│   ├── services/               # Business logic (Google sync, date parsing)
-│   │   ├── google_calendar.py # OAuth2, event sync
-│   │   ├── date_parser.py     # dateparser integration
-│   │   ├── ocr.py             # EasyOCR integration
-│   ├── templates/              # Jinja2 HTML templates
-│   ├── static/                 # CSS, minimal JS (HTMX)
-│   └── migrations/             # Alembic schema migrations
-├── tests/
-│   ├── test_routes.py
-│   ├── test_services.py
-│   └── test_date_parsing.py
-├── requirements.txt
-├── .env                        # OAuth2 secrets (git-ignored)
-└── docker-compose.yml          # Optional: for local development
+Calendar View Route → EventService.list_month_expanded(requesting_user_id=user.id)
+  → EventRepository._visible_to() (existing filter)
+  → Template renders only visible events
+  → Google Sync: cp_visibility in extendedProperties (existing)
 ```
 
-## Google Calendar OAuth2 Flow
-
+### Year Comparison Data Flow
 ```
-1. User clicks "Login with Google"
-2. Redirect to Google consent screen
-3. User authorizes calendar access
-4. Google returns authorization code
-5. FastAPI exchanges code for access + refresh tokens
-6. Store refresh token in session
-7. Use access token to call Google Calendar API
-8. Auto-refresh token when expired
+New API endpoint → OverviewService.get_year_overview(year_a) + get_year_overview(year_b)
+  → Return combined response with delta calculations
+  → Template renders side-by-side summary table
 ```
 
-## Deployment Considerations
+## Sources
 
-- **Local/Household:** Run on Raspberry Pi or home server (one instance, SQLite sufficient)
-- **Cloud upgrade:** Render, Railway, or Docker container (no changes needed, SQLite → PostgreSQL only)
-- **Environment:** Python 3.10+ required (for union types, match/case)
-
-## Versions as of March 2026
-
-| Technology | Version | Release Date |
-|-----------|---------|--------------|
-| FastAPI | 0.135.1 | January 2026 |
-| SQLite | 3.51.3 | March 13, 2026 |
-| google-api-python-client | 2.193.0 | March 17, 2026 |
-| dateparser | 1.3.0 | February 2026 |
-| EasyOCR | 1.7.2 | September 2024 |
-| spaCy | 3.7 | Latest (v4 coming soon) |
-| Python | 3.10+ | Current standard |
+- `/googleapis/google-api-python-client` via Context7 — Verified Calendar v3 Event.reminders spec: max 5 overrides, popup/email methods, 0–40320 minutes range (HIGH confidence)
+- Codebase analysis — models.py, schemas.py, service.py, repository.py, sync/service.py, event_entry_modal.html, budget_overview.html, locale files (verified directly)
+- requirements.txt — Current pinned versions confirmed
+- config.py — `GOOGLE_EVENT_REMINDER_MINUTES = 30` default confirmed
 
 ---
-
-**Confidence Levels:**
-- **Stack recommendation:** HIGH (all libraries current, well-maintained, widely used)
-- **Frontend SSR approach:** MEDIUM-HIGH (suitable for v1, team may prefer SPA later)
-- **OCR/NLP optional features:** MEDIUM (EasyOCR excellent but requires GPU optimization)
-- **Two-user OAuth2 auth:** HIGH (Google's pattern, well-documented)
+*Stack research for: CalendarPlanner v2.1 — Privacy, Reminders & Multi-Year Budget*
+*Researched: 2026-03-20*
 
