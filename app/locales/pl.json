@@ -306,5 +306,16 @@
   "budget.overview_detail_total": "Suma",
   "budget.overview_detail_empty": "Brak jednorazowych wydatków",
   "budget.overview_detail_add": "Dodaj wydatek",
-  "budget.overview_detail_delete_confirm": "Usunięto"
+  "budget.overview_detail_delete_confirm": "Usunięto",
+  "budget.yoy_title": "Porównanie rok do roku",
+  "budget.yoy_category": "Kategoria",
+  "budget.yoy_selected": "Wybrany rok",
+  "budget.yoy_previous": "Poprzedni rok",
+  "budget.yoy_delta": "Zmiana",
+  "budget.yoy_net_income": "Dochód netto",
+  "budget.yoy_additional": "Dodatkowe przychody",
+  "budget.yoy_recurring_exp": "Wydatki stałe",
+  "budget.yoy_onetime_exp": "Wydatki jednorazowe",
+  "budget.yoy_total_balance": "Bilans netto",
+  "budget.yoy_final_balance": "Końcowe saldo konta"
 }

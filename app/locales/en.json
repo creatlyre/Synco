@@ -306,5 +306,16 @@
   "budget.overview_detail_total": "Total",
   "budget.overview_detail_empty": "No one-time expenses",
   "budget.overview_detail_add": "Add expense",
-  "budget.overview_detail_delete_confirm": "Deleted"
+  "budget.overview_detail_delete_confirm": "Deleted",
+  "budget.yoy_title": "Year-over-Year Comparison",
+  "budget.yoy_category": "Category",
+  "budget.yoy_selected": "Selected Year",
+  "budget.yoy_previous": "Previous Year",
+  "budget.yoy_delta": "Change",
+  "budget.yoy_net_income": "Net Income",
+  "budget.yoy_additional": "Additional Earnings",
+  "budget.yoy_recurring_exp": "Recurring Expenses",
+  "budget.yoy_onetime_exp": "One-time Expenses",
+  "budget.yoy_total_balance": "Net Balance",
+  "budget.yoy_final_balance": "Final Account Balance"
 }
