@@ -231,3 +231,46 @@ def test_extract_cp_visibility_unknown_defaults_shared():
 def test_extract_cp_visibility_missing_defaults_shared():
     assert GoogleSyncService._extract_cp_visibility({}) == "shared"
     assert GoogleSyncService._extract_cp_visibility({"extendedProperties": {}}) == "shared"
+
+
+# ── Phase 18 Nyquist: import ownership validation ─────────────────────────────
+
+
+def test_upsert_skips_foreign_private_event(test_db):
+    """VIS-02: _upsert_google_event skips private events not owned by importing user."""
+    service = GoogleSyncService(test_db)
+    google_event = {
+        "id": "gcal-foreign-123",
+        "summary": "Someone else's secret",
+        "start": {"dateTime": "2026-03-20T10:00:00Z"},
+        "end": {"dateTime": "2026-03-20T11:00:00Z"},
+        "extendedProperties": {
+            "private": {
+                "cp_event_id": "cp-foreign-evt",
+                "cp_visibility": "private",
+                "cp_owner_id": "other-user-999",
+            }
+        },
+    }
+    created, updated = service._upsert_google_event("cal-1", "my-user-id", google_event)
+    assert created == 0 and updated == 0, "Foreign private event must be skipped"
+
+
+def test_upsert_allows_own_private_event(test_db):
+    """VIS-02: _upsert_google_event imports private events owned by the importing user."""
+    service = GoogleSyncService(test_db)
+    google_event = {
+        "id": "gcal-own-456",
+        "summary": "My private meeting",
+        "start": {"dateTime": "2026-03-20T10:00:00Z"},
+        "end": {"dateTime": "2026-03-20T11:00:00Z"},
+        "extendedProperties": {
+            "private": {
+                "cp_event_id": "cp-own-evt",
+                "cp_visibility": "private",
+                "cp_owner_id": "my-user-id",
+            }
+        },
+    }
+    created, updated = service._upsert_google_event("cal-1", "my-user-id", google_event)
+    assert created == 1, "Own private event must be imported"
