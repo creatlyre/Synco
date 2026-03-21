@@ -401,3 +401,44 @@ class TestRecurringExpensesMultiYear:
         res = authenticated_client.get("/api/budget/overview?year=2027")
         m1 = res.json()["data"]["months"][0]
         assert m1["recurring_expenses"] == 5000.0
+
+
+class TestYearOverYearComparison:
+    """BUD-04: Year-over-year comparison."""
+
+    def test_comparison_returns_both_years(self, authenticated_client, test_db, test_user_a):
+        _seed_settings(test_db, test_user_a.calendar_id)
+        res = authenticated_client.get("/api/budget/overview/comparison?year=2026")
+        assert res.status_code == 200
+        data = res.json()["data"]
+        assert data["selected_year"] == 2026
+        assert data["previous_year"] == 2025
+
+    def test_comparison_has_required_keys(self, authenticated_client, test_db, test_user_a):
+        _seed_settings(test_db, test_user_a.calendar_id)
+        res = authenticated_client.get("/api/budget/overview/comparison?year=2026")
+        data = res.json()["data"]
+        required_keys = {"total_net", "total_additional", "total_recurring", "total_onetime", "total_balance", "final_account_balance"}
+        assert required_keys.issubset(set(data["selected"].keys()))
+        assert required_keys.issubset(set(data["previous"].keys()))
+        assert required_keys.issubset(set(data["delta"].keys()))
+
+    def test_comparison_delta_is_selected_minus_previous(self, authenticated_client, test_db, test_user_a):
+        _seed_settings(test_db, test_user_a.calendar_id)
+        authenticated_client.post("/api/budget/expenses", json={"year": 2026, "month": 1, "name": "Test", "amount": 500})
+        res = authenticated_client.get("/api/budget/overview/comparison?year=2026")
+        data = res.json()["data"]
+        for key in ["total_net", "total_additional", "total_recurring", "total_onetime", "total_balance", "final_account_balance"]:
+            assert abs(data["delta"][key] - (data["selected"][key] - data["previous"][key])) < 0.01
+
+    def test_comparison_previous_year_has_valid_data(self, authenticated_client, test_db, test_user_a):
+        """Previous year with no year-specific data still returns computed values."""
+        _seed_settings(test_db, test_user_a.calendar_id)
+        res = authenticated_client.get("/api/budget/overview/comparison?year=2026")
+        data = res.json()["data"]
+        assert data["previous"]["total_net"] is not None
+        assert isinstance(data["previous"]["final_account_balance"], (int, float))
+
+    def test_comparison_requires_auth(self, test_client):
+        res = test_client.get("/api/budget/overview/comparison?year=2026")
+        assert res.status_code in (302, 303, 401)

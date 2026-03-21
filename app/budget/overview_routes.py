@@ -19,6 +19,15 @@ def _service(db) -> OverviewService:
     )
 
 
+@router.get("/comparison")
+async def get_comparison(year: int, user=Depends(get_current_user), db=Depends(get_db)):
+    if not user.calendar_id:
+        raise HTTPException(status_code=400, detail="No calendar linked")
+    service = _service(db)
+    data = service.get_year_comparison(user.calendar_id, year)
+    return {"data": data}
+
+
 @router.get("")
 async def get_overview(year: int, user=Depends(get_current_user), db=Depends(get_db)):
     if not user.calendar_id:

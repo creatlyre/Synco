@@ -137,3 +137,34 @@ class OverviewService:
             "carry_forward": carry_forward,
             "months": months,
         }
+
+    def get_year_comparison(self, calendar_id: str, year: int) -> dict:
+        selected = self.get_year_overview(calendar_id, year)
+        previous = self.get_year_overview(calendar_id, year - 1)
+
+        def _sum_totals(data: dict) -> dict:
+            months = data["months"]
+            return {
+                "total_net": round(sum(m["net"] for m in months), 2),
+                "total_additional": round(sum(m["additional_earnings"] for m in months), 2),
+                "total_recurring": round(sum(m["recurring_expenses"] for m in months), 2),
+                "total_onetime": round(sum(m["onetime_expenses"] for m in months), 2),
+                "total_balance": round(sum(m["monthly_balance"] for m in months), 2),
+                "final_account_balance": round(months[-1]["account_balance"], 2) if months else 0.0,
+            }
+
+        sel_totals = _sum_totals(selected)
+        prev_totals = _sum_totals(previous)
+
+        delta = {
+            key: round(sel_totals[key] - prev_totals[key], 2)
+            for key in sel_totals
+        }
+
+        return {
+            "selected_year": year,
+            "previous_year": year - 1,
+            "selected": sel_totals,
+            "previous": prev_totals,
+            "delta": delta,
+        }
