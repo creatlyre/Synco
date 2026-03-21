@@ -2,6 +2,8 @@
 
 {% block title %}{{ t('budget.overview_page_title') }} - {{ t('app.name') }}{% endblock %}
 
+{% block page_heading %}{{ t('budget.overview_page_title') }}{% endblock %}
+
 {% block content %}
 <div class="flex flex-col lg:flex-row gap-6">
 
@@ -9,17 +11,17 @@
   <nav class="w-full lg:w-48 flex-shrink-0">
     <div class="glass rounded-2xl p-4">
       <div class="flex lg:flex-col gap-2">
-        <a href="/budget/settings" class="px-4 py-3 text-sm font-medium rounded-xl block hover:bg-white/5 transition-colors">
+        <a href="/budget/settings" class="px-4 py-3 text-sm font-medium rounded-xl block hover:bg-white/5 transition-colors min-h-[44px] flex items-center">
           {{ t('budget.sidebar_settings') }}
         </a>
-        <a href="/budget/income" class="px-4 py-3 text-sm font-medium rounded-xl block hover:bg-white/5 transition-colors">
+        <a href="/budget/income" class="px-4 py-3 text-sm font-medium rounded-xl block hover:bg-white/5 transition-colors min-h-[44px] flex items-center">
           {{ t('budget.sidebar_income') }}
         </a>
-        <a href="/budget/expenses" class="px-4 py-3 text-sm font-medium rounded-xl block hover:bg-white/5 transition-colors">
+        <a href="/budget/expenses" class="px-4 py-3 text-sm font-medium rounded-xl block hover:bg-white/5 transition-colors min-h-[44px] flex items-center">
           {{ t('budget.sidebar_expenses') }}
         </a>
         <!-- Active: Overview -->
-        <div class="px-4 py-3 text-sm font-medium rounded-xl nav-active">
+        <div class="px-4 py-3 text-sm font-medium rounded-xl nav-active min-h-[44px] flex items-center" aria-current="page">
           {{ t('budget.sidebar_overview') }}
         </div>
         <a href="/" class="glass-btn-secondary rounded-xl px-4 py-3 text-sm font-medium block text-center lg:mt-4">
@@ -54,13 +56,13 @@
     <div id="overview-content" class="hidden stagger-children">
       <!-- Year picker -->
       <div class="flex items-center justify-center gap-4 mb-6">
-        <button id="year-prev" class="glass-btn-secondary rounded-xl px-4 py-2.5 text-sm font-medium min-h-[44px] min-w-[44px]">←</button>
+        <button id="year-prev" class="glass-btn-secondary rounded-xl px-4 py-2.5 text-sm font-medium min-h-[44px] min-w-[44px]" aria-label="Previous year">←</button>
         <span id="year-display" class="text-xl font-bold"></span>
-        <button id="year-next" class="glass-btn-secondary rounded-xl px-4 py-2.5 text-sm font-medium min-h-[44px] min-w-[44px]">→</button>
+        <button id="year-next" class="glass-btn-secondary rounded-xl px-4 py-2.5 text-sm font-medium min-h-[44px] min-w-[44px]" aria-label="Next year">→</button>
       </div>
 
-      <!-- Initial balance display -->
-      <div class="text-xs opacity-60 text-center mb-3">
+      <!-- Carry-forward / Initial balance display -->
+      <div id="carry-forward-line" class="text-xs opacity-60 text-center mb-3">
         {{ t('budget.overview_initial_balance') }}: <span id="initial-balance" class="font-medium">0.00</span> {{ t('budget.currency') }}
       </div>
 
@@ -115,10 +117,14 @@
   const detailTotal = {{ t('budget.overview_detail_total')|tojson }};
   const detailEmpty = {{ t('budget.overview_detail_empty')|tojson }};
   const detailAdd = {{ t('budget.overview_detail_add')|tojson }};
+  const carriedFromTpl = {{ t('budget.overview_carried_from')|tojson }};
+  const noPriorDataText = {{ t('budget.overview_no_prior_data')|tojson }};
+  const initialBalanceLabel = {{ t('budget.overview_initial_balance')|tojson }};
 
   let currentYear = new Date().getFullYear();
   let expandedMonth = null;
   let overviewData = null;
+  let yearBounds = null;
 
   function fmt(n) {
     const s = Math.abs(n).toFixed(2);
@@ -133,6 +139,11 @@
     return '';
   }
 
+  function fmtSigned(n) {
+    const prefix = n > 0 ? '+' : '';
+    return prefix + fmt(n);
+  }
+
   async function loadSettings() {
     const res = await fetch('/api/budget/settings');
     const json = await res.json();
@@ -142,7 +153,42 @@
   async function loadOverview() {
     const res = await fetch('/api/budget/overview?year=' + currentYear);
     const json = await res.json();
+    yearBounds = json.year_bounds || null;
     return json.data;
+  }
+
+  function updateYearNav() {
+    const prevBtn = document.getElementById('year-prev');
+    const nextBtn = document.getElementById('year-next');
+    if (yearBounds) {
+      prevBtn.disabled = currentYear <= yearBounds.min_year;
+      nextBtn.disabled = currentYear >= yearBounds.max_year;
+      prevBtn.style.opacity = prevBtn.disabled ? '0.3' : '';
+      prevBtn.style.cursor = prevBtn.disabled ? 'not-allowed' : '';
+      prevBtn.style.pointerEvents = prevBtn.disabled ? 'none' : '';
+      nextBtn.style.opacity = nextBtn.disabled ? '0.3' : '';
+      nextBtn.style.cursor = nextBtn.disabled ? 'not-allowed' : '';
+      nextBtn.style.pointerEvents = nextBtn.disabled ? 'none' : '';
+    }
+  }
+
+  function renderCarryForward(data) {
+    const container = document.getElementById('carry-forward-line');
+    if (!container) return;
+    const cf = data.carry_forward;
+    if (!cf) {
+      container.innerHTML = initialBalanceLabel + ': <span id="initial-balance" class="font-medium">' + fmt(data.initial_balance) + '</span> ' + currency;
+      return;
+    }
+    if (cf.type === 'initial') {
+      container.innerHTML = initialBalanceLabel + ': <span id="initial-balance" class="font-medium">' + fmt(cf.amount) + '</span> ' + currency;
+    } else if (cf.type === 'carry_forward') {
+      const label = carriedFromTpl.replace('{year}', cf.source_year);
+      const color = cf.amount >= 0 ? '#4ade80' : '#f87171';
+      container.innerHTML = label + ': <span id="initial-balance" class="font-medium" style="color:' + color + '">' + fmtSigned(cf.amount) + '</span> ' + currency;
+    } else if (cf.type === 'no_prior_data') {
+      container.innerHTML = '<span class="opacity-60">' + noPriorDataText + '</span>';
+    }
   }
 
   function buildDetailHTML(m) {
@@ -154,7 +200,7 @@
       rows = items.map(item => `<tr class="border-b border-white/5" data-id="${item.id}">
           <td class="py-1 px-2 text-xs detail-edit-name cursor-pointer hover:bg-white/5" data-id="${item.id}" data-field="name">${item.name}</td>
           <td class="py-1 px-2 text-xs text-right detail-edit-amount cursor-pointer hover:bg-white/5" data-id="${item.id}" data-field="amount">${fmt(item.amount)}</td>
-          <td class="py-1 px-1 text-center"><button class="detail-delete text-xs opacity-40 hover:opacity-100 hover:text-red-400 transition-opacity" data-id="${item.id}">✕</button></td>
+          <td class="py-1 px-1 text-center"><button class="detail-delete text-xs opacity-40 hover:opacity-100 hover:text-red-400 transition-opacity" data-id="${item.id}" aria-label="Delete">✕</button></td>
         </tr>`).join('');
       // Total row
       const total = items.reduce((s, i) => s + i.amount, 0);
@@ -187,7 +233,7 @@
   function render(data) {
     overviewData = data;
     const tbody = document.getElementById('overview-body');
-    document.getElementById('initial-balance').textContent = fmt(data.initial_balance);
+    renderCarryForward(data);
 
     let totNet = 0, totAdd = 0, totRec = 0, totOt = 0, totBal = 0;
 
@@ -207,8 +253,8 @@
         <td class="py-1.5 px-2 text-right">${fmt(m.additional_earnings)}</td>
         <td class="py-1.5 px-2 text-right">${fmt(m.recurring_expenses)}</td>
         <td class="py-1.5 px-2 text-right">${fmt(m.onetime_expenses)}</td>
-        <td class="py-1.5 px-2 text-right font-medium" style="${colorClass(m.monthly_balance)}">${fmt(m.monthly_balance)}</td>
-        <td class="py-1.5 px-2 text-right font-medium" style="${colorClass(m.account_balance)}">${fmt(m.account_balance)}</td>
+        <td class="py-1.5 px-2 text-right font-medium" style="${colorClass(m.monthly_balance)}">${fmtSigned(m.monthly_balance)}</td>
+        <td class="py-1.5 px-2 text-right font-medium" style="${colorClass(m.account_balance)}">${fmtSigned(m.account_balance)}</td>
       </tr>
       <tr class="detail-row" data-detail-month="${m.month}">
         <td colspan="7" class="p-0">${buildDetailHTML(m)}</td>
@@ -220,7 +266,7 @@
     document.getElementById('total-recurring').textContent = fmt(totRec);
     document.getElementById('total-onetime').textContent = fmt(totOt);
     const totalBalEl = document.getElementById('total-balance');
-    totalBalEl.textContent = fmt(totBal);
+    totalBalEl.textContent = fmtSigned(totBal);
     totalBalEl.style = colorClass(totBal);
 
     // Expand the previously expanded month after re-render
@@ -389,13 +435,24 @@
   }
 
   // Year navigation
-  document.getElementById('year-prev').addEventListener('click', () => { currentYear--; expandedMonth = null; reload(); });
-  document.getElementById('year-next').addEventListener('click', () => { currentYear++; expandedMonth = null; reload(); });
+  document.getElementById('year-prev').addEventListener('click', () => {
+    if (yearBounds && currentYear <= yearBounds.min_year) return;
+    currentYear--;
+    expandedMonth = null;
+    reload();
+  });
+  document.getElementById('year-next').addEventListener('click', () => {
+    if (yearBounds && currentYear >= yearBounds.max_year) return;
+    currentYear++;
+    expandedMonth = null;
+    reload();
+  });
 
   async function reload() {
     document.getElementById('year-display').textContent = currentYear;
     const data = await loadOverview();
     render(data);
+    updateYearNav();
   }
 
   async function init() {
@@ -411,6 +468,7 @@
       document.getElementById('skeleton-loader').classList.add('hidden');
       document.getElementById('overview-content').classList.remove('hidden');
       render(data);
+      updateYearNav();
     } catch(e) {
       console.error('Failed to load overview', e);
       document.getElementById('skeleton-loader').classList.add('hidden');
