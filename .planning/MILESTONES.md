@@ -1,5 +1,28 @@
 # Milestones
 
+## v2.1 Privacy, Reminders & Multi-Year Budget (Shipped: 2026-03-21)
+
+**Phases completed:** 5 phases (18-22), 7 plans
+
+**Key accomplishments:**
+
+- Event privacy: visibility toggle in event forms, lock icon for private events, partner filtering across all views, sync retraction to Google Calendar
+- Reminder UI: chip-based multi-reminder form with toggle, add/remove (up to 5), edit prefill, synced to Google Calendar
+- Multi-year budget: year navigation with carry-forward balance computation, year bounds detection, manual carry-forward override
+- Year-over-year comparison: side-by-side annual totals (income, expenses, balance) with color-coded delta arrows
+- Historical year import: TSV paste interface for past-year income hours/rates, one-time & recurring expenses
+- 267 tests passing across all subsystems
+
+**Stats:**
+
+- 32 files changed, 1,847 insertions, 90 deletions
+- Timeline: 2026-03-20 → 2026-03-21 (2 days)
+- 33 commits
+
+**Git range:** v2.0 → v2.1
+
+---
+
 ## v2.0 Budget Tracker (Shipped: 2026-03-20)
 
 **Phases completed:** 6 phases (12-17), 14 plans

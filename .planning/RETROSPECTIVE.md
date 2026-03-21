@@ -2,7 +2,54 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
-## Milestone: v2.0 (Phases 16-17) — Overview Detail & Performance
+## Milestone: v2.1 — Privacy, Reminders & Multi-Year Budget
+
+**Shipped:** 2026-03-21
+**Phases:** 5 | **Plans:** 7
+
+### What Was Built
+- Event privacy: visibility toggle, lock icons, partner filtering across all views, sync retraction to Google Calendar
+- Reminder UI: chip-based multi-reminder form with toggle, add/remove (up to 5), edit prefill, GCal sync
+- Multi-year budget: year navigation with carry-forward balance computation, year bounds, manual override
+- Year-over-year comparison: side-by-side annual totals with color-coded delta arrows (green=improvement, red=decline)
+- Historical year import: TSV paste for past-year income hours/rates, one-time & recurring expenses
+- Carry-forward manual override feature (added during UAT)
+- Year-scoped recurring expenses + bulk delete (added during UAT)
+- 37 new tests, 267 total passing
+
+### What Worked
+- Phases 18-19 had VERIFICATION.md with formal verification — process discipline maintained for early phases
+- UAT process for phases 20-22 caught real bugs (Supabase migration errors, cross-year recurring scope)
+- Feature requests during UAT were handled in-flight without disrupting the flow
+- Zero new dependencies across all 5 phases — everything built with existing stack
+- Research assessment (HIGH confidence, zero new packages) was accurate
+- Bonus features (carry-forward override, bulk delete) added organically during UAT without plan overhead
+
+### What Was Inefficient
+- VERIFICATION.md not created for phases 20-22 — relied on UAT instead (acceptable but inconsistent)
+- Supabase migration needed 3 iterations: calendar_id uuid→text, auth.uid() cast, missing table catch
+- REQUIREMENTS.md traceability never updated for BUD-01–04 (still "Pending" at audit time)
+- SUMMARY frontmatter requirements-completed empty for phases 20-22
+- Initial milestone audit showed gaps_found (7/11) due to missing formal verification — had to re-audit after UAT
+
+### Patterns Established
+- `|tojson` pattern for Jinja2→JS i18n: pre-render translations into JS variables, never use inline `{{ t('...') }}` in JS strings
+- `SupabaseStoreError` catch pattern: graceful degradation when table doesn't exist yet
+- `CarryForwardRepository` pattern: standalone repo with get/upsert/delete for override data
+- `neq` operator in InMemoryStore for test fixtures
+- Client-side TSV parsing for bulk import (no file upload needed)
+
+### Key Lessons
+1. Supabase column types must match exactly — `uuid` vs `text` for calendar_id caused migration failures
+2. RLS policies with `auth.uid()` need `::text` cast when comparing against varchar columns
+3. UAT is sufficient verification for UI-heavy phases — but keep doing VERIFICATION.md for backend/logic phases
+4. Jinja2 escaped quotes in JS strings cause `TemplateSyntaxError` — always use the `|tojson` pre-render pattern
+5. Feature additions during UAT are fine when quick — they validate real user needs faster than planning cycles
+
+### Cost Observations
+- 5 phases completed in 2 days (2026-03-20 → 2026-03-21)
+- 33 commits, 32 files changed, 1,847 insertions
+- Notable: Phases 18-19 executed in ~3 min each; phases 20-22 took longer due to UAT-driven bug fixes and feature additions
 
 **Shipped:** 2026-03-20
 **Phases:** 2 | **Plans:** 4
@@ -98,6 +145,7 @@
 | v1.1 | 4 | 10 | Faster execution, but verification discipline slipped for 3/4 phases |
 | v2.0 (12-15) | 4 | 10 | Budget feature module — clean execution, full test coverage |
 | v2.0 (16-17) | 2 | 4 | Small scope, but stale verification artifacts caused significant audit overhead |
+| v2.1 | 5 | 7 | UAT-driven verification for UI phases, bonus features added in-flight during UAT |
 
 ### Cumulative Quality
 
@@ -107,6 +155,7 @@
 | v1.1 | 145 | Locale integration, Polish NLP, day-click, reminder sync |
 | v2.0 (12-15) | 214 | Budget settings, income, expenses, year overview |
 | v2.0 (16-17) | 230 | Month detail CRUD, CDN removal, pooling, cache headers |
+| v2.1 | 267 | Privacy, reminders, multi-year budget, YoY comparison, historical import |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -114,3 +163,5 @@
 2. Keep planning metadata current during execution, not as retroactive cleanup
 3. Never trust retroactively-generated VERIFICATION.md — always cross-reference with actual tests and code
 4. Stale/fabricated process artifacts are worse than missing ones — they create false confidence
+5. UAT is a valid alternative to VERIFICATION.md for UI-heavy phases — use both when appropriate
+6. Jinja2 `|tojson` pattern prevents JS i18n errors — always pre-render, never inline template tags in JS strings

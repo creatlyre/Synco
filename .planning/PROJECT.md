@@ -10,14 +10,17 @@ A shared calendar both partners can edit that stays in sync with Google Calendar
 
 ## Current State
 
-- v2.0 shipped on 2026-03-20.
+- v2.1 shipped on 2026-03-21.
+- Event privacy: visibility toggle, lock icons, partner filtering, sync retraction to Google Calendar.
+- Reminder UI: chip-based multi-reminder form with toggle, add/remove (up to 5), edit prefill, GCal sync.
+- Multi-year budget: year navigation with carry-forward balance, manual override, year bounds.
+- Year-over-year comparison: side-by-side annual totals with color-coded delta arrows.
+- Historical import: TSV paste for past-year income hours/rates, one-time & recurring expenses.
 - Full household budget tracker: income calculation from 3 hourly rates, expense management, 12-month year overview with running balance.
-- Accordion month detail in year overview with inline CRUD for one-time expenses.
-- Performance optimized: prebuilt Tailwind CSS (34KB, no CDN), httpx connection pooling, Cache-Control headers on static assets.
 - Full Polish/English localization with language switcher, persisted preference, and locale-aware NLP/OCR parsing.
-- 230 tests passing across auth, events, calendar, NLP, sync, budget, and performance.
-- ~8,900 LOC across Python, HTML templates, and JSON locale files.
-- Planning artifacts for v1.0, v1.1 archived under `.planning/milestones/`.
+- 267 tests passing across auth, events, calendar, NLP, sync, budget, and performance.
+- ~13,475 LOC across Python, HTML templates, and JSON locale files.
+- Planning artifacts for v1.0, v1.1, v2.0, v2.1 archived under `.planning/milestones/`.
 
 ## Requirements
 
@@ -47,14 +50,18 @@ A shared calendar both partners can edit that stays in sync with Google Calendar
 - ✓ httpx connection pooling in SupabaseStore — v2.0
 - ✓ Cache-Control headers on static assets (7-day cache) — v2.0
 
+- ✓ Event visibility toggle — private events hidden from partner entirely — v2.1
+- ✓ Reminder UI in event forms — toggle with editable defaults, chip-based add/remove, GCal sync — v2.1
+- ✓ Multi-year budget browsing — year navigation with carry-forward balance — v2.1
+- ✓ Year-over-year summary comparison — income, expenses, balance totals side-by-side — v2.1
+- ✓ Historical year import — TSV paste for past-year data (income hours, expenses) — v2.1
+
 ### Active
 
-(No active requirements — next milestone not yet defined)
+(None — planning next milestone)
 
 ### Out of Scope additions from v2.0/v3.0
 
-- Multi-year budget tracking — current year only
-- Excel import for past budget data — optional convenience
 - Budget-to-calendar event integration — independent features
 
 ### Out of Scope
@@ -62,10 +69,7 @@ A shared calendar both partners can edit that stays in sync with Google Calendar
 - More than two concurrent users / team calendars — focus on household pair first
 - Native mobile app — Google Calendar on phone handles mobile access via sync
 - Full two-way Google Calendar sync as v1 — export/push covers the core need
-- Event visibility controls (private vs shared) — deferred to next milestone
-- Reminder UI in quick-entry form — backend ready, UI deferred
-- Multi-year budget tracking — current year only for v2.0
-- Excel data import for past months — optional, not required for v2.0
+
 - Two-way sync between budget and calendar events
 
 ## Context
@@ -105,6 +109,11 @@ A shared calendar both partners can edit that stays in sync with Google Calendar
 | Prebuilt CSS over CDN | Eliminate runtime dependency, reduce payload 10x | ✓ Shipped v2.0 |
 | Singleton httpx client | Reduce connection overhead across requests | ✓ Shipped v2.0 |
 | Cache-Control on static assets | Faster repeat page loads | ✓ Shipped v2.0 |
+| Lock emoji as sole privacy indicator | Simple, no background color change needed | ✓ Shipped v2.1 |
+| Chip-based reminder UI with max 5 | Intuitive add/remove UX, reasonable limit | ✓ Shipped v2.1 |
+| Carry-forward balance computation | Prior year ending balance → next year starting balance | ✓ Shipped v2.1 |
+| Unicode arrows for YoY deltas | No icon library dependency | ✓ Shipped v2.1 |
+| TSV paste for historical import | Simple, no file upload needed | ✓ Shipped v2.1 |
 
 ---
-*Last updated: 2026-03-20 after v2.0 milestone completion*
+*Last updated: 2026-03-21 after v2.1 milestone completion*
