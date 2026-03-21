@@ -100,3 +100,46 @@ No gaps found. All 10 observable truths verified against the codebase. All 6 art
 
 _Verified: 2026-03-20_
 _Verifier: Claude (gsd-verifier)_
+
+## Validation Audit 2026-03-21
+
+### Test Infrastructure
+
+| Framework | Config | Command |
+|-----------|--------|---------|
+| pytest | pyproject.toml | `python -m pytest tests/ -v` |
+
+### Per-Task Automated Test Map
+
+| Task | Requirement | Test File | Test Function | Status |
+|------|------------|-----------|---------------|--------|
+| Task 1+2 | REM-01 | tests/test_events_api.py | `test_create_event_with_reminder_list` | COVERED |
+| Task 1+2 | REM-01 | tests/test_events_api.py | `test_update_event_reminder_list` | COVERED |
+| Task 1+2 | REM-02 | tests/test_events_api.py | `test_reminder_list_rejects_negative_value` | COVERED |
+| Task 1+2 | REM-02 | tests/test_events_api.py | `test_reminder_list_rejects_over_max_value` | COVERED |
+| Task 1 | REM-01/02/03 | tests/test_calendar_views.py | `test_reminder_i18n_keys_complete_in_both_locales` | COVERED |
+| Task 1+2 | REM-01 | tests/test_calendar_views.py | `test_reminder_ui_elements_in_event_entry_modal` | COVERED |
+| — | REM-01 | tests/test_sync_api.py | `test_event_body_defaults_to_google_default_reminders` | COVERED (pre-existing) |
+| — | REM-01 | tests/test_sync_api.py | `test_event_body_single_reminder_backward_compat` | COVERED (pre-existing) |
+| — | REM-02 | tests/test_sync_api.py | `test_event_body_multiple_reminders` | COVERED (pre-existing) |
+| — | REM-01 | tests/test_sync_integration.py | `test_day_click_entry_syncs_to_google_with_reminders` | COVERED (pre-existing) |
+
+### Manual-Only Items
+
+| # | Item | Reason |
+|---|------|--------|
+| 1 | Visual chip rendering (CSS styling) | Requires browser |
+| 2 | Add/remove click flow (DOM interaction) | Requires browser |
+| 3 | Edit prefill round-trip | Requires live server + browser |
+| 4 | Google Calendar sync verification | Requires external service |
+
+### Audit Metrics
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 5 |
+| Resolved (automated) | 5 |
+| Escalated (manual-only) | 0 |
+| Total automated tests | 10 (6 new + 4 pre-existing) |
+| All tests passing | 243/244 (1 pre-existing failure unrelated) |
+| Nyquist compliant | Yes |
