@@ -33,6 +33,24 @@ async def overview_page(
     return response
 
 
+@router.get("/stats", response_class=HTMLResponse)
+async def stats_page(
+    request: Request,
+    user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    context = inject_template_i18n(
+        request,
+        {
+            "request": request,
+            "user": user,
+        },
+    )
+    response = templates.TemplateResponse("budget_stats.html", context)
+    set_locale_cookie_if_param(response, request)
+    return response
+
+
 @router.get("/import", response_class=HTMLResponse)
 async def import_page(
     request: Request,
