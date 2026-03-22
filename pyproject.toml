@@ -1,11 +1,11 @@
 [project]
-name = "calendarplanner"
+name = "synco"
 version = "1.0.0"
-description = "Shared household calendar with Google Calendar sync"
+description = "Shared household calendar & budget planner with Google Calendar sync"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
-  { name = "CalendarPlanner" }
+  { name = "Synco" }
 ]
 
 dependencies = []

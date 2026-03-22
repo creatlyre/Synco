@@ -91,7 +91,7 @@ class GoogleSyncService:
     @staticmethod
     def _sync_calendar_name(user: User) -> str:
         suffix = user.email.split("@")[0] if user.email else user.id[:8]
-        return f"CalendarPlanner Sync ({suffix})"
+        return f"Synco Sync ({suffix})"
 
     def _google_service(self, creds: Credentials):
         return build("calendar", "v3", credentials=creds, cache_discovery=False)

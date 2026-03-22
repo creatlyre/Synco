@@ -1,10 +1,10 @@
-# CalendarPlanner
+# Synco
 
-Shared household calendar for two users with Google sign-in, shared events, recurrence, Google Calendar sync, natural-language quick add, and OCR-assisted event extraction.
+Shared household calendar & budget planner for two users with Google sign-in, shared events, recurrence, Google Calendar sync, natural-language quick add, and OCR-assisted event extraction.
 
 ## Why This Project
 
-CalendarPlanner is designed for a couple/household that wants one shared source of scheduling truth while still receiving reminders on phones through Google Calendar.
+Synco is designed for a couple/household that wants one shared source of scheduling truth while still receiving reminders on phones through Google Calendar.
 
 ## Current Status
 

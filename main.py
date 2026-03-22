@@ -27,8 +27,8 @@ from app.users.routes import router as users_router
 from app.views.calendar_routes import router as calendar_router
 
 app = FastAPI(
-    title="CalendarPlanner",
-    description="Shared household calendar with Google Calendar sync",
+    title="Synco",
+    description="Shared household calendar & budget planner with Google Calendar sync",
     version="1.0.0",
     debug=os.getenv("DEBUG", "false").lower() == "true",
 )

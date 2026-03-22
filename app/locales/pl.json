@@ -1,7 +1,7 @@
 {
-  "app.name": "CalendarPlanner",
-  "app.calendar_title": "Kalendarz - CalendarPlanner",
-  "app.invite_title": "Zaproszenie - CalendarPlanner",
+  "app.name": "Synco",
+  "app.calendar_title": "Kalendarz - Synco",
+  "app.invite_title": "Zaproszenie - Synco",
   "nav.logout": "Wyloguj",
   "calendar.title": "Kalendarz",
   "calendar.loading_calendar": "Ładowanie kalendarza...",
