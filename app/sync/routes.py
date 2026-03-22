@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query
+from fastapi.concurrency import run_in_threadpool
 
 from app.auth.dependencies import get_current_user
 from app.database.database import get_db
@@ -16,7 +17,7 @@ async def export_month(
     db=Depends(get_db),
 ):
     service = GoogleSyncService(db)
-    result = service.export_month(user, year, month)
+    result = await run_in_threadpool(service.export_month, user, year, month)
     return {
         "users_synced": result.users_synced,
         "events_synced": result.events_synced,
@@ -32,7 +33,7 @@ async def import_month(
     db=Depends(get_db),
 ):
     service = GoogleSyncService(db)
-    result = service.import_month(user, year, month)
+    result = await run_in_threadpool(service.import_month, user, year, month)
     requires_reauth = any(
         "insufficientPermissions" in err or "insufficient authentication scopes" in err.lower()
         for err in result.errors

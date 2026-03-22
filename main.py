@@ -74,8 +74,7 @@ async def root(request: Request, user=Depends(get_current_user)):
         },
     )
     response = templates.TemplateResponse(
-        "calendar.html",
-        context,
+        request=request, name="calendar.html", context=context
     )
     set_locale_cookie_if_param(response, request)
     return response
@@ -91,8 +90,7 @@ async def invite_page(request: Request, user=Depends(get_current_user)):
         },
     )
     response = templates.TemplateResponse(
-        "invite.html",
-        context,
+        request=request, name="invite.html", context=context
     )
     set_locale_cookie_if_param(response, request)
     return response
