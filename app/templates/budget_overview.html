@@ -24,6 +24,9 @@
         <div class="px-4 py-3 text-sm font-medium rounded-xl nav-active min-h-[44px] flex items-center" aria-current="page">
           {{ t('budget.sidebar_overview') }}
         </div>
+        <a href="/budget/stats" class="px-4 py-3 text-sm font-medium rounded-xl block hover:bg-white/5 transition-colors min-h-[44px] flex items-center">
+          {{ t('budget.sidebar_stats') }}
+        </a>
         <a href="/budget/import" class="px-4 py-3 text-sm font-medium rounded-xl block hover:bg-white/5 transition-colors min-h-[44px] flex items-center">
           {{ t('budget.sidebar_import') }}
         </a>
@@ -67,24 +70,6 @@
       <!-- Carry-forward / Initial balance display -->
       <div id="carry-forward-line" class="text-xs opacity-60 text-center mb-3">
         {{ t('budget.overview_initial_balance') }}: <span id="initial-balance" class="font-medium">0.00</span> {{ t('budget.currency') }}
-      </div>
-
-      <!-- YoY Comparison Card -->
-      <div id="yoy-comparison" class="hidden glass rounded-xl p-4 mb-4">
-        <h3 class="text-sm font-semibold mb-3 text-center">{{ t('budget.yoy_title') }}</h3>
-        <div class="table-responsive">
-          <table class="w-full text-sm" id="yoy-table">
-            <thead>
-              <tr class="text-xs opacity-70 border-b border-white/10">
-                <th class="text-left py-2 px-2 font-medium">{{ t('budget.yoy_category') }}</th>
-                <th class="text-right py-2 px-2 font-medium" id="yoy-selected-label">{{ t('budget.yoy_selected') }}</th>
-                <th class="text-right py-2 px-2 font-medium" id="yoy-previous-label">{{ t('budget.yoy_previous') }}</th>
-                <th class="text-right py-2 px-2 font-medium">{{ t('budget.yoy_delta') }}</th>
-              </tr>
-            </thead>
-            <tbody id="yoy-body"></tbody>
-          </table>
-        </div>
       </div>
 
       <!-- Overview table -->
@@ -144,14 +129,6 @@
   const carryForwardEditTitle = {{ t('budget.overview_carry_forward_edit')|tojson }};
   const carryForwardPromptText = {{ t('budget.overview_carry_forward_prompt')|tojson }};
   const manualOverrideLabel = {{ t('budget.overview_manual_override')|tojson }};
-  const yoyLabels = {
-    total_net: {{ t('budget.yoy_net_income')|tojson }},
-    total_additional: {{ t('budget.yoy_additional')|tojson }},
-    total_recurring: {{ t('budget.yoy_recurring_exp')|tojson }},
-    total_onetime: {{ t('budget.yoy_onetime_exp')|tojson }},
-    total_balance: {{ t('budget.yoy_total_balance')|tojson }},
-    final_account_balance: {{ t('budget.yoy_final_balance')|tojson }}
-  };
 
   let currentYear = new Date().getFullYear();
   let expandedMonth = null;
@@ -282,44 +259,6 @@
         </div>
       </div>
     </div>`;
-  }
-
-  async function loadComparison() {
-    try {
-      const res = await fetch('/api/budget/overview/comparison?year=' + currentYear);
-      const json = await res.json();
-      renderComparison(json.data);
-    } catch(e) {
-      document.getElementById('yoy-comparison').classList.add('hidden');
-    }
-  }
-
-  function renderComparison(data) {
-    const card = document.getElementById('yoy-comparison');
-    const tbody = document.getElementById('yoy-body');
-    document.getElementById('yoy-selected-label').textContent = data.selected_year;
-    document.getElementById('yoy-previous-label').textContent = data.previous_year;
-
-    const keys = ['total_net', 'total_additional', 'total_recurring', 'total_onetime', 'total_balance', 'final_account_balance'];
-
-    tbody.innerHTML = keys.map(function(key) {
-      const sel = data.selected[key];
-      const prev = data.previous[key];
-      const delta = data.delta[key];
-      const isExpenseRow = key === 'total_recurring' || key === 'total_onetime';
-      const isPositive = isExpenseRow ? delta <= 0 : delta >= 0;
-      const arrow = delta > 0 ? '\u25B2' : delta < 0 ? '\u25BC' : '\u2014';
-      const deltaColor = delta === 0 ? '' : (isPositive ? 'color:#4ade80;' : 'color:#f87171;');
-
-      return '<tr class="border-b border-white/5">' +
-        '<td class="py-1.5 px-2 font-medium">' + yoyLabels[key] + '</td>' +
-        '<td class="py-1.5 px-2 text-right">' + fmt(sel) + '</td>' +
-        '<td class="py-1.5 px-2 text-right">' + fmt(prev) + '</td>' +
-        '<td class="py-1.5 px-2 text-right font-medium" style="' + deltaColor + '">' + arrow + ' ' + fmt(Math.abs(delta)) + '</td>' +
-        '</tr>';
-    }).join('');
-
-    card.classList.remove('hidden');
   }
 
   function render(data) {
@@ -545,7 +484,6 @@
     const data = await loadOverview();
     render(data);
     updateYearNav();
-    loadComparison();
   }
 
   async function init() {
@@ -562,7 +500,6 @@
       document.getElementById('overview-content').classList.remove('hidden');
       render(data);
       updateYearNav();
-      loadComparison();
     } catch(e) {
       console.error('Failed to load overview', e);
       document.getElementById('skeleton-loader').classList.add('hidden');

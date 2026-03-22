@@ -15,11 +15,12 @@ class CarryForwardRepository:
     def __init__(self, db: SupabaseStore):
         self.db = db
 
-    def get(self, calendar_id: str, year: int) -> CarryForwardOverride | None:
+    def get(self, calendar_id: str, year: int, auth_token: str | None = None) -> CarryForwardOverride | None:
         try:
             rows = self.db.select(
                 "carry_forward_overrides",
                 {"calendar_id": f"eq.{calendar_id}", "year": f"eq.{year}", "limit": "1"},
+                auth_token=auth_token,
             )
         except SupabaseStoreError:
             return None
@@ -33,13 +34,14 @@ class CarryForwardRepository:
             amount=float(r.get("amount", 0)),
         )
 
-    def upsert(self, calendar_id: str, year: int, amount: float) -> CarryForwardOverride:
-        existing = self.get(calendar_id, year)
+    def upsert(self, calendar_id: str, year: int, amount: float, auth_token: str | None = None) -> CarryForwardOverride:
+        existing = self.get(calendar_id, year, auth_token=auth_token)
         if existing:
             row = self.db.update(
                 "carry_forward_overrides",
                 {"id": f"eq.{existing.id}"},
                 {"amount": amount, "updated_at": datetime.now(timezone.utc).isoformat()},
+                auth_token=auth_token,
             )
             if row:
                 existing.amount = amount
@@ -47,6 +49,7 @@ class CarryForwardRepository:
         row = self.db.insert(
             "carry_forward_overrides",
             {"calendar_id": calendar_id, "year": year, "amount": amount},
+            auth_token=auth_token,
         )
         return CarryForwardOverride(
             id=row.get("id", ""),
@@ -55,10 +58,11 @@ class CarryForwardRepository:
             amount=amount,
         )
 
-    def delete(self, calendar_id: str, year: int) -> bool:
+    def delete(self, calendar_id: str, year: int, auth_token: str | None = None) -> bool:
         return self.db.delete(
             "carry_forward_overrides",
             {"calendar_id": f"eq.{calendar_id}", "year": f"eq.{year}"},
+            auth_token=auth_token,
         ) > 0
 
 
@@ -104,10 +108,10 @@ class OverviewService:
             return True
         return False
 
-    def _compute_carry_forward(self, calendar_id: str, year: int, settings) -> dict:
+    def _compute_carry_forward(self, calendar_id: str, year: int, settings, auth_token: str | None = None) -> dict:
         # Check for manual override first
         if self.carry_forward_repo:
-            override = self.carry_forward_repo.get(calendar_id, year)
+            override = self.carry_forward_repo.get(calendar_id, year, auth_token=auth_token)
             if override:
                 return {"type": "override", "amount": round(override.amount, 2), "source_year": year - 1}
 
@@ -122,11 +126,11 @@ class OverviewService:
         if not prior_has_data:
             return {"type": "no_prior_data", "amount": 0, "source_year": prior_year}
 
-        prior_overview = self.get_year_overview(calendar_id, prior_year)
+        prior_overview = self.get_year_overview(calendar_id, prior_year, auth_token=auth_token)
         dec_balance = prior_overview["months"][11]["account_balance"]
         return {"type": "carry_forward", "amount": round(dec_balance, 2), "source_year": prior_year}
 
-    def get_year_overview(self, calendar_id: str, year: int) -> dict:
+    def get_year_overview(self, calendar_id: str, year: int, auth_token: str | None = None) -> dict:
         settings = self.settings_repo.get_by_calendar(calendar_id)
         hours_list = self.hours_repo.get_by_calendar_year(calendar_id, year)
         earnings_list = self.earnings_repo.get_by_calendar_year(calendar_id, year)
@@ -138,7 +142,7 @@ class OverviewService:
         zus = settings.zus_costs if settings else 0
         acc = settings.accounting_costs if settings else 0
 
-        carry_forward = self._compute_carry_forward(calendar_id, year, settings)
+        carry_forward = self._compute_carry_forward(calendar_id, year, settings, auth_token=auth_token)
         effective_initial = carry_forward["amount"]
 
         hours_by_month = {h.month: h for h in hours_list}
@@ -199,9 +203,9 @@ class OverviewService:
             "months": months,
         }
 
-    def get_year_comparison(self, calendar_id: str, year: int) -> dict:
-        selected = self.get_year_overview(calendar_id, year)
-        previous = self.get_year_overview(calendar_id, year - 1)
+    def get_year_comparison(self, calendar_id: str, year: int, auth_token: str | None = None) -> dict:
+        selected = self.get_year_overview(calendar_id, year, auth_token=auth_token)
+        previous = self.get_year_overview(calendar_id, year - 1, auth_token=auth_token)
 
         def _sum_totals(data: dict) -> dict:
             months = data["months"]

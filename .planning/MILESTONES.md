@@ -1,6 +1,6 @@
 # Milestones
 
-## v2.1 Privacy, Reminders & Multi-Year Budget (Shipped: 2026-03-21)
+## v2.1 Privacy, Reminders & Multi-Year Budget (Shipped: 2026-03-22)
 
 **Phases completed:** 5 phases (18-22), 7 plans
 
@@ -11,13 +11,13 @@
 - Multi-year budget: year navigation with carry-forward balance computation, year bounds detection, manual carry-forward override
 - Year-over-year comparison: side-by-side annual totals (income, expenses, balance) with color-coded delta arrows
 - Historical year import: TSV paste interface for past-year income hours/rates, one-time & recurring expenses
-- 267 tests passing across all subsystems
+- 270 tests passing across all subsystems
 
 **Stats:**
 
-- 32 files changed, 1,847 insertions, 90 deletions
+- 45 files changed, 4,053 insertions, 104 deletions
 - Timeline: 2026-03-20 → 2026-03-21 (2 days)
-- 33 commits
+- 34 commits
 
 **Git range:** v2.0 → v2.1
 

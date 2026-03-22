@@ -4,18 +4,18 @@
 
 ## Milestone: v2.1 — Privacy, Reminders & Multi-Year Budget
 
-**Shipped:** 2026-03-21
+**Shipped:** 2026-03-22
 **Phases:** 5 | **Plans:** 7
 
 ### What Was Built
 - Event privacy: visibility toggle, lock icons, partner filtering across all views, sync retraction to Google Calendar
 - Reminder UI: chip-based multi-reminder form with toggle, add/remove (up to 5), edit prefill, GCal sync
 - Multi-year budget: year navigation with carry-forward balance computation, year bounds, manual override
-- Year-over-year comparison: side-by-side annual totals with color-coded delta arrows (green=improvement, red=decline)
+- Year-over-year comparison: dedicated stats dashboard with side-by-side annual totals, color-coded delta arrows (green=improvement, red=decline)
 - Historical year import: TSV paste for past-year income hours/rates, one-time & recurring expenses
 - Carry-forward manual override feature (added during UAT)
 - Year-scoped recurring expenses + bulk delete (added during UAT)
-- 37 new tests, 267 total passing
+- 40 new tests, 270 total passing
 
 ### What Worked
 - Phases 18-19 had VERIFICATION.md with formal verification — process discipline maintained for early phases
@@ -47,8 +47,8 @@
 5. Feature additions during UAT are fine when quick — they validate real user needs faster than planning cycles
 
 ### Cost Observations
-- 5 phases completed in 2 days (2026-03-20 → 2026-03-21)
-- 33 commits, 32 files changed, 1,847 insertions
+- 5 phases completed in 2 days (2026-03-20 → 2026-03-22)
+- 34 commits, 45 files changed, 4,053 insertions
 - Notable: Phases 18-19 executed in ~3 min each; phases 20-22 took longer due to UAT-driven bug fixes and feature additions
 
 **Shipped:** 2026-03-20
@@ -145,7 +145,7 @@
 | v1.1 | 4 | 10 | Faster execution, but verification discipline slipped for 3/4 phases |
 | v2.0 (12-15) | 4 | 10 | Budget feature module — clean execution, full test coverage |
 | v2.0 (16-17) | 2 | 4 | Small scope, but stale verification artifacts caused significant audit overhead |
-| v2.1 | 5 | 7 | UAT-driven verification for UI phases, bonus features added in-flight during UAT |
+| v2.1 | 5 | 7 | UAT-driven verification for UI phases, bonus features added in-flight during UAT, dedicated stats dashboard |
 
 ### Cumulative Quality
 
@@ -155,7 +155,7 @@
 | v1.1 | 145 | Locale integration, Polish NLP, day-click, reminder sync |
 | v2.0 (12-15) | 214 | Budget settings, income, expenses, year overview |
 | v2.0 (16-17) | 230 | Month detail CRUD, CDN removal, pooling, cache headers |
-| v2.1 | 267 | Privacy, reminders, multi-year budget, YoY comparison, historical import |
+| v2.1 | 270 | Privacy, reminders, multi-year budget, YoY stats dashboard, historical import |
 
 ### Top Lessons (Verified Across Milestones)
 

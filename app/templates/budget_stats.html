@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('budget.stats_page_title') }} - {{ t('app.name') }}{% endblock %}
+
+{% block page_heading %}{{ t('budget.stats_page_title') }}{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-6">
+
+  <!-- Sidebar -->
+  <nav class="w-full lg:w-48 flex-shrink-0">
+    <div class="glass rounded-2xl p-4">
+      <div class="flex lg:flex-col gap-2">
+        <a href="/budget/settings" class="px-4 py-3 text-sm font-medium rounded-xl block hover:bg-white/5 transition-colors min-h-[44px] flex items-center">
+          {{ t('budget.sidebar_settings') }}
+        </a>
+        <a href="/budget/income" class="px-4 py-3 text-sm font-medium rounded-xl block hover:bg-white/5 transition-colors min-h-[44px] flex items-center">
+          {{ t('budget.sidebar_income') }}
+        </a>
+        <a href="/budget/expenses" class="px-4 py-3 text-sm font-medium rounded-xl block hover:bg-white/5 transition-colors min-h-[44px] flex items-center">
+          {{ t('budget.sidebar_expenses') }}
+        </a>
+        <a href="/budget/overview" class="px-4 py-3 text-sm font-medium rounded-xl block hover:bg-white/5 transition-colors min-h-[44px] flex items-center">
+          {{ t('budget.sidebar_overview') }}
+        </a>
+        <!-- Active: Stats -->
+        <div class="px-4 py-3 text-sm font-medium rounded-xl nav-active min-h-[44px] flex items-center" aria-current="page">
+          {{ t('budget.sidebar_stats') }}
+        </div>
+        <a href="/budget/import" class="px-4 py-3 text-sm font-medium rounded-xl block hover:bg-white/5 transition-colors min-h-[44px] flex items-center">
+          {{ t('budget.sidebar_import') }}
+        </a>
+        <a href="/" class="glass-btn-secondary rounded-xl px-4 py-3 text-sm font-medium block text-center lg:mt-4">
+          {{ t('budget.back') }}
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <div class="flex-1 overflow-x-auto">
+    <!-- No settings warning -->
+    <div id="no-settings" class="hidden glass rounded-2xl p-6 mb-6 text-center">
+      <h3 class="text-section-title mb-2"><span aria-hidden="true">⚠</span></h3>
+      <p class="text-sm opacity-70">{{ t('budget.overview_no_settings') }}</p>
+      <a href="/budget/settings" class="glass-btn-primary rounded-xl px-4 py-2 mt-4 inline-block text-sm">{{ t('budget.sidebar_settings') }}</a>
+    </div>
+
+    <!-- Loading skeleton -->
+    <div id="skeleton-loader">
+      <div class="glass rounded-2xl p-6">
+        <div class="animate-pulse bg-white/5 h-8 w-48 rounded mb-4 mx-auto"></div>
+        <div class="space-y-2">
+          {% for i in range(6) %}
+          <div class="animate-pulse bg-white/5 h-8 rounded"></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats content -->
+    <div id="stats-content" class="hidden stagger-children">
+      <!-- Year picker -->
+      <div class="flex items-center justify-center gap-4 mb-6">
+        <button id="year-prev" class="glass-btn-secondary rounded-xl px-4 py-2.5 text-sm font-medium min-h-[44px] min-w-[44px]" aria-label="Previous year">←</button>
+        <span id="year-display" class="text-xl font-bold"></span>
+        <button id="year-next" class="glass-btn-secondary rounded-xl px-4 py-2.5 text-sm font-medium min-h-[44px] min-w-[44px]" aria-label="Next year">→</button>
+      </div>
+
+      <!-- Yearly Totals Summary Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-6" id="summary-cards">
+        <div class="glass rounded-xl p-4 text-center">
+          <div class="text-xs opacity-60 mb-1">{{ t('budget.stats_total_income') }}</div>
+          <div class="text-lg font-bold" id="card-income">0.00</div>
+        </div>
+        <div class="glass rounded-xl p-4 text-center">
+          <div class="text-xs opacity-60 mb-1">{{ t('budget.stats_total_additional') }}</div>
+          <div class="text-lg font-bold" id="card-additional">0.00</div>
+        </div>
+        <div class="glass rounded-xl p-4 text-center">
+          <div class="text-xs opacity-60 mb-1">{{ t('budget.stats_total_recurring') }}</div>
+          <div class="text-lg font-bold" id="card-recurring">0.00</div>
+        </div>
+        <div class="glass rounded-xl p-4 text-center">
+          <div class="text-xs opacity-60 mb-1">{{ t('budget.stats_total_onetime') }}</div>
+          <div class="text-lg font-bold" id="card-onetime">0.00</div>
+        </div>
+        <div class="glass rounded-xl p-4 text-center">
+          <div class="text-xs opacity-60 mb-1">{{ t('budget.stats_net_balance') }}</div>
+          <div class="text-lg font-bold" id="card-balance">0.00</div>
+        </div>
+        <div class="glass rounded-xl p-4 text-center">
+          <div class="text-xs opacity-60 mb-1">{{ t('budget.stats_final_balance') }}</div>
+          <div class="text-lg font-bold" id="card-account">0.00</div>
+        </div>
+      </div>
+
+      <!-- Monthly Breakdown Chart (bar-like visualization) -->
+      <div class="glass rounded-xl p-4 mb-6">
+        <h3 class="text-sm font-semibold mb-4 text-center">{{ t('budget.stats_monthly_chart') }}</h3>
+        <div id="monthly-bars" class="space-y-2"></div>
+      </div>
+
+      <!-- YoY Comparison Card -->
+      <div id="yoy-comparison" class="hidden glass rounded-xl p-4 mb-6">
+        <h3 class="text-sm font-semibold mb-3 text-center">{{ t('budget.yoy_title') }}</h3>
+        <div class="table-responsive">
+          <table class="w-full text-sm" id="yoy-table">
+            <thead>
+              <tr class="text-xs opacity-70 border-b border-white/10">
+                <th class="text-left py-2 px-2 font-medium">{{ t('budget.yoy_category') }}</th>
+                <th class="text-right py-2 px-2 font-medium" id="yoy-selected-label">{{ t('budget.yoy_selected') }}</th>
+                <th class="text-right py-2 px-2 font-medium" id="yoy-previous-label">{{ t('budget.yoy_previous') }}</th>
+                <th class="text-right py-2 px-2 font-medium">{{ t('budget.yoy_delta') }}</th>
+              </tr>
+            </thead>
+            <tbody id="yoy-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Best / Worst Months -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="glass rounded-xl p-4">
+          <h3 class="text-sm font-semibold mb-3 text-center" style="color: #4ade80;">{{ t('budget.stats_best_month') }}</h3>
+          <div id="best-month" class="text-center">
+            <div class="text-2xl font-bold" id="best-month-name">-</div>
+            <div class="text-sm opacity-70" id="best-month-value">0.00</div>
+          </div>
+        </div>
+        <div class="glass rounded-xl p-4">
+          <h3 class="text-sm font-semibold mb-3 text-center" style="color: #f87171;">{{ t('budget.stats_worst_month') }}</h3>
+          <div id="worst-month" class="text-center">
+            <div class="text-2xl font-bold" id="worst-month-name">-</div>
+            <div class="text-sm opacity-70" id="worst-month-value">0.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const monthNames = [
+    '{{ t("budget.income_month_jan") }}', '{{ t("budget.income_month_feb") }}',
+    '{{ t("budget.income_month_mar") }}', '{{ t("budget.income_month_apr") }}',
+    '{{ t("budget.income_month_may") }}', '{{ t("budget.income_month_jun") }}',
+    '{{ t("budget.income_month_jul") }}', '{{ t("budget.income_month_aug") }}',
+    '{{ t("budget.income_month_sep") }}', '{{ t("budget.income_month_oct") }}',
+    '{{ t("budget.income_month_nov") }}', '{{ t("budget.income_month_dec") }}'
+  ];
+
+  const currency = '{{ t("budget.currency") }}';
+  const yoyLabels = {
+    total_net: {{ t('budget.yoy_net_income')|tojson }},
+    total_additional: {{ t('budget.yoy_additional')|tojson }},
+    total_recurring: {{ t('budget.yoy_recurring_exp')|tojson }},
+    total_onetime: {{ t('budget.yoy_onetime_exp')|tojson }},
+    total_balance: {{ t('budget.yoy_total_balance')|tojson }},
+    final_account_balance: {{ t('budget.yoy_final_balance')|tojson }}
+  };
+
+  let currentYear = new Date().getFullYear();
+  let yearBounds = null;
+
+  function fmt(n) {
+    const s = Math.abs(n).toFixed(2);
+    const parts = s.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return (n < 0 ? '-' : '') + parts.join('.');
+  }
+
+  function fmtSigned(n) {
+    const prefix = n > 0 ? '+' : '';
+    return prefix + fmt(n);
+  }
+
+  function colorClass(val) {
+    if (val > 0) return 'color: #4ade80;';
+    if (val < 0) return 'color: #f87171;';
+    return '';
+  }
+
+  async function loadSettings() {
+    const res = await fetch('/api/budget/settings');
+    const json = await res.json();
+    return json.data;
+  }
+
+  async function loadOverview() {
+    const res = await fetch('/api/budget/overview?year=' + currentYear);
+    const json = await res.json();
+    yearBounds = json.year_bounds || null;
+    return json.data;
+  }
+
+  async function loadComparison() {
+    try {
+      const res = await fetch('/api/budget/overview/comparison?year=' + currentYear);
+      const json = await res.json();
+      return json.data;
+    } catch(e) {
+      return null;
+    }
+  }
+
+  function updateYearNav() {
+    const prevBtn = document.getElementById('year-prev');
+    const nextBtn = document.getElementById('year-next');
+    if (yearBounds) {
+      prevBtn.disabled = currentYear <= yearBounds.min_year;
+      nextBtn.disabled = currentYear >= yearBounds.max_year;
+      prevBtn.style.opacity = prevBtn.disabled ? '0.3' : '';
+      prevBtn.style.cursor = prevBtn.disabled ? 'not-allowed' : '';
+      prevBtn.style.pointerEvents = prevBtn.disabled ? 'none' : '';
+      nextBtn.style.opacity = nextBtn.disabled ? '0.3' : '';
+      nextBtn.style.cursor = nextBtn.disabled ? 'not-allowed' : '';
+      nextBtn.style.pointerEvents = nextBtn.disabled ? 'none' : '';
+    }
+  }
+
+  function renderSummaryCards(months) {
+    let totNet = 0, totAdd = 0, totRec = 0, totOt = 0, totBal = 0;
+    months.forEach(m => {
+      totNet += m.net;
+      totAdd += m.additional_earnings;
+      totRec += m.recurring_expenses;
+      totOt += m.onetime_expenses;
+      totBal += m.monthly_balance;
+    });
+
+    const finalAccount = months.length > 0 ? months[months.length - 1].account_balance : 0;
+
+    document.getElementById('card-income').textContent = fmt(totNet) + ' ' + currency;
+    document.getElementById('card-additional').textContent = fmt(totAdd) + ' ' + currency;
+    document.getElementById('card-recurring').textContent = fmt(totRec) + ' ' + currency;
+    document.getElementById('card-onetime').textContent = fmt(totOt) + ' ' + currency;
+
+    const balEl = document.getElementById('card-balance');
+    balEl.textContent = fmtSigned(totBal) + ' ' + currency;
+    balEl.style = colorClass(totBal);
+
+    const accEl = document.getElementById('card-account');
+    accEl.textContent = fmtSigned(finalAccount) + ' ' + currency;
+    accEl.style = colorClass(finalAccount);
+  }
+
+  function renderMonthlyBars(months) {
+    const container = document.getElementById('monthly-bars');
+    const maxAbs = Math.max(...months.map(m => Math.abs(m.monthly_balance)), 1);
+
+    container.innerHTML = months.map(m => {
+      const pct = Math.min(Math.abs(m.monthly_balance) / maxAbs * 100, 100);
+      const isPositive = m.monthly_balance >= 0;
+      const barColor = isPositive ? 'bg-green-500/60' : 'bg-red-500/60';
+      const textColor = isPositive ? 'color: #4ade80;' : 'color: #f87171;';
+
+      return `<div class="flex items-center gap-3">
+        <span class="text-xs w-8 text-right opacity-70 flex-shrink-0">${monthNames[m.month - 1].substring(0, 3)}</span>
+        <div class="flex-1 h-5 rounded bg-white/5 overflow-hidden relative">
+          <div class="${barColor} h-full rounded transition-all duration-500" style="width: ${pct}%"></div>
+        </div>
+        <span class="text-xs w-24 text-right font-medium flex-shrink-0" style="${textColor}">${fmtSigned(m.monthly_balance)}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderBestWorst(months) {
+    if (months.length === 0) return;
+
+    const sorted = [...months].sort((a, b) => b.monthly_balance - a.monthly_balance);
+    const best = sorted[0];
+    const worst = sorted[sorted.length - 1];
+
+    document.getElementById('best-month-name').textContent = monthNames[best.month - 1];
+    document.getElementById('best-month-value').textContent = fmtSigned(best.monthly_balance) + ' ' + currency;
+    document.getElementById('best-month-value').style = colorClass(best.monthly_balance);
+
+    document.getElementById('worst-month-name').textContent = monthNames[worst.month - 1];
+    document.getElementById('worst-month-value').textContent = fmtSigned(worst.monthly_balance) + ' ' + currency;
+    document.getElementById('worst-month-value').style = colorClass(worst.monthly_balance);
+  }
+
+  function renderComparison(data) {
+    if (!data) {
+      document.getElementById('yoy-comparison').classList.add('hidden');
+      return;
+    }
+    const card = document.getElementById('yoy-comparison');
+    const tbody = document.getElementById('yoy-body');
+    document.getElementById('yoy-selected-label').textContent = data.selected_year;
+    document.getElementById('yoy-previous-label').textContent = data.previous_year;
+
+    const keys = ['total_net', 'total_additional', 'total_recurring', 'total_onetime', 'total_balance', 'final_account_balance'];
+
+    tbody.innerHTML = keys.map(function(key) {
+      const sel = data.selected[key];
+      const prev = data.previous[key];
+      const delta = data.delta[key];
+      const isExpenseRow = key === 'total_recurring' || key === 'total_onetime';
+      const isPositive = isExpenseRow ? delta <= 0 : delta >= 0;
+      const arrow = delta > 0 ? '\u25B2' : delta < 0 ? '\u25BC' : '\u2014';
+      const deltaColor = delta === 0 ? '' : (isPositive ? 'color:#4ade80;' : 'color:#f87171;');
+
+      return '<tr class="border-b border-white/5">' +
+        '<td class="py-1.5 px-2 font-medium">' + yoyLabels[key] + '</td>' +
+        '<td class="py-1.5 px-2 text-right">' + fmt(sel) + '</td>' +
+        '<td class="py-1.5 px-2 text-right">' + fmt(prev) + '</td>' +
+        '<td class="py-1.5 px-2 text-right font-medium" style="' + deltaColor + '">' + arrow + ' ' + fmt(Math.abs(delta)) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    card.classList.remove('hidden');
+  }
+
+  document.getElementById('year-prev').addEventListener('click', () => {
+    if (yearBounds && currentYear <= yearBounds.min_year) return;
+    currentYear--;
+    reload();
+  });
+  document.getElementById('year-next').addEventListener('click', () => {
+    if (yearBounds && currentYear >= yearBounds.max_year) return;
+    currentYear++;
+    reload();
+  });
+
+  async function reload() {
+    document.getElementById('year-display').textContent = currentYear;
+    const data = await loadOverview();
+    renderSummaryCards(data.months);
+    renderMonthlyBars(data.months);
+    renderBestWorst(data.months);
+    updateYearNav();
+    const comparison = await loadComparison();
+    renderComparison(comparison);
+  }
+
+  async function init() {
+    document.getElementById('year-display').textContent = currentYear;
+    try {
+      const settings = await loadSettings();
+      if (!settings) {
+        document.getElementById('skeleton-loader').classList.add('hidden');
+        document.getElementById('no-settings').classList.remove('hidden');
+        return;
+      }
+      const data = await loadOverview();
+      document.getElementById('skeleton-loader').classList.add('hidden');
+      document.getElementById('stats-content').classList.remove('hidden');
+      renderSummaryCards(data.months);
+      renderMonthlyBars(data.months);
+      renderBestWorst(data.months);
+      updateYearNav();
+      const comparison = await loadComparison();
+      renderComparison(comparison);
+    } catch(e) {
+      console.error('Failed to load stats', e);
+      document.getElementById('skeleton-loader').classList.add('hidden');
+    }
+  }
+
+  init();
+})();
+</script>
+{% endblock %}

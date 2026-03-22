@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Privacy, Reminders & Multi-Year Budget
-status: completed
-stopped_at: Phase 22 UI-SPEC approved
-last_updated: "2026-03-21T21:10:09.978Z"
-last_activity: 2026-03-21
+status: archived
+stopped_at: Milestone archived
+last_updated: "2026-03-22T21:30:00.000Z"
+last_activity: 2026-03-22
 progress:
   total_phases: 5
   completed_phases: 5
@@ -17,16 +17,16 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-21)
+See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** A shared calendar both partners can edit that stays in sync with Google Calendar.
 **Current focus:** Planning next milestone
 
 ## Position
 
-**Milestone:** v2.1 Privacy, Reminders & Multi-Year Budget — SHIPPED 2026-03-21
-Status: Milestone Complete (14/14 requirements, 267 tests passing)
-Last activity: 2026-03-21
+**Milestone:** v2.1 Privacy, Reminders & Multi-Year Budget — ARCHIVED 2026-03-22
+Status: Milestone Archived (15/15 requirements, 270 tests passing)
+Last activity: 2026-03-22
 
 [██████████░░░░░░░░░░] 2/4 phases
 

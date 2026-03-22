@@ -15,6 +15,15 @@ create policy "Users can manage their own carry-forward overrides"
   for all
   using (
     calendar_id in (
-      select calendar_id from public.users where id = auth.uid()::text
+      select u.calendar_id from public.users u
+      where u.google_id::text = auth.uid()::text
+         or lower(u.email::text) = lower(coalesce(auth.jwt() ->> 'email', ''))
+    )
+  )
+  with check (
+    calendar_id in (
+      select u.calendar_id from public.users u
+      where u.google_id::text = auth.uid()::text
+         or lower(u.email::text) = lower(coalesce(auth.jwt() ->> 'email', ''))
     )
   );

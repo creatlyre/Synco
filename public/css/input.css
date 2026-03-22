@@ -301,45 +301,6 @@ html.light-mode ::-webkit-scrollbar-track { background: rgba(99, 102, 241, 0.08)
 html.light-mode ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); }
 html.light-mode ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.6); }
 
-/* ── Theme toggle button ──────────────────────────────── */
-.theme-toggle {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 100;
-  width: 2.75rem;
-  height: 2.75rem;
-  min-width: 44px;
-  min-height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.3s, transform 0.2s, color 0.3s, box-shadow 0.3s;
-  font-size: 1.2rem;
-}
-
-html.light-mode .theme-toggle {
-  background: rgba(99, 102, 241, 0.15);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: rgb(55, 65, 81);
-}
-
-.theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.1) rotate(15deg);
-  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
-}
-
-html.light-mode .theme-toggle:hover {
-  background: rgba(99, 102, 241, 0.25);
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
-}
-
 /* ── Accessibility: global focus ring ─────────────────────── */
 :focus-visible {
   outline: 2px solid rgba(139, 92, 246, 0.7);

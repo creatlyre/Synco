@@ -18,8 +18,9 @@ A shared calendar both partners can edit that stays in sync with Google Calendar
 - Historical import: TSV paste for past-year income hours/rates, one-time & recurring expenses.
 - Full household budget tracker: income calculation from 3 hourly rates, expense management, 12-month year overview with running balance.
 - Full Polish/English localization with language switcher, persisted preference, and locale-aware NLP/OCR parsing.
-- 267 tests passing across auth, events, calendar, NLP, sync, budget, and performance.
-- ~13,475 LOC across Python, HTML templates, and JSON locale files.
+- Budget stats dashboard with yearly summary cards, monthly bar chart, best/worst months, and YoY comparison.
+- 270 tests passing across auth, events, calendar, NLP, sync, budget, and performance.
+- ~8,137 LOC Python (app + tests), plus HTML templates, CSS, and JSON locale files.
 - Planning artifacts for v1.0, v1.1, v2.0, v2.1 archived under `.planning/milestones/`.
 
 ## Requirements
@@ -116,4 +117,4 @@ A shared calendar both partners can edit that stays in sync with Google Calendar
 | TSV paste for historical import | Simple, no file upload needed | ✓ Shipped v2.1 |
 
 ---
-*Last updated: 2026-03-21 after v2.1 milestone completion*
+*Last updated: 2026-03-22 after v2.1 milestone archived*

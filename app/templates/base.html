@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="CalendarPlanner — Smart household calendar & budget planner">
     <meta name="theme-color" content="#1e1553">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='18' rx='2'/><line x1='16' y1='2' x2='16' y2='6'/><line x1='8' y1='2' x2='8' y2='6'/><line x1='3' y1='10' x2='21' y2='10'/></svg>">
     <title>{% block title %}{{ t('app.name') }}{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,34 +13,38 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body class="min-h-screen text-white transition-colors duration-300">
-    <!-- Theme Toggle Button -->
-    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark/light mode" title="Toggle theme (Press D)">
-      <span aria-hidden="true">☀️</span>
-    </button>
+    <!-- Skip to main content -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:rounded-lg focus:bg-indigo-600 focus:px-4 focus:py-2 focus:text-sm focus:text-white focus:shadow-lg">Skip to main content</a>
 
     <nav class="glass sticky top-0 z-40 border-b border-white/10">
         <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
             <a href="/" class="text-xl font-bold tracking-wide drop-shadow" style="font-family: var(--font-display); letter-spacing: -0.02em;">
-              <span aria-hidden="true">✦</span> {{ t('app.name') }}
+              <svg class="inline-block w-5 h-5 -mt-0.5 mr-0.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              {{ t('app.name') }}
             </a>
             <a href="/budget/overview" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex">{{ t('budget.nav_link') }}</a>
             <div class="flex items-center gap-2">
+                <!-- Theme Toggle -->
+                <button id="theme-toggle" class="glass-btn-secondary rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center p-2" aria-label="Toggle dark/light mode" title="Toggle theme (Press D)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                </button>
+
                 <!-- Language Switcher -->
                 <div class="relative inline-block" id="locale-dropdown">
                     <button id="locale-switcher" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] flex items-center gap-1" title="Switch language" aria-expanded="false" aria-haspopup="true">
                         {% if locale == 'en' %}
-                            <span aria-hidden="true">🇬🇧</span> English
+                            <svg class="inline-block w-4 h-4 -mt-0.5 mr-1" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>English
                         {% else %}
-                            <span aria-hidden="true">🇵🇱</span> Polski
+                            <svg class="inline-block w-4 h-4 -mt-0.5 mr-1" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Polski
                         {% endif %}
                     </button>
                     <div id="locale-menu" class="absolute right-0 hidden pt-1 w-32" role="menu">
                         <div class="rounded-lg bg-black/80 border border-white/20 py-1 shadow-lg dropdown-open">
                             <button type="button" onclick="switchLocale('pl')" class="w-full text-left px-4 py-2.5 hover:bg-white/10 text-sm min-h-[44px]" role="menuitem">
-                                <span aria-hidden="true">🇵🇱</span> Polski
+                                PL — Polski
                             </button>
                             <button type="button" onclick="switchLocale('en')" class="w-full text-left px-4 py-2.5 hover:bg-white/10 text-sm min-h-[44px]" role="menuitem">
-                                <span aria-hidden="true">🇬🇧</span> English
+                                EN — English
                             </button>
                         </div>
                     </div>
@@ -54,22 +58,26 @@
         </div>
     </nav>
 
-    <main class="mx-auto max-w-7xl px-4 py-6 animate-fade-in">
+    <main id="main-content" class="mx-auto max-w-7xl px-4 py-6 animate-fade-in">
+        <h1 class="sr-only">{% block page_heading %}{{ t('app.name') }}{% endblock %}</h1>
         {% block content %}{% endblock %}
     </main>
 
+    <!-- Global toast container for aria-live announcements -->
+    <div id="global-toast" class="fixed bottom-4 right-4 z-[100] hidden rounded-xl px-4 py-3 text-sm font-medium shadow-lg toast-success" role="status" aria-live="polite"></div>
+
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
-      <a href="/" class="{{ 'active' if request.url.path == '/' else '' }}">
-        <span class="nav-icon" aria-hidden="true">📅</span>
+      <a href="/" class="{{ 'active' if request.url.path == '/' else '' }}" {{ 'aria-current=page' if request.url.path == '/' else '' }}>
+        <span class="nav-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
         {{ t('app.calendar_short') if t('app.calendar_short') != 'app.calendar_short' else 'Calendar' }}
       </a>
-      <a href="/budget/overview" class="{{ 'active' if '/budget' in request.url.path else '' }}">
-        <span class="nav-icon" aria-hidden="true">💰</span>
+      <a href="/budget/overview" class="{{ 'active' if '/budget' in request.url.path else '' }}" {{ 'aria-current=page' if '/budget' in request.url.path else '' }}>
+        <span class="nav-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
         {{ t('budget.nav_link') }}
       </a>
-      <a href="/budget/settings" class="{{ 'active' if request.url.path == '/budget/settings' else '' }}">
-        <span class="nav-icon" aria-hidden="true">⚙️</span>
+      <a href="/budget/settings" class="{{ 'active' if request.url.path == '/budget/settings' else '' }}" {{ 'aria-current=page' if request.url.path == '/budget/settings' else '' }}>
+        <span class="nav-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
         {{ t('budget.sidebar_settings') if t('budget.sidebar_settings') != 'budget.sidebar_settings' else 'Settings' }}
       </a>
     </nav>
@@ -132,7 +140,9 @@
 
       function updateToggleIcon() {
         const isLight = htmlRoot.classList.contains('light-mode');
-        themeToggle.innerHTML = isLight ? '<span aria-hidden="true">🌙</span>' : '<span aria-hidden="true">☀️</span>';
+        themeToggle.innerHTML = isLight
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
         document.body.style.color = isLight ? '#1e3a8a' : 'white';
       }
 

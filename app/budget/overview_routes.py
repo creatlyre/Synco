@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, Cookie, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.auth.dependencies import get_current_user
@@ -27,20 +29,20 @@ class CarryForwardUpdate(BaseModel):
 
 
 @router.get("/comparison")
-async def get_comparison(year: int, user=Depends(get_current_user), db=Depends(get_db)):
+async def get_comparison(year: int, user=Depends(get_current_user), db=Depends(get_db), session: Optional[str] = Cookie(None)):
     if not user.calendar_id:
         raise HTTPException(status_code=400, detail="No calendar linked")
     service = _service(db)
-    data = service.get_year_comparison(user.calendar_id, year)
+    data = service.get_year_comparison(user.calendar_id, year, auth_token=session)
     return {"data": data}
 
 
 @router.get("")
-async def get_overview(year: int, user=Depends(get_current_user), db=Depends(get_db)):
+async def get_overview(year: int, user=Depends(get_current_user), db=Depends(get_db), session: Optional[str] = Cookie(None)):
     if not user.calendar_id:
         raise HTTPException(status_code=400, detail="No calendar linked")
     service = _service(db)
-    data = service.get_year_overview(user.calendar_id, year)
+    data = service.get_year_overview(user.calendar_id, year, auth_token=session)
     year_bounds = service.get_year_bounds(user.calendar_id)
     return {"data": data, "year_bounds": year_bounds}
 
@@ -50,11 +52,12 @@ async def set_carry_forward(
     payload: CarryForwardUpdate,
     user=Depends(get_current_user),
     db=Depends(get_db),
+    session: Optional[str] = Cookie(None),
 ):
     if not user.calendar_id:
         raise HTTPException(status_code=400, detail="No calendar linked")
     repo = CarryForwardRepository(db)
-    override = repo.upsert(user.calendar_id, payload.year, payload.amount)
+    override = repo.upsert(user.calendar_id, payload.year, payload.amount, auth_token=session)
     return {"data": {"year": override.year, "amount": override.amount}}
 
 
@@ -63,11 +66,12 @@ async def delete_carry_forward(
     year: int,
     user=Depends(get_current_user),
     db=Depends(get_db),
+    session: Optional[str] = Cookie(None),
 ):
     if not user.calendar_id:
         raise HTTPException(status_code=400, detail="No calendar linked")
     repo = CarryForwardRepository(db)
-    deleted = repo.delete(user.calendar_id, year)
+    deleted = repo.delete(user.calendar_id, year, auth_token=session)
     if not deleted:
         raise HTTPException(status_code=404, detail="No override found")
     return {"ok": True}

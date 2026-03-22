@@ -5,7 +5,7 @@
 - [x] v1.0 milestone - Phases 1-7 shipped 2026-03-19 (22/22 plans complete). Archive: .planning/milestones/v1.0-ROADMAP.md
 - [x] v1.1 milestone - Phases 8-11 shipped 2026-03-20 (10/10 plans complete). Archive: .planning/milestones/v1.1-ROADMAP.md
 - [x] v2.0 milestone — Budget Tracker - Phases 12-17 shipped 2026-03-20 (230 tests passing). Archive: .planning/milestones/v2.0-ROADMAP.md
-- [x] v2.1 milestone — Privacy, Reminders & Multi-Year Budget - Phases 18-22 shipped 2026-03-21 (267 tests passing). Archive: .planning/milestones/v2.1-ROADMAP.md
+- [x] v2.1 milestone — Privacy, Reminders & Multi-Year Budget - Phases 18-22 shipped 2026-03-22 (270 tests passing). Archive: .planning/milestones/v2.1-ROADMAP.md
 
 ## Phases
 
@@ -50,4 +50,4 @@
 
 ---
 
-*Roadmap updated: 2026-03-21 after v2.1 milestone completion*
+*Roadmap updated: 2026-03-22 after v2.1 milestone archived*
