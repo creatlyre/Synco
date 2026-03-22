@@ -182,12 +182,18 @@ async def oauth_callback(
         }});
         if (!response.ok) {{
           const data = await response.json().catch(() => ({{}}));
-          document.body.innerHTML = `<p>{_msg(request, "auth.sign_in_failed")}: ${{data.detail || {unknown_error}}}</p>`;
+          const p = document.createElement('p');
+          p.textContent = `{_msg(request, "auth.sign_in_failed")}: ` + (data.detail || {unknown_error});
+          document.body.innerHTML = '';
+          document.body.appendChild(p);
           return;
         }}
         window.location.href = '/';
       }} catch (err) {{
-        document.body.innerHTML = `<p>{_msg(request, "auth.sign_in_failed")}: ${{String(err)}}</p>`;
+        const p = document.createElement('p');
+        p.textContent = `{_msg(request, "auth.sign_in_failed")}: ` + String(err);
+        document.body.innerHTML = '';
+        document.body.appendChild(p);
       }}
     }})();
   </script>
