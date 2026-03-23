@@ -19,7 +19,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from config import Settings
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, get_current_user_optional
 from app.auth.routes import router as auth_router
 from app.events.routes import router as events_router
 from app.i18n import inject_template_i18n, set_locale_cookie_if_param
@@ -177,9 +177,14 @@ app.include_router(billing_public_router)
 
 
 @app.get("/", response_class=HTMLResponse)
-async def root(request: Request, user=Depends(get_current_user)):
+async def root(request: Request, user=Depends(get_current_user_optional)):
     from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/dashboard", status_code=302)
+    if user:
+        return RedirectResponse(url="/dashboard", status_code=302)
+    context = inject_template_i18n(request, {"request": request})
+    response = templates.TemplateResponse(request=request, name="landing.html", context=context)
+    set_locale_cookie_if_param(response, request)
+    return response
 
 
 @app.get("/invite", response_class=HTMLResponse)
@@ -219,7 +224,7 @@ async def health_ready():
 
 @app.exception_handler(HTTPException)
 async def auth_redirect_handler(request: Request, exc: HTTPException):
-    if exc.status_code == 401 and request.url.path in {"/", "/invite", "/dashboard"}:
+    if exc.status_code == 401 and request.url.path in {"/invite", "/dashboard"}:
         from fastapi.responses import RedirectResponse
 
         return RedirectResponse(url="/auth/login", status_code=307)

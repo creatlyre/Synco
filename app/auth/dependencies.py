@@ -138,3 +138,16 @@ async def get_current_user(
             calendar_id=None,
             last_login=datetime.utcnow(),
         )
+
+
+async def get_current_user_optional(
+    session: Optional[str] = Cookie(None),
+    supabase_refresh: Optional[str] = Cookie(None),
+    response: Response = None,
+    db=Depends(get_db),
+) -> User | AuthenticatedUser | None:
+    """Same as get_current_user but returns None instead of raising 401."""
+    try:
+        return await get_current_user(session, supabase_refresh, response, db)
+    except HTTPException:
+        return None
