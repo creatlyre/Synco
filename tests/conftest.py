@@ -8,7 +8,7 @@ import jwt
 import pytest
 from fastapi.testclient import TestClient
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, get_current_user_optional
 from app.database.database import Base, get_db
 from app.database.models import Calendar, User
 from config import Settings
@@ -317,6 +317,7 @@ def authenticated_client(test_db, test_user_a: User):
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_current_user_optional] = override_get_current_user
 
     client = TestClient(app)
     settings = Settings()

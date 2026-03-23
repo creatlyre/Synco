@@ -34,8 +34,12 @@ def test_oauth_callback_creates_user(test_db, test_client, monkeypatch):
 
 
 def test_invalid_session_redirects(test_client):
+    # Root path now serves landing page for unauthenticated users
     response = test_client.get("/", follow_redirects=False)
+    assert response.status_code == 200
 
+    # Dashboard still requires auth and redirects
+    response = test_client.get("/dashboard", follow_redirects=False)
     assert response.status_code == 307
     assert response.headers.get("location") == "/auth/login"
 
