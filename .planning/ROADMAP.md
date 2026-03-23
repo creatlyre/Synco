@@ -47,11 +47,11 @@
   Plans:
   - [ ] 24-01-PLAN.md — Backend: DB migration, models, expense category CRUD API, category_id integration, stats breakdown endpoint
   - [ ] 24-02-PLAN.md — Frontend: category selector in forms, category display/filter in expense list, pie/bar charts on stats page
-- [ ] **Phase 25: Shopping List** — Shared household shopping list with add/delete/edit, multi-item paste, Biedronka store-section auto-grouping
+- [x] **Phase 25: Shopping List** — Shared household shopping list with add/delete/edit, multi-item paste, Biedronka store-section auto-grouping
   **Plans:** 2 plans
   Plans:
-  - [ ] 25-01-PLAN.md — Backend: DB migration, models, keyword JSON, repository, service with auto-categorization, API routes
-  - [ ] 25-02-PLAN.md — Frontend: shopping view, template with section-grouped display, nav links, i18n, tests
+  - [x] 25-01-PLAN.md — Backend: DB migration, models, keyword JSON, repository, service with auto-categorization, API routes
+  - [x] 25-02-PLAN.md — Frontend: shopping view, template with section-grouped display, nav links, i18n, tests
 - [ ] **Phase 26: Notifications** — In-app notification feed with bell badge, partner change alerts, email toggle, event reminders
   **Plans:** 3 plans
   Plans:
@@ -141,7 +141,7 @@
 | 22. Historical Year Import | v2.1 | 1/1 | Complete | 2026-03-21 |
 | 23. Event Categories & Colors | 2/2 | Complete   | 2026-03-22 | - |
 | 24. Expense Categories & Charts | 2/2 | Complete    | 2026-03-23 | - |
-| 25. Shopping List | v3.0 | 0/2 | Planned | - |
+| 25. Shopping List | v3.0 | 2/2 | Complete | 2026-03-23 |
 | 26. Notifications | v3.0 | 0/? | Not started | - |
 | 27. Dashboard | v3.0 | 0/2 | Planned | - |
 
