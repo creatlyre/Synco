@@ -187,6 +187,30 @@ async def root(request: Request, user=Depends(get_current_user_optional)):
     return response
 
 
+@app.get("/terms", response_class=HTMLResponse)
+async def terms_page(request: Request):
+    context = inject_template_i18n(request, {"request": request})
+    response = templates.TemplateResponse(request=request, name="terms.html", context=context)
+    set_locale_cookie_if_param(response, request)
+    return response
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy_page(request: Request):
+    context = inject_template_i18n(request, {"request": request})
+    response = templates.TemplateResponse(request=request, name="privacy.html", context=context)
+    set_locale_cookie_if_param(response, request)
+    return response
+
+
+@app.get("/refund", response_class=HTMLResponse)
+async def refund_page(request: Request):
+    context = inject_template_i18n(request, {"request": request})
+    response = templates.TemplateResponse(request=request, name="refund.html", context=context)
+    set_locale_cookie_if_param(response, request)
+    return response
+
+
 @app.get("/invite", response_class=HTMLResponse)
 async def invite_page(request: Request, user=Depends(get_current_user)):
     context = inject_template_i18n(

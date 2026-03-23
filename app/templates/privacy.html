@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('privacy.title') }} - {{ t('app.name') }}{% endblock %}
+{% block page_heading %}{{ t('privacy.title') }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-8">
+  <h2 class="text-3xl font-bold" style="font-family: var(--font-display);">{{ t('privacy.title') }}</h2>
+  <p class="text-sm text-gray-400">{{ t('privacy.last_updated') }}</p>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('privacy.controller_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('privacy.controller_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('privacy.data_collected_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('privacy.data_collected_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('privacy.legal_basis_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('privacy.legal_basis_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('privacy.usage_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('privacy.usage_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('privacy.sharing_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('privacy.sharing_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('privacy.cookies_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('privacy.cookies_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('privacy.retention_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('privacy.retention_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('privacy.rights_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('privacy.rights_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('privacy.security_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('privacy.security_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('privacy.transfers_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('privacy.transfers_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('privacy.children_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('privacy.children_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('privacy.changes_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('privacy.changes_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('privacy.contact_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('privacy.contact_body') }}</p>
+  </section>
+</div>
+{% endblock %}

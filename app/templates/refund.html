@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('refund.title') }} - {{ t('app.name') }}{% endblock %}
+{% block page_heading %}{{ t('refund.title') }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-8">
+  <h2 class="text-3xl font-bold" style="font-family: var(--font-display);">{{ t('refund.title') }}</h2>
+  <p class="text-sm text-gray-400">{{ t('refund.last_updated') }}</p>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('refund.free_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('refund.free_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('refund.saas_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('refund.saas_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('refund.annual_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('refund.annual_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('refund.self_hosted_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('refund.self_hosted_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('refund.cancel_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('refund.cancel_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('refund.request_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('refund.request_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('refund.contact_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('refund.contact_body') }}</p>
+  </section>
+</div>
+{% endblock %}

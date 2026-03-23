@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('terms.title') }} - {{ t('app.name') }}{% endblock %}
+{% block page_heading %}{{ t('terms.title') }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-8">
+  <h2 class="text-3xl font-bold" style="font-family: var(--font-display);">{{ t('terms.title') }}</h2>
+  <p class="text-sm text-gray-400">{{ t('terms.last_updated') }}</p>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('terms.intro_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('terms.intro_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('terms.account_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('terms.account_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('terms.service_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('terms.service_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('terms.billing_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('terms.billing_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('terms.ip_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('terms.ip_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('terms.acceptable_use_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('terms.acceptable_use_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('terms.liability_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('terms.liability_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('terms.termination_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('terms.termination_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('terms.changes_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('terms.changes_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('terms.law_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('terms.law_body') }}</p>
+  </section>
+
+  <section class="space-y-3">
+    <h3 class="text-xl font-semibold" style="font-family: var(--font-display);">{{ t('terms.contact_heading') }}</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ t('terms.contact_body') }}</p>
+  </section>
+</div>
+{% endblock %}
