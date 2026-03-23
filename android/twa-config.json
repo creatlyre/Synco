@@ -1,0 +1,25 @@
+{
+  "host": "synco.app",
+  "name": "Synco",
+  "shortName": "Synco",
+  "themeColor": "#1e1553",
+  "navigationColor": "#0f0a2e",
+  "backgroundColor": "#0f0a2e",
+  "startUrl": "/dashboard",
+  "iconUrl": "https://synco.app/static/icons/icon-512.png",
+  "maskableIconUrl": "https://synco.app/static/icons/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "enableNotifications": false,
+  "display": "standalone",
+  "orientation": "any",
+  "packageId": "app.synco.twa",
+  "signingKey": {
+    "path": "synco-keystore.jks",
+    "alias": "synco"
+  },
+  "minSdkVersion": 24,
+  "appVersion": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli"
+}

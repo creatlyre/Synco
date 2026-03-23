@@ -54,6 +54,24 @@ A one-time purchase for organizations or advanced users who want to self-host Sy
 
 Pricing details will be published at launch. Check the pricing page (coming soon) for current plans and rates.
 
+## Mobile Access Strategy
+
+Synco provides mobile access through:
+
+1. **Progressive Web App (PWA)** — Install Synco to your home screen from any modern browser. Works on iOS, Android, and desktop. Offline shell with cached assets.
+2. **Android Wrapper (TWA)** — A lightweight Android app via Trusted Web Activity for Google Play Store distribution. No native code — Chrome renders the full app.
+
+### Why Not a Native App?
+
+A full native iOS/Android rewrite is **explicitly deferred** until monetization is validated. Rationale:
+
+- PWA + TWA covers 95%+ of mobile use cases (home screen install, fullscreen, offline shell)
+- Native development would 3-5x the maintenance burden for a two-person household app
+- Users already get phone notifications via Google Calendar sync
+- Revenue validation must come before platform expansion
+
+This decision will be revisited after v4.0 proves product-market fit and sustainable revenue.
+
 ## FAQ
 
 **Can I use Synco for free?**
