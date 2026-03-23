@@ -1,8 +1,24 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from app.budget.expense_repository import ExpenseRepository
 from app.budget.expense_schemas import ExpenseCreate, ExpenseUpdate
 from app.database.models import Expense
+
+_KEYWORDS_PATH = Path(__file__).parent / "category_keywords.json"
+
+
+def _load_keywords() -> dict[str, list[str]]:
+    with open(_KEYWORDS_PATH, encoding="utf-8") as f:
+        data = json.load(f)
+    # Strip _meta key — only category entries
+    return {k: v for k, v in data.items() if not k.startswith("_")}
+
+
+# Loaded once at module import
+CATEGORY_KEYWORDS: dict[str, list[str]] = _load_keywords()
 
 
 class ExpenseService:
@@ -65,3 +81,33 @@ class ExpenseService:
 
     def get_category_breakdown(self, calendar_id: str, year: int) -> list[dict]:
         return self.repo.get_expenses_by_category(calendar_id, year)
+
+    def _detect_category(self, name: str, categories: list) -> str | None:
+        """Match expense name against keyword map, return category_id or None."""
+        lower = name.lower()
+        words = lower.split()
+        cat_by_name = {c.name: c.id for c in categories}
+        for cat_name, keywords in CATEGORY_KEYWORDS.items():
+            if cat_name not in cat_by_name:
+                continue
+            for kw in keywords:
+                for w in words:
+                    if kw in w or (len(w) >= 3 and w in kw):
+                        return cat_by_name[cat_name]
+        return None
+
+    def auto_categorize(self, calendar_id: str, year: int) -> dict:
+        """Auto-assign categories to uncategorized expenses for a year. Returns count of updated."""
+        categories = self.list_categories(calendar_id)
+        expenses = self.repo.get_by_calendar_year(calendar_id, year)
+        uncategorized = [e for e in expenses if not e.category_id]
+
+        updated = 0
+        for e in uncategorized:
+            cat_id = self._detect_category(e.name, categories)
+            if cat_id:
+                from app.budget.expense_schemas import ExpenseUpdate
+                self.repo.update(e.id, ExpenseUpdate(category_id=cat_id))
+                updated += 1
+
+        return {"total": len(uncategorized), "updated": updated}

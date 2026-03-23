@@ -391,5 +391,8 @@
   "budget.expense_category_filter": "Filtruj wg kategorii",
   "budget.expense_category_filter_all": "Wszystkie kategorie",
   "budget.expense_category_chart_title": "Wydatki wg kategorii",
-  "budget.expense_category_uncategorized": "Bez kategorii"
+  "budget.expense_category_uncategorized": "Bez kategorii",
+  "budget.expense_category_auto": "Auto-kategoryzuj",
+  "budget.expense_category_auto_hint": "Automatycznie przypisz kategorie do wydatk\u00f3w bez kategorii na podstawie nazw",
+  "budget.expense_category_auto_done": "{count} wydatk\u00f3w skategoryzowano"
 }

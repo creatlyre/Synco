@@ -11,6 +11,7 @@ from app.budget.expense_schemas import (
     ExpenseUpdate,
 )
 from app.budget.expense_service import ExpenseService
+from app.budget.expense_service import CATEGORY_KEYWORDS
 from app.database.database import get_db
 
 router = APIRouter(prefix="/api/budget/expenses", tags=["expenses"])
@@ -18,6 +19,12 @@ router = APIRouter(prefix="/api/budget/expenses", tags=["expenses"])
 
 def _service(db) -> ExpenseService:
     return ExpenseService(ExpenseRepository(db))
+
+
+@router.get("/category-keywords")
+async def get_category_keywords(user=Depends(get_current_user)):
+    """Serve the keyword mapping so the frontend can do client-side auto-detection."""
+    return {"data": CATEGORY_KEYWORDS}
 
 
 @router.get("/categories")
@@ -45,6 +52,15 @@ async def get_expenses_by_category(year: int, user=Depends(get_current_user), db
     service = _service(db)
     breakdown = service.get_category_breakdown(user.calendar_id, year)
     return {"data": breakdown}
+
+
+@router.post("/auto-categorize")
+async def auto_categorize_expenses(year: int, user=Depends(get_current_user), db=Depends(get_db)):
+    if not user.calendar_id:
+        raise HTTPException(status_code=400, detail="No calendar linked")
+    service = _service(db)
+    result = service.auto_categorize(user.calendar_id, year)
+    return {"data": result}
 
 
 @router.get("")

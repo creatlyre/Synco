@@ -61,6 +61,7 @@
         <button id="year-prev" class="glass-btn-secondary rounded-xl px-4 py-2.5 text-sm font-medium min-h-[44px] min-w-[44px]" aria-label="Previous year">←</button>
         <span id="year-display" class="text-xl font-bold"></span>
         <button id="year-next" class="glass-btn-secondary rounded-xl px-4 py-2.5 text-sm font-medium min-h-[44px] min-w-[44px]" aria-label="Next year">→</button>
+        <button id="auto-categorize-btn" class="glass-btn-info rounded-xl px-3 py-2 text-xs min-h-[44px]" title="{{ t('budget.expense_category_auto_hint') }}">🏷️ {{ t('budget.expense_category_auto') }}</button>
       </div>
 
       <!-- Recurring expenses section -->
@@ -240,7 +241,8 @@
     categoryNone: '{{ t("budget.expense_category_none") }}',
     categoryFilterAll: '{{ t("budget.expense_category_filter_all") }}',
     categoryLabel: '{{ t("budget.expense_category_label") }}',
-    categoryUncategorized: '{{ t("budget.expense_category_uncategorized") }}'
+    categoryUncategorized: '{{ t("budget.expense_category_uncategorized") }}',
+    autoCategorized: '{{ t("budget.expense_category_auto_done") }}'
   };
 
   let currentYear = new Date().getFullYear();
@@ -296,20 +298,19 @@
     });
   }
 
-  // Keyword → category name mapping (EN + PL) for smart auto-detection
-  const categoryKeywords = {
-    'Groceries': ['grocery','groceries','food','milk','bread','meat','fruit','vegetables','supermarket','lidl','biedronka','żabka','zabka','auchan','carrefour','zakupy','spożywcze','spozywcze','jedzenie','mleko','chleb','mięso','mieso','owoce','warzywa'],
-    'Rent': ['rent','czynsz','lease','najm','najem','wynajem','mieszkanie','apartment','flat'],
-    'Utilities': ['electric','electricity','gas','water','heating','internet','phone','wifi','mobile','energia','prąd','prad','gaz','woda','ogrzewanie','telefon','media','rachunki','rachunek'],
-    'Transport': ['transport','fuel','petrol','diesel','gas station','uber','taxi','bus','train','tram','metro','parking','toll','benzyna','paliwo','bilet','komunikacja','mpk','bolt','pkl'],
-    'Entertainment': ['netflix','spotify','hbo','disney','cinema','movie','game','gaming','concert','theatre','theater','kino','film','gra','gry','koncert','teatr','youtube','steam','playstation','xbox','subscription','subskrypcja','rozrywka'],
-    'Health': ['doctor','pharmacy','medicine','dentist','hospital','medical','health','gym','fitness','lekarz','apteka','leki','dentysta','szpital','zdrowie','siłownia','silownia','badania','rehabilitacja','okulista'],
-    'Education': ['course','book','school','university','tuition','training','learn','workshop','kurs','książka','ksiazka','szkoła','szkola','uniwersytet','nauka','szkolenie','studia','uczelnia','korepetycje'],
-    'Other': []
-  };
+  // Keyword → category name mapping loaded from backend (single source of truth)
+  let categoryKeywords = {};
+
+  async function loadCategoryKeywords() {
+    try {
+      const res = await fetch('/api/budget/expenses/category-keywords');
+      const json = await res.json();
+      if (res.ok) categoryKeywords = json.data || {};
+    } catch (e) { /* silently fall back to empty — no auto-detect */ }
+  }
 
   function detectCategory(name) {
-    if (!name || !categories.length) return '';
+    if (!name || !categories.length || !Object.keys(categoryKeywords).length) return '';
     var lower = name.toLowerCase();
     var words = lower.split(/\s+/);
     for (var catName in categoryKeywords) {
@@ -317,7 +318,6 @@
       for (var i = 0; i < keywords.length; i++) {
         for (var w = 0; w < words.length; w++) {
           if (words[w].indexOf(keywords[i]) !== -1 || keywords[i].indexOf(words[w]) !== -1 && words[w].length >= 3) {
-            // Find the category by name
             var match = categories.find(function(c) { return c.name === catName; });
             if (match) return match.id;
           }
@@ -768,6 +768,14 @@
   document.getElementById('rec-category').addEventListener('change', function() { recCatManual = true; });
   document.getElementById('ot-category').addEventListener('change', function() { otCatManual = true; });
 
+  document.getElementById('auto-categorize-btn').addEventListener('click', async function() {
+    const res = await fetch('/api/budget/expenses/auto-categorize?year=' + currentYear, { method: 'POST' });
+    const json = await res.json();
+    if (res.ok) {
+      showToast(labels.autoCategorized.replace('{count}', json.data.updated));
+      await reload();
+    }
+  });
   document.getElementById('rec-bulk-btn').addEventListener('click', () => openBulkModal('recurring'));
   document.getElementById('ot-bulk-btn').addEventListener('click', () => openBulkModal('onetime'));
   document.getElementById('rec-delete-all-btn').addEventListener('click', () => deleteAll('recurring'));
@@ -814,6 +822,7 @@
     try {
       await loadCategories();
       populateCategorySelects();
+      await loadCategoryKeywords();
       await loadExpenses();
     } catch(e) {
       console.error('Failed to load expenses', e);
