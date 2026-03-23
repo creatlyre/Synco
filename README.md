@@ -286,4 +286,11 @@ Milestone archives and planning artifacts live under `.planning/`.
 
 ## License
 
-This project is licensed under the [GNU AGPL-3.0](LICENSE). If you host a modified version as a network service, you must publish your changes under the same license.
+Synco is open-source software licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0).
+
+**In short:**
+- You can freely use, modify, and self-host Synco for personal or household use.
+- If you modify Synco and run it as a network service, you must make your modified source code available under AGPL-3.0.
+- A **commercial license** is available for organizations that need to use Synco without AGPL obligations. See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md).
+
+For a full explanation of what is free, what is paid, and how the dual-license model works, see [MONETIZATION.md](MONETIZATION.md).
