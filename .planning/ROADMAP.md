@@ -126,7 +126,7 @@
 | 21. Year-over-Year Comparison | v2.1 | 1/1 | Complete | 2026-03-21 |
 | 22. Historical Year Import | v2.1 | 1/1 | Complete | 2026-03-21 |
 | 23. Event Categories & Colors | 2/2 | Complete   | 2026-03-22 | - |
-| 24. Expense Categories & Charts | v3.0 | 0/2 | Not started | - |
+| 24. Expense Categories & Charts | 1/2 | In Progress|  | - |
 | 25. Shopping List | v3.0 | 0/? | Not started | - |
 | 26. Notifications | v3.0 | 0/? | Not started | - |
 | 27. Dashboard | v3.0 | 0/? | Not started | - |
