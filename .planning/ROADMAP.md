@@ -47,7 +47,11 @@
   Plans:
   - [ ] 24-01-PLAN.md — Backend: DB migration, models, expense category CRUD API, category_id integration, stats breakdown endpoint
   - [ ] 24-02-PLAN.md — Frontend: category selector in forms, category display/filter in expense list, pie/bar charts on stats page
-- [ ] **Phase 25: Shopping List** — Shared household shopping list with add/delete/check-off, multi-item paste
+- [ ] **Phase 25: Shopping List** — Shared household shopping list with add/delete/edit, multi-item paste, Biedronka store-section auto-grouping
+  **Plans:** 2 plans
+  Plans:
+  - [ ] 25-01-PLAN.md — Backend: DB migration, models, keyword JSON, repository, service with auto-categorization, API routes
+  - [ ] 25-02-PLAN.md — Frontend: shopping view, template with section-grouped display, nav links, i18n, tests
 - [ ] **Phase 26: Notifications** — In-app notification feed with bell badge, partner change alerts, email toggle, event reminders
   **Plans:** 3 plans
   Plans:
@@ -83,15 +87,16 @@
 **Plans**: 2 plans (24-01, 24-02)
 
 ### Phase 25: Shopping List
-**Goal**: Both household users share a common shopping list they can manage together
+**Goal**: Both household users share a common shopping list with Biedronka store-section auto-grouping for route-optimized shopping
 **Depends on**: Nothing (independent feature)
 **Requirements**: SHOP-01, SHOP-02, SHOP-03, SHOP-04, SHOP-05
 **Success Criteria** (what must be TRUE):
   1. User can add individual items to the shopping list
-  2. User can delete items and check off / uncheck purchased items
+  2. User can delete and edit items on the shopping list
   3. Both household users see and share the same shopping list
-  4. User can paste a comma-separated string to add multiple items at once
-**Plans**: TBD
+  4. User can paste a comma/newline-separated string to add multiple items at once
+  5. Items are auto-categorized into Biedronka store sections via keyword matching
+**Plans**: 2 plans (25-01, 25-02)
 
 ### Phase 26: Notifications
 **Goal**: Users receive in-app and optional email alerts for partner activity and event reminders
@@ -136,7 +141,7 @@
 | 22. Historical Year Import | v2.1 | 1/1 | Complete | 2026-03-21 |
 | 23. Event Categories & Colors | 2/2 | Complete   | 2026-03-22 | - |
 | 24. Expense Categories & Charts | 2/2 | Complete    | 2026-03-23 | - |
-| 25. Shopping List | v3.0 | 0/? | Not started | - |
+| 25. Shopping List | v3.0 | 0/2 | Planned | - |
 | 26. Notifications | v3.0 | 0/? | Not started | - |
 | 27. Dashboard | v3.0 | 0/2 | Planned | - |
 
