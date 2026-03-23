@@ -1,5 +1,8 @@
+import json
+import logging
 import os
-from datetime import datetime
+import sys
+from datetime import datetime, timezone
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.exception_handlers import http_exception_handler
@@ -7,13 +10,21 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.cors import CORSMiddleware
+
+from config import Settings
 
 from app.auth.dependencies import get_current_user
 from app.auth.routes import router as auth_router
 from app.events.routes import router as events_router
 from app.i18n import inject_template_i18n, set_locale_cookie_if_param
 from app.middleware.auth_middleware import SessionValidationMiddleware
+from app.middleware.security import SecurityHeadersMiddleware
 from app.budget.routes import router as budget_router
 from app.budget.views import router as budget_views_router
 from app.budget.income_routes import router as income_router
@@ -40,6 +51,49 @@ app = FastAPI(
     debug=os.getenv("DEBUG", "false").lower() == "true",
 )
 
+# --- Structured logging ---
+
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_obj = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        if record.exc_info and record.exc_info[0]:
+            log_obj["exception"] = self.formatException(record.exc_info)
+        return json.dumps(log_obj)
+
+
+def setup_logging():
+    settings = Settings(_env_file=None) if os.getenv("TESTING") else Settings()
+    root = logging.getLogger()
+    root.setLevel(settings.LOG_LEVEL)
+    handler = logging.StreamHandler(sys.stdout)
+    if settings.LOG_FORMAT == "json":
+        handler.setFormatter(JSONFormatter())
+    else:
+        handler.setFormatter(logging.Formatter(
+            "%(asctime)s %(levelname)-8s %(name)s: %(message)s"
+        ))
+    root.handlers = [handler]
+
+
+setup_logging()
+
+# --- Sentry ---
+
+_settings = Settings(_env_file=None) if os.getenv("TESTING") else Settings()
+if _settings.SENTRY_DSN:
+    import sentry_sdk
+    sentry_sdk.init(
+        dsn=_settings.SENTRY_DSN,
+        environment=_settings.ENVIRONMENT,
+        traces_sample_rate=0.1 if _settings.ENVIRONMENT == "production" else 1.0,
+        send_default_pii=False,
+    )
+
 templates = Jinja2Templates(directory="app/templates")
 
 app.mount("/static", StaticFiles(directory="public"), name="static")
@@ -53,6 +107,27 @@ class StaticCacheMiddleware(BaseHTTPMiddleware):
         return response
 
 
+# --- Rate limiting ---
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# --- Middleware (outermost first) ---
+
+app.add_middleware(SecurityHeadersMiddleware, environment=_settings.ENVIRONMENT)
+
+if _settings.ALLOWED_ORIGINS:
+    origins = [o.strip() for o in _settings.ALLOWED_ORIGINS.split(",") if o.strip()]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(StaticCacheMiddleware)
 app.add_middleware(SessionValidationMiddleware)
 app.include_router(auth_router)
@@ -101,7 +176,21 @@ async def invite_page(request: Request, user=Depends(get_current_user)):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    from app.database.database import get_db
+    checks = {"app": "ok"}
+    try:
+        db = next(get_db())
+        db.select("subscriptions", {"limit": "1"})
+        checks["database"] = "ok"
+    except Exception:
+        checks["database"] = "error"
+    status = "ok" if all(v == "ok" for v in checks.values()) else "degraded"
+    return {"status": status, "checks": checks}
+
+
+@app.get("/health/ready")
+async def health_ready():
+    return {"status": "ready"}
 
 
 @app.exception_handler(HTTPException)
