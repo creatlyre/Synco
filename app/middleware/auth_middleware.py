@@ -17,6 +17,8 @@ class SessionValidationMiddleware(BaseHTTPMiddleware):
             "/auth/register",
             "/auth/password-login",
             "/api/billing/webhook",
+            "/manifest.json",
+            "/sw.js",
             "/docs",
             "/openapi.json",
             "/redoc",
