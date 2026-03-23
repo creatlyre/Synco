@@ -24,12 +24,9 @@ async def notification_badge(request: Request, user=Depends(get_current_user), d
     if count > 0:
         display = str(count) if count <= 99 else "99+"
         return HTMLResponse(
-            f'<span id="notif-badge" hx-get="/notifications/badge" hx-trigger="every 30s" hx-swap="outerHTML"'
-            f' class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{display}</span>'
+            f'<span class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{display}</span>'
         )
-    return HTMLResponse(
-        '<span id="notif-badge" hx-get="/notifications/badge" hx-trigger="every 30s" hx-swap="outerHTML"></span>'
-    )
+    return HTMLResponse("")
 
 
 @router.get("/dropdown", response_class=HTMLResponse)

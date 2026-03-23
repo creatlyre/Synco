@@ -14,9 +14,9 @@ def _service(db) -> BudgetSettingsService:
 
 
 @router.get("/settings")
-async def get_budget_settings(user=Depends(get_current_user), db=Depends(get_db)):
+async def get_budget_settings(year: int, user=Depends(get_current_user), db=Depends(get_db)):
     service = _service(db)
-    settings = service.get_settings(user.calendar_id)
+    settings = service.get_settings(user.calendar_id, year=year)
     if not settings:
         return {"data": None}
     return {"data": BudgetSettingsResponse.model_validate(settings, from_attributes=True).model_dump()}

@@ -1,6 +1,6 @@
-<div class="rounded-lg bg-black/90 border border-white/20 shadow-xl max-h-96 overflow-y-auto dropdown-open">
+<div class="rounded-lg bg-[#1a1a2e] border border-white/20 shadow-xl max-h-96 overflow-y-auto dropdown-open backdrop-blur-xl">
     <!-- Header -->
-    <div class="sticky top-0 bg-black/90 border-b border-white/10 px-4 py-2.5 flex items-center justify-between">
+    <div class="sticky top-0 bg-[#1a1a2e] border-b border-white/10 px-4 py-2.5 flex items-center justify-between">
         <span class="text-sm font-semibold text-white/90">{{ t('notification.no_notifications') if not notifications else '' }}{% if notifications %}Notifications{% endif %}</span>
         {% if notifications %}
         <button class="text-xs text-indigo-400 hover:text-indigo-300"

@@ -10,10 +10,11 @@ from app.database.models import BudgetSettings, MonthlyHours, AdditionalEarning
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _seed_settings(test_db, calendar_id, rate_1=100, rate_2=80, rate_3=60, zus=1500, acc=500):
+def _seed_settings(test_db, calendar_id, rate_1=100, rate_2=80, rate_3=60, zus=1500, acc=500, year=2026):
     settings = BudgetSettings(
         id=str(uuid.uuid4()),
         calendar_id=calendar_id,
+        year=year,
         rate_1=rate_1,
         rate_2=rate_2,
         rate_3=rate_3,

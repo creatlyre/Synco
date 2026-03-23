@@ -41,6 +41,7 @@ class ParseEventResponse(BaseModel):
     raw_text: str
     ambiguous: bool = False
     year_candidates: list[int] = []
+    suggested_category: Optional[str] = None
 
 
 class OCRParseResponse(BaseModel):
@@ -118,6 +119,7 @@ async def parse_event(payload: ParseEventRequest, request: Request, user=Depends
         raw_text=result.raw_text,
         ambiguous=result.ambiguous,
         year_candidates=result.year_candidates,
+        suggested_category=result.suggested_category,
     )
 
 

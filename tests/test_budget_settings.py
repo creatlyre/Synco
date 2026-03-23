@@ -17,17 +17,18 @@ from main import app
 
 
 def test_get_budget_settings_empty(authenticated_client):
-    """GET /api/budget/settings when no settings exist returns null data."""
-    response = authenticated_client.get("/api/budget/settings")
+    """GET /api/budget/settings?year=2026 when no settings exist returns null data."""
+    response = authenticated_client.get("/api/budget/settings?year=2026")
     assert response.status_code == 200
     assert response.json()["data"] is None
 
 
 def test_get_budget_settings_existing(authenticated_client, test_db, test_user_a):
-    """GET /api/budget/settings when settings exist returns saved values."""
+    """GET /api/budget/settings?year=2026 when settings exist returns saved values."""
     test_db.insert("budget_settings", {
         "id": str(uuid.uuid4()),
         "calendar_id": test_user_a.calendar_id,
+        "year": 2026,
         "rate_1": 150.0,
         "rate_2": 200.0,
         "rate_3": 250.0,
@@ -36,10 +37,11 @@ def test_get_budget_settings_existing(authenticated_client, test_db, test_user_a
         "initial_balance": 50000.0,
     })
 
-    response = authenticated_client.get("/api/budget/settings")
+    response = authenticated_client.get("/api/budget/settings?year=2026")
     assert response.status_code == 200
     data = response.json()["data"]
     assert data is not None
+    assert data["year"] == 2026
     assert data["rate_1"] == 150.0
     assert data["rate_2"] == 200.0
     assert data["rate_3"] == 250.0
@@ -51,6 +53,7 @@ def test_get_budget_settings_existing(authenticated_client, test_db, test_user_a
 def test_save_budget_settings_create(authenticated_client):
     """PUT /api/budget/settings creates new settings when none exist."""
     payload = {
+        "year": 2026,
         "rate_1": 150.0,
         "rate_2": 200.0,
         "rate_3": 250.0,
@@ -61,6 +64,7 @@ def test_save_budget_settings_create(authenticated_client):
     response = authenticated_client.put("/api/budget/settings", json=payload)
     assert response.status_code == 200
     data = response.json()["data"]
+    assert data["year"] == 2026
     assert data["rate_1"] == 150.0
     assert data["rate_2"] == 200.0
     assert data["rate_3"] == 250.0
@@ -74,6 +78,7 @@ def test_save_budget_settings_update(authenticated_client, test_db, test_user_a)
     test_db.insert("budget_settings", {
         "id": str(uuid.uuid4()),
         "calendar_id": test_user_a.calendar_id,
+        "year": 2026,
         "rate_1": 100.0,
         "rate_2": 100.0,
         "rate_3": 100.0,
@@ -83,6 +88,7 @@ def test_save_budget_settings_update(authenticated_client, test_db, test_user_a)
     })
 
     payload = {
+        "year": 2026,
         "rate_1": 200.0,
         "rate_2": 300.0,
         "rate_3": 400.0,
@@ -104,6 +110,7 @@ def test_save_budget_settings_update(authenticated_client, test_db, test_user_a)
 def test_save_budget_settings_validation_negative_rate(authenticated_client):
     """PUT with negative rate_1 returns 422 validation error."""
     payload = {
+        "year": 2026,
         "rate_1": -10.0,
         "rate_2": 200.0,
         "rate_3": 250.0,
@@ -118,6 +125,7 @@ def test_save_budget_settings_validation_negative_rate(authenticated_client):
 def test_save_budget_settings_validation_negative_balance(authenticated_client):
     """PUT with negative initial_balance returns 422."""
     payload = {
+        "year": 2026,
         "rate_1": 150.0,
         "rate_2": 200.0,
         "rate_3": 250.0,
@@ -132,6 +140,7 @@ def test_save_budget_settings_validation_negative_balance(authenticated_client):
 def test_save_budget_settings_validation_zero_rate(authenticated_client):
     """PUT with rate_1=0 returns 422 (must be > 0)."""
     payload = {
+        "year": 2026,
         "rate_1": 0.0,
         "rate_2": 200.0,
         "rate_3": 250.0,
@@ -146,6 +155,7 @@ def test_save_budget_settings_validation_zero_rate(authenticated_client):
 def test_save_budget_settings_zero_balance_allowed(authenticated_client):
     """PUT with initial_balance=0 is valid (zero starting balance)."""
     payload = {
+        "year": 2026,
         "rate_1": 150.0,
         "rate_2": 200.0,
         "rate_3": 250.0,
@@ -161,6 +171,7 @@ def test_save_budget_settings_zero_balance_allowed(authenticated_client):
 def test_save_budget_settings_rounds_to_two_decimals(authenticated_client):
     """PUT with extra decimal precision gets rounded to 2 decimals."""
     payload = {
+        "year": 2026,
         "rate_1": 150.999,
         "rate_2": 200.0,
         "rate_3": 250.0,

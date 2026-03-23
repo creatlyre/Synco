@@ -6,10 +6,11 @@ from fastapi.testclient import TestClient
 from app.database.models import BudgetSettings
 
 
-def _seed_settings(test_db, calendar_id, rate_1=100, rate_2=80, rate_3=60, zus=1500, acc=500):
+def _seed_settings(test_db, calendar_id, rate_1=100, rate_2=80, rate_3=60, zus=1500, acc=500, year=2026):
     settings = BudgetSettings(
         id=str(uuid.uuid4()),
         calendar_id=calendar_id,
+        year=year,
         rate_1=rate_1,
         rate_2=rate_2,
         rate_3=rate_3,
@@ -92,8 +93,9 @@ def test_bulk_hours_import_empty(authenticated_client: TestClient, test_db, test
 
 def test_import_feeds_yoy_comparison(authenticated_client: TestClient, test_db, test_user_a):
     """IMP-04: Imported data appears in year-over-year comparison."""
-    # 1. Create budget settings
-    _seed_settings(test_db, test_user_a.calendar_id)
+    # 1. Create budget settings for both years
+    _seed_settings(test_db, test_user_a.calendar_id, year=2024)
+    _seed_settings(test_db, test_user_a.calendar_id, year=2025)
 
     # 2. Import hours for year 2024 (previous year)
     hours_2024 = {
@@ -130,7 +132,7 @@ def test_import_feeds_yoy_comparison(authenticated_client: TestClient, test_db, 
 
 def test_imported_expenses_in_yoy(authenticated_client: TestClient, test_db, test_user_a):
     """Imported one-time expenses appear in YoY totals."""
-    _seed_settings(test_db, test_user_a.calendar_id, rate_1=100, rate_2=80, rate_3=60, zus=1500, acc=500)
+    _seed_settings(test_db, test_user_a.calendar_id, rate_1=100, rate_2=80, rate_3=60, zus=1500, acc=500, year=2024)
 
     # Import one-time expenses for 2024
     res = authenticated_client.post("/api/budget/expenses/bulk", json={
@@ -155,7 +157,7 @@ def test_imported_expenses_in_yoy(authenticated_client: TestClient, test_db, tes
 
 def test_imported_recurring_expenses_in_overview(authenticated_client: TestClient, test_db, test_user_a):
     """IMP-03: Imported recurring expenses appear in every month of the overview."""
-    _seed_settings(test_db, test_user_a.calendar_id)
+    _seed_settings(test_db, test_user_a.calendar_id, year=2024)
 
     # Import recurring expenses via bulk endpoint (same flow as import page)
     res = authenticated_client.post("/api/budget/expenses/bulk", json={

@@ -6,10 +6,11 @@ import pytest
 from app.database.models import BudgetSettings
 
 
-def _seed_settings(test_db, calendar_id, rate_1=100, rate_2=50, rate_3=0, zus=1000, acc=200, balance=10000):
+def _seed_settings(test_db, calendar_id, rate_1=100, rate_2=50, rate_3=0, zus=1000, acc=200, balance=10000, year=2026):
     s = BudgetSettings(
         id=str(uuid.uuid4()),
         calendar_id=calendar_id,
+        year=year,
         rate_1=rate_1,
         rate_2=rate_2,
         rate_3=rate_3,
@@ -495,3 +496,83 @@ class TestCarryForwardOverride:
         _seed_settings(test_db, test_user_a.calendar_id)
         res = authenticated_client.delete("/api/budget/overview/carry-forward?year=2026")
         assert res.status_code == 404
+
+
+class TestSalaryOffset:
+    """Salary offset: monthly_balance uses previous month's net (payroll delay)."""
+
+    def test_monthly_balance_uses_previous_month_net(self, authenticated_client, test_db, test_user_a):
+        """Month N balance uses month N-1 net, not month N net."""
+        _seed_settings(test_db, test_user_a.calendar_id, rate_1=100, rate_2=0, rate_3=0, zus=0, acc=0, balance=0)
+        # Month 1: 160h → net = 14080
+        # Month 2: 80h → net = 7040
+        authenticated_client.put(
+            "/api/budget/income/hours",
+            json={"year": 2026, "month": 2, "rate_1_hours": 80},
+        )
+        res = authenticated_client.get("/api/budget/overview?year=2026")
+        data = res.json()["data"]
+        m1 = data["months"][0]
+        m2 = data["months"][1]
+        m3 = data["months"][2]
+
+        # m1 net = 14080 (160h), m2 net = 7040 (80h), m3 net = 14080 (default 160h)
+        assert m1["net"] == 14080.0
+        assert m2["net"] == 7040.0
+        assert m3["net"] == 14080.0
+
+        # m1 balance uses Dec prior year net (same settings, default hours → 14080)
+        assert m1["monthly_balance"] == 14080.0
+        # m2 balance uses m1 net (14080), not m2 net (7040)
+        assert m2["monthly_balance"] == 14080.0
+        # m3 balance uses m2 net (7040)
+        assert m3["monthly_balance"] == 7040.0
+
+    def test_net_column_shows_same_month_value(self, authenticated_client, test_db, test_user_a):
+        """Net (Dochód netto) always reflects current month's hours, unshifted."""
+        _seed_settings(test_db, test_user_a.calendar_id, rate_1=100, rate_2=0, rate_3=0, zus=0, acc=0, balance=0)
+        authenticated_client.put(
+            "/api/budget/income/hours",
+            json={"year": 2026, "month": 4, "rate_1_hours": 200},
+        )
+        res = authenticated_client.get("/api/budget/overview?year=2026")
+        data = res.json()["data"]
+        # Month 4 has 200h → net = (100*200)*0.88 = 17600
+        assert data["months"][3]["net"] == 17600.0
+        # Other months still 14080
+        assert data["months"][0]["net"] == 14080.0
+
+    def test_january_uses_prior_year_december_net(self, authenticated_client, test_db, test_user_a):
+        """January balance uses December of prior year's net."""
+        # Set up 2025 with December hours = 80
+        _seed_settings(test_db, test_user_a.calendar_id, rate_1=100, rate_2=0, rate_3=0, zus=0, acc=0, balance=5000, year=2025)
+        authenticated_client.put(
+            "/api/budget/income/hours",
+            json={"year": 2025, "month": 12, "rate_1_hours": 80},
+        )
+        # Set up 2026 with same rates
+        _seed_settings(test_db, test_user_a.calendar_id, rate_1=100, rate_2=0, rate_3=0, zus=0, acc=0, balance=0, year=2026)
+        authenticated_client.put(
+            "/api/budget/income/hours",
+            json={"year": 2026, "month": 1, "rate_1_hours": 160},
+        )
+        res = authenticated_client.get("/api/budget/overview?year=2026")
+        jan = res.json()["data"]["months"][0]
+        # Jan net = (100*160)*0.88 = 14080 (earned)
+        assert jan["net"] == 14080.0
+        # Jan balance uses Dec 2025 net = (100*80)*0.88 = 7040 (received)
+        assert jan["monthly_balance"] == 7040.0
+
+    def test_account_balance_accumulates_offset_balances(self, authenticated_client, test_db, test_user_a):
+        """Running balance correctly accumulates the offset monthly_balance values."""
+        _seed_settings(test_db, test_user_a.calendar_id, rate_1=100, rate_2=0, rate_3=0, zus=0, acc=0, balance=1000)
+        authenticated_client.put(
+            "/api/budget/income/hours",
+            json={"year": 2026, "month": 3, "rate_1_hours": 80},
+        )
+        res = authenticated_client.get("/api/budget/overview?year=2026")
+        data = res.json()["data"]
+        running = data["initial_balance"]
+        for m in data["months"]:
+            running += m["monthly_balance"]
+            assert abs(m["account_balance"] - running) < 0.01

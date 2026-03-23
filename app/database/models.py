@@ -91,6 +91,7 @@ class Event:
 class BudgetSettings:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     calendar_id: str = ""
+    year: int = 0
     rate_1: float = 0.0
     rate_2: float = 0.0
     rate_3: float = 0.0

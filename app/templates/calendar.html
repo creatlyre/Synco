@@ -207,7 +207,7 @@ function catDisplayName(cat) {
 }
 
 function populateCategoryDropdowns() {
-  ['event-entry-category', 'event-category'].forEach(id => {
+  ['event-entry-category', 'event-category', 'qa-parsed-category'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const current = sel.value;
@@ -221,6 +221,34 @@ function populateCategoryDropdowns() {
     });
     if (current) sel.value = current;
   });
+}
+
+function findCategoryIdByPresetName(presetName) {
+  if (!presetName) return '';
+  const match = categoriesCache.find(c => c.is_preset && c.name.toLowerCase() === presetName.toLowerCase());
+  return match ? match.id : '';
+}
+
+function suggestCategoryFromTitle(title) {
+  if (!title) return '';
+  const text = title.toLowerCase();
+  const KEYWORDS = {
+    Work: ['meeting','standup','stand-up','scrum','sprint','retro','review','1:1','sync','workshop','presentation','demo','conference','call','interview','deadline','report','project','client','office','shift','training','seminar','webinar','brainstorm','kickoff','planning','release','deploy','spotkanie','zebranie','narada','prezentacja','konferencja','rozmowa','termin','raport','projekt','klient','biuro','szkolenie','seminarium','planowanie','wdrożenie','wdrozenie','deadline'],
+    Health: ['doctor','dentist','therapy','therapist','gym','workout','exercise','run','running','yoga','pilates','checkup','check-up','physio','vaccination','vaccine','blood test','surgery','hospital','clinic','medication','meditation','swim','swimming','cycling','hike','hiking','walk','fitness','lekarz','dentysta','stomatolog','terapia','siłownia','silownia','trening','ćwiczenia','cwiczenia','bieganie','joga','badanie','wizyta','fizjoterapia','szczepienie','krew','operacja','szpital','klinika','medytacja','pływanie','plywanie','rower','spacer','basen','rehabilitacja'],
+    Social: ['dinner','lunch','brunch','breakfast','coffee','party','birthday','wedding','anniversary','date','drinks','beer','wine','bar','pub','gathering','reunion','hangout','bbq','barbecue','picnic','game night','movie night','concert','show','festival','visit','guests','friends','celebration','obiad','kolacja','śniadanie','sniadanie','kawa','impreza','urodziny','ślub','slub','rocznica','randka','piwo','wino','grill','piknik','koncert','festiwal','odwiedziny','goście','goscie','znajomi','przyjaciele','imieniny','wigilia'],
+    Errands: ['shopping','groceries','store','market','pharmacy','bank','post office','laundry','cleaning','repair','mechanic','car wash','pickup','pick up','drop off','deliver','delivery','return','exchange','pay','payment','bill','insurance','passport','visa','plumber','electrician','move','moving','zakupy','sklep','apteka','poczta','pranie','sprzątanie','sprzatanie','naprawa','mechanik','myjnia','odbiór','odbior','dostarczenie','dostawa','zwrot','wymiana','płatność','platnosc','rachunek','ubezpieczenie','paszport','hydraulik','elektryk','przeprowadzka'],
+    Personal: ['hobby','read','reading','study','studying','course','class','lesson','practice','rehearsal','music','guitar','piano','painting','drawing','writing','journal','diary','self-care','haircut','spa','massage','nails','beauty','relax','vacation','holiday','travel','trip','flight','plan','rest','czytanie','nauka','kurs','lekcja','zajęcia','zajecia','próba','proba','muzyka','gitara','pianino','malowanie','rysowanie','pisanie','fryzjer','masaż','masaz','urlop','wakacje','podróż','podroz','wycieczka','lot','odpoczynek','drzemka']
+  };
+  let best = '', bestCount = 0;
+  for (const [cat, kws] of Object.entries(KEYWORDS)) {
+    let count = 0;
+    for (const kw of kws) {
+      const re = new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+      if (re.test(text)) count++;
+    }
+    if (count > bestCount) { bestCount = count; best = cat; }
+  }
+  return bestCount > 0 ? findCategoryIdByPresetName(best) : '';
 }
 
 function renderCategoryFilterButtons() {
@@ -498,6 +526,7 @@ function resetEventEntryForm() {
   updateReminderAddState();
   const entryCatSel = document.getElementById('event-entry-category');
   if (entryCatSel) entryCatSel.value = '';
+  if (typeof _entryCategoryManual !== 'undefined') _entryCategoryManual = false;
   updateEventEntryValidation();
 }
 
@@ -773,6 +802,22 @@ eventEntrySaveAnotherBtn.addEventListener('click', async () => {
     eventEntryDirty = true;
     updateEventEntryValidation();
   });
+});
+
+// Auto-suggest category when title changes in manual entry (only if user hasn't picked one)
+let _entryCategoryManual = false;
+const entryCatSel = document.getElementById('event-entry-category');
+if (entryCatSel) {
+  entryCatSel.addEventListener('change', () => { _entryCategoryManual = true; });
+}
+let _entryCatDebounce = null;
+eventEntryTitleInput.addEventListener('input', () => {
+  if (_entryCategoryManual) return;
+  clearTimeout(_entryCatDebounce);
+  _entryCatDebounce = setTimeout(() => {
+    const catId = suggestCategoryFromTitle(eventEntryTitleInput.value);
+    if (entryCatSel && catId) entryCatSel.value = catId;
+  }, 300);
 });
 
 eventEntryModal.addEventListener('click', (event) => {
@@ -1117,6 +1162,9 @@ loadSyncStatus();
     if (rep) rep.value = '';
     const vis = document.getElementById('qa-parsed-visibility');
     if (vis) vis.value = 'shared';
+    const cat = document.getElementById('qa-parsed-category');
+    if (cat) cat.value = '';
+    resetQaReminders();
   }
 
   function toDatetimeLocal(isoString) {
@@ -1158,6 +1206,15 @@ loadSyncStatus();
       noteEl.classList.remove('hidden');
     } else {
       noteEl.classList.add('hidden');
+    }
+
+    // Auto-select category from NLP suggestion
+    const catSel = document.getElementById('qa-parsed-category');
+    if (catSel) {
+      const catId = parsed.suggested_category
+        ? findCategoryIdByPresetName(parsed.suggested_category)
+        : suggestCategoryFromTitle(parsed.title);
+      catSel.value = catId || '';
     }
 
     // Recurrence
@@ -1215,6 +1272,84 @@ loadSyncStatus();
     return parts.join(';');
   }
 
+  // ── QA Reminders state ─────────────────────────────────────────────────
+  let qaReminders = [30, 2880];
+  const QA_MAX_REMINDERS = 5;
+  const qaRemindersToggle = document.getElementById('qa-reminders-toggle');
+  const qaRemindersToggleLabel = document.getElementById('qa-reminders-toggle-label');
+  const qaRemindersContainer = document.getElementById('qa-reminders-container');
+  const qaReminderChips = document.getElementById('qa-reminder-chips');
+  const qaReminderAddRow = document.getElementById('qa-reminder-add-row');
+  const qaReminderMinutesInput = document.getElementById('qa-reminder-minutes-input');
+  const qaReminderMethodSelect = document.getElementById('qa-reminder-method-select');
+  const qaReminderConfirmBtn = document.getElementById('qa-reminder-confirm-btn');
+  const qaReminderAddBtn = document.getElementById('qa-reminder-add-btn');
+  const qaReminderCounter = document.getElementById('qa-reminder-counter');
+
+  function renderQaReminderChips() {
+    qaReminderChips.innerHTML = '';
+    qaReminders.forEach((minutes, index) => {
+      const chip = document.createElement('span');
+      chip.className = 'inline-flex items-center gap-1 rounded-full bg-indigo-500/25 border border-indigo-400/30 px-2.5 py-1 text-xs text-white/90';
+      chip.innerHTML = `${formatReminderMinutes(minutes)} <button type="button" data-idx="${index}" class="ml-0.5 text-white/50 hover:text-white" aria-label="${I18N.reminderRemoveLabel}">&times;</button>`;
+      chip.querySelector('button').addEventListener('click', () => {
+        qaReminders.splice(index, 1);
+        renderQaReminderChips();
+        updateQaReminderAddState();
+      });
+      qaReminderChips.appendChild(chip);
+    });
+  }
+
+  function updateQaReminderAddState() {
+    const atMax = qaReminders.length >= QA_MAX_REMINDERS;
+    qaReminderAddBtn.disabled = atMax;
+    qaReminderAddBtn.classList.toggle('opacity-40', atMax);
+    qaReminderAddBtn.classList.toggle('cursor-not-allowed', atMax);
+    qaReminderCounter.classList.toggle('hidden', !atMax);
+  }
+
+  function setQaRemindersEnabled(enabled) {
+    qaRemindersContainer.classList.toggle('hidden', !enabled);
+    qaRemindersToggleLabel.textContent = enabled ? I18N.reminderToggleOn : I18N.reminderToggleOff;
+  }
+
+  function resetQaReminders() {
+    qaReminders = [30, 2880];
+    qaRemindersToggle.checked = true;
+    setQaRemindersEnabled(true);
+    renderQaReminderChips();
+    updateQaReminderAddState();
+    qaReminderAddRow.classList.add('hidden');
+    qaReminderAddRow.classList.remove('flex');
+  }
+
+  qaRemindersToggle.addEventListener('change', () => {
+    setQaRemindersEnabled(qaRemindersToggle.checked);
+  });
+
+  qaReminderAddBtn.addEventListener('click', () => {
+    if (qaReminders.length >= QA_MAX_REMINDERS) return;
+    qaReminderAddRow.classList.remove('hidden');
+    qaReminderAddRow.classList.add('flex');
+    qaReminderMinutesInput.value = '';
+    qaReminderMethodSelect.value = 'popup';
+    qaReminderMinutesInput.focus();
+  });
+
+  qaReminderConfirmBtn.addEventListener('click', () => {
+    const val = parseInt(qaReminderMinutesInput.value, 10);
+    if (isNaN(val) || val < 0 || val > 40320) return;
+    qaReminders.push(val);
+    qaReminderAddRow.classList.add('hidden');
+    qaReminderAddRow.classList.remove('flex');
+    renderQaReminderChips();
+    updateQaReminderAddState();
+  });
+
+  renderQaReminderChips();
+  updateQaReminderAddState();
+
   function buildPayload() {
     const startVal = document.getElementById('qa-parsed-start').value;
     const endVal   = document.getElementById('qa-parsed-end').value;
@@ -1224,7 +1359,9 @@ loadSyncStatus();
       end_at:     endVal   ? new Date(endVal).toISOString()   : null,
       timezone:   Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
       rrule:      buildQARRule(),
-      visibility: document.getElementById('qa-parsed-visibility').value
+      visibility: document.getElementById('qa-parsed-visibility').value,
+      category_id: document.getElementById('qa-parsed-category')?.value || null,
+      reminder_minutes_list: qaRemindersToggle.checked ? qaReminders : []
     };
   }
 

@@ -137,8 +137,42 @@ class OverviewService:
         dec_balance = prior_overview["months"][11]["account_balance"]
         return {"type": "carry_forward", "amount": round(dec_balance, 2), "source_year": prior_year}
 
+    def _get_prior_december_net(self, calendar_id: str, year: int, prior_overview: dict | None = None) -> float:
+        """Net income for December of (year-1), used as January salary offset.
+
+        Salary earned in month N is paid ~10th of month N+1, so
+        monthly_balance uses previous month's net instead of current.
+        """
+        if prior_overview is not None:
+            return prior_overview["months"][11]["net"]
+
+        prior_year = year - 1
+        settings = self.settings_repo.get_by_calendar(calendar_id, year=prior_year)
+        if not settings:
+            settings = self.settings_repo.get_by_calendar(calendar_id, year=year)
+        if not settings:
+            return 0.0
+
+        r1, r2, r3 = settings.rate_1, settings.rate_2, settings.rate_3
+        zus, acc = settings.zus_costs, settings.accounting_costs
+
+        hours_list = self.hours_repo.get_by_calendar_year(calendar_id, prior_year)
+        hours_by_month = {h.month: h for h in hours_list}
+        h = hours_by_month.get(12)
+
+        if h is None:
+            # No prior year December data — use January of current year as proxy
+            current_hours = self.hours_repo.get_by_calendar_year(calendar_id, year)
+            h = {ch.month: ch for ch in current_hours}.get(1)
+
+        h1 = h.rate_1_hours if (h and h.rate_1_hours is not None) else DEFAULT_HOURS
+        h2 = h.rate_2_hours if (h and h.rate_2_hours is not None) else DEFAULT_HOURS
+        h3 = h.rate_3_hours if (h and h.rate_3_hours is not None) else DEFAULT_HOURS
+
+        return (r1 * h1) * 0.88 + (r2 * h2) * 0.88 + (r3 * h3) * 0.88 - (zus + acc)
+
     def get_year_overview(self, calendar_id: str, year: int, auth_token: str | None = None, prior_overview: dict | None = None, bounds: dict | None = None) -> dict:
-        settings = self.settings_repo.get_by_calendar(calendar_id)
+        settings = self.settings_repo.get_by_calendar(calendar_id, year=year)
         hours_list = self.hours_repo.get_by_calendar_year(calendar_id, year)
         earnings_list = self.earnings_repo.get_by_calendar_year(calendar_id, year)
         expenses_list = self.expense_repo.get_by_calendar_year(calendar_id, year)
@@ -179,6 +213,10 @@ class OverviewService:
         running_balance = effective_initial
         months = []
 
+        # Salary offset: salary earned in month N is received in month N+1.
+        # January uses December of prior year; subsequent months use prior month.
+        prev_net = self._get_prior_december_net(calendar_id, year, prior_overview)
+
         for m in range(1, 13):
             h = hours_by_month.get(m)
             h1 = h.rate_1_hours if (h and h.rate_1_hours is not None) else DEFAULT_HOURS
@@ -189,8 +227,9 @@ class OverviewService:
             additional = earnings_by_month.get(m, 0) + recurring_earnings_total
             onetime_expenses = onetime_by_month.get(m, 0)
 
-            monthly_balance = net + additional - recurring_expense_total - onetime_expenses
+            monthly_balance = prev_net + additional - recurring_expense_total - onetime_expenses
             running_balance += monthly_balance
+            prev_net = net
 
             months.append({
                 "month": m,

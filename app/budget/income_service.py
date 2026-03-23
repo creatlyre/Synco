@@ -20,7 +20,7 @@ class IncomeService:
         self.settings_repo = settings_repo
 
     def get_year_data(self, calendar_id: str, year: int) -> dict:
-        settings = self.settings_repo.get_by_calendar(calendar_id)
+        settings = self.settings_repo.get_by_calendar(calendar_id, year=year)
         hours_list = self.hours_repo.get_by_calendar_year(calendar_id, year)
         earnings_list = self.earnings_repo.get_by_calendar_year(calendar_id, year)
 

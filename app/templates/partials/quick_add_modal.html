@@ -250,6 +250,49 @@
           <p class="mt-1 text-xs text-white/40">{{ t('qa.visibility_help') }}</p>
         </div>
 
+        <!-- Category -->
+        <div>
+          <label for="qa-parsed-category"
+                 class="mb-1 block text-xs font-medium uppercase tracking-wide text-white/60">
+            {{ t('category.label') }}
+          </label>
+          <select id="qa-parsed-category" class="glass-input">
+            <option value="">{{ t('category.none') }}</option>
+          </select>
+        </div>
+
+        <!-- Reminders Section -->
+        <div id="qa-reminders-section">
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-medium uppercase tracking-wide text-white/60">{{ t('reminder.label') }}</label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input id="qa-reminders-toggle" type="checkbox" checked
+                     class="h-4 w-4 rounded border-white/30 bg-white/10 text-indigo-500 focus:ring-indigo-500/50" />
+              <span id="qa-reminders-toggle-label" class="text-xs text-white/60">{{ t('reminder.toggle_on') }}</span>
+            </label>
+          </div>
+          <div id="qa-reminders-container">
+            <div id="qa-reminder-chips" class="flex flex-wrap gap-2 mb-2"></div>
+            <div id="qa-reminder-add-row" class="hidden items-center gap-2 mb-2">
+              <input id="qa-reminder-minutes-input" type="number" min="0" max="40320"
+                     placeholder="{{ t('reminder.minutes_placeholder') }}"
+                     class="glass-input w-28 text-sm" />
+              <select id="qa-reminder-method-select" class="glass-input w-28 text-sm">
+                <option value="popup">{{ t('reminder.method_popup') }}</option>
+                <option value="email">{{ t('reminder.method_email') }}</option>
+              </select>
+              <button type="button" id="qa-reminder-confirm-btn"
+                      class="glass-btn-primary rounded-lg px-3 py-1.5 text-xs min-h-[32px]">OK</button>
+            </div>
+            <div class="flex items-center gap-3">
+              <button type="button" id="qa-reminder-add-btn"
+                      class="text-xs text-cyan-300 hover:text-cyan-200 transition-colors">{{ t('reminder.add') }}</button>
+              <span id="qa-reminder-counter" class="text-xs text-white/40 hidden">{{ t('reminder.max_reached') }}</span>
+            </div>
+            <p class="mt-1 text-xs text-white/40">{{ t('reminder.sync_help') }}</p>
+          </div>
+        </div>
+
         <!-- Save inline error -->
         <div id="qa-save-error" class="hidden rounded-xl border border-red-400/30 bg-red-900/20 px-3 py-2 text-xs text-red-300" role="alert"></div>
 

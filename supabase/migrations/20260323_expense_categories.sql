@@ -11,25 +11,8 @@ create table if not exists public.expense_categories (
   unique (calendar_id, name)
 );
 
-alter table public.expense_categories enable row level security;
-
-create policy "Users can manage their own expense categories"
-  on public.expense_categories
-  for all
-  using (
-    calendar_id in (
-      select u.calendar_id from public.users u
-      where u.google_id::text = auth.uid()::text
-         or lower(u.email::text) = lower(coalesce(auth.jwt() ->> 'email', ''))
-    )
-  )
-  with check (
-    calendar_id in (
-      select u.calendar_id from public.users u
-      where u.google_id::text = auth.uid()::text
-         or lower(u.email::text) = lower(coalesce(auth.jwt() ->> 'email', ''))
-    )
-  );
+-- RLS disabled: app uses service-role key without JWT
+alter table public.expense_categories disable row level security;
 
 -- Add category_id to expenses table
 alter table public.expenses add column if not exists category_id uuid references public.expense_categories(id) on delete set null;

@@ -2,6 +2,7 @@ from pydantic import BaseModel, field_validator
 
 
 class BudgetSettingsUpdate(BaseModel):
+    year: int
     rate_1: float
     rate_2: float
     rate_3: float
@@ -27,6 +28,7 @@ class BudgetSettingsUpdate(BaseModel):
 class BudgetSettingsResponse(BaseModel):
     id: str
     calendar_id: str
+    year: int
     rate_1: float
     rate_2: float
     rate_3: float

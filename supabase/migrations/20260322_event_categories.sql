@@ -11,25 +11,8 @@ create table if not exists public.event_categories (
   unique (calendar_id, name)
 );
 
-alter table public.event_categories enable row level security;
-
-create policy "Users can manage their own event categories"
-  on public.event_categories
-  for all
-  using (
-    calendar_id in (
-      select u.calendar_id from public.users u
-      where u.google_id::text = auth.uid()::text
-         or lower(u.email::text) = lower(coalesce(auth.jwt() ->> 'email', ''))
-    )
-  )
-  with check (
-    calendar_id in (
-      select u.calendar_id from public.users u
-      where u.google_id::text = auth.uid()::text
-         or lower(u.email::text) = lower(coalesce(auth.jwt() ->> 'email', ''))
-    )
-  );
+-- RLS disabled: app uses service-role key without JWT
+alter table public.event_categories disable row level security;
 
 -- Add category_id to events table
 alter table public.events add column if not exists category_id uuid references public.event_categories(id) on delete set null;
