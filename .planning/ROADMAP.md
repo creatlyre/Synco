@@ -35,12 +35,17 @@
 
 ### v3.0 Dashboard, Notifications & Categories (Phases 23-27)
 
-- [x] **Phase 23: Event Categories & Colors** — Preset + custom categories with curated colors, color-coded calendar grid, category filtering (completed 2026-03-22)
+- [x] **Phase 23: Event Categories & Colors** — Preset + custom categories with curated colors, color-coded calendar grid, category filtering
+ (completed 2026-03-22)
   **Plans:** 2 plans
   Plans:
   - [ ] 23-01-PLAN.md — Backend foundation: DB migration, models, category CRUD API, event category_id integration
   - [ ] 23-02-PLAN.md — Frontend: category selector in forms, color-coded grid/day view, category filter bar
 - [ ] **Phase 24: Expense Categories & Charts** — Expense categorization, category selector in forms, pie/bar chart spending breakdown
+  **Plans:** 2 plans
+  Plans:
+  - [ ] 24-01-PLAN.md — Backend: DB migration, models, expense category CRUD API, category_id integration, stats breakdown endpoint
+  - [ ] 24-02-PLAN.md — Frontend: category selector in forms, category display/filter in expense list, pie/bar charts on stats page
 - [ ] **Phase 25: Shopping List** — Shared household shopping list with add/delete/check-off, multi-item paste
 - [ ] **Phase 26: Notifications** — In-app notification feed with bell badge, partner change alerts, email toggle, event reminders
 - [ ] **Phase 27: Dashboard** — Home page with today's events, 7-day preview, budget snapshot, quick-add buttons
@@ -69,7 +74,7 @@
   3. Budget stats page shows pie/bar chart of spending grouped by category
   4. User can filter or group the expense list by category
   5. Category selector appears in both recurring and one-time expense forms
-**Plans**: TBD
+**Plans**: 2 plans (24-01, 24-02)
 
 ### Phase 25: Shopping List
 **Goal**: Both household users share a common shopping list they can manage together
@@ -121,7 +126,7 @@
 | 21. Year-over-Year Comparison | v2.1 | 1/1 | Complete | 2026-03-21 |
 | 22. Historical Year Import | v2.1 | 1/1 | Complete | 2026-03-21 |
 | 23. Event Categories & Colors | 2/2 | Complete   | 2026-03-22 | - |
-| 24. Expense Categories & Charts | v3.0 | 0/? | Not started | - |
+| 24. Expense Categories & Charts | v3.0 | 0/2 | Not started | - |
 | 25. Shopping List | v3.0 | 0/? | Not started | - |
 | 26. Notifications | v3.0 | 0/? | Not started | - |
 | 27. Dashboard | v3.0 | 0/? | Not started | - |
