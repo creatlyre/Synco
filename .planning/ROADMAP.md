@@ -23,6 +23,8 @@
   - [x] 29-01-PLAN.md — Billing data model, Stripe checkout, webhook handler
   - [x] 29-02-PLAN.md — Entitlement dependencies, billing settings page, i18n
 - [ ] Phase 30: SaaS Production Platform and Operations
+  **Goal:** [To be planned]
+  **Requirements:** [SAS-01, SAS-05, SAS-06]
 - [ ] Phase 31: Paid Self-Hosted Distribution
 - [ ] Phase 32: Mobile Distribution Path (PWA + Android Wrapper)
 - [ ] Phase 33: Go-to-Market, Pricing, and Launch Funnel
