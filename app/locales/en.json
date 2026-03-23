@@ -446,5 +446,21 @@
   "shopping.item_updated": "Item updated",
   "shopping.section_learned": "Got it! Will remember for next time",
   "shopping.clear_all": "Clear all",
-  "shopping.clear_confirm": "Remove all items from the list?"
+  "shopping.clear_confirm": "Remove all items from the list?",
+  "dashboard.nav_home": "Home",
+  "dashboard.today_events": "Today's Events",
+  "dashboard.week_preview": "Next 7 Days",
+  "dashboard.budget_snapshot": "Budget Snapshot",
+  "dashboard.quick_add": "Quick Add",
+  "dashboard.add_event": "Add Event",
+  "dashboard.add_expense": "Add Expense",
+  "dashboard.no_events_today": "No events today",
+  "dashboard.no_events": "\u2014",
+  "dashboard.more_events": "more",
+  "dashboard.view_overview": "View full overview \u2192",
+  "dashboard.setup_budget": "Set up your budget",
+  "dashboard.account_balance": "Account Balance",
+  "dashboard.income": "Income",
+  "dashboard.expenses": "Expenses",
+  "dashboard.top_categories": "Top Categories"
 }

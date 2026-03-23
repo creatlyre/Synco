@@ -113,7 +113,7 @@ def test_day_view_ignores_malformed_recurrence_rule(authenticated_client, test_u
 # ── Quick Add modal (server-rendered HTML presence) ───────────────────────────
 
 def _calendar_html(authenticated_client):
-    response = authenticated_client.get("/")
+    response = authenticated_client.get("/calendar")
     assert response.status_code == 200
     return response.text
 
@@ -538,7 +538,7 @@ def test_switch_locale_from_polish_to_english(authenticated_client):
 def test_locale_cookie_persists_across_reload(authenticated_client):
     """Language selection persists in cookie across page reload."""
     # Switch to English
-    response1 = authenticated_client.get("/?lang=en")
+    response1 = authenticated_client.get("/dashboard?lang=en")
     assert response1.status_code == 200
 
     # Verify cookie was set
@@ -546,17 +546,17 @@ def test_locale_cookie_persists_across_reload(authenticated_client):
     assert cookies.get("locale") == "en"
 
     # Reload without query param
-    html = authenticated_client.get("/").text
+    html = authenticated_client.get("/dashboard").text
     assert_locale_rendered(html, "en")  # Should still be English
 
 
 def test_english_locale_consistent_across_pages(authenticated_client):
     """English rendering is consistent across different pages."""
     # Set locale to English
-    authenticated_client.get("/?lang=en")
+    authenticated_client.get("/dashboard?lang=en")
 
     # Check calendar page
-    calendar_html = authenticated_client.get("/").text
+    calendar_html = authenticated_client.get("/calendar").text
     assert_contains_any(calendar_html, "Calendar", "Logout", "Google Sync")
 
     # Check invite page
@@ -567,11 +567,11 @@ def test_english_locale_consistent_across_pages(authenticated_client):
 def test_query_param_overrides_cookie(authenticated_client):
     """?lang=en overrides persisted pl cookie."""
     # Set cookie to Polish
-    authenticated_client.get("/?lang=pl")
+    authenticated_client.get("/dashboard?lang=pl")
     assert authenticated_client.cookies.get("locale") == "pl"
 
     # Request with ?lang=en should set new cookie
-    html = authenticated_client.get("/?lang=en").text
+    html = authenticated_client.get("/dashboard?lang=en").text
     assert_locale_rendered(html, "en")
     assert authenticated_client.cookies.get("locale") == "en"
 

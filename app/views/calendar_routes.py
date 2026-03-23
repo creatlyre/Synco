@@ -9,7 +9,7 @@ from app.auth.dependencies import get_current_user
 from app.database.database import get_db
 from app.events.repository import EventRepository
 from app.events.service import EventService
-from app.i18n import inject_template_i18n
+from app.i18n import inject_template_i18n, set_locale_cookie_if_param
 
 router = APIRouter(prefix="/calendar", tags=["calendar"])
 templates = Jinja2Templates(directory="app/templates")
@@ -17,6 +17,24 @@ templates = Jinja2Templates(directory="app/templates")
 
 def _service(db) -> EventService:
     return EventService(EventRepository(db))
+
+
+@router.get("", response_class=HTMLResponse)
+async def calendar_page(request: Request, user=Depends(get_current_user)):
+    from datetime import datetime as dt
+    context = inject_template_i18n(
+        request,
+        {
+            "request": request,
+            "user": user,
+            "now": dt.utcnow(),
+        },
+    )
+    response = templates.TemplateResponse(
+        request=request, name="calendar.html", context=context
+    )
+    set_locale_cookie_if_param(response, request)
+    return response
 
 
 @router.get("/month", response_class=HTMLResponse)

@@ -29,6 +29,7 @@ from app.notifications.routes import router as notifications_router
 from app.notifications.views import router as notification_views_router
 from app.shopping.routes import router as shopping_router
 from app.shopping.views import router as shopping_views_router
+from app.dashboard.routes import router as dashboard_router
 
 app = FastAPI(
     title="Synco",
@@ -69,23 +70,13 @@ app.include_router(notifications_router)
 app.include_router(notification_views_router)
 app.include_router(shopping_router)
 app.include_router(shopping_views_router)
+app.include_router(dashboard_router)
 
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request, user=Depends(get_current_user)):
-    context = inject_template_i18n(
-        request,
-        {
-            "request": request,
-            "user": user,
-            "now": datetime.utcnow(),
-        },
-    )
-    response = templates.TemplateResponse(
-        request=request, name="calendar.html", context=context
-    )
-    set_locale_cookie_if_param(response, request)
-    return response
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/dashboard", status_code=302)
 
 
 @app.get("/invite", response_class=HTMLResponse)
@@ -111,7 +102,7 @@ async def health():
 
 @app.exception_handler(HTTPException)
 async def auth_redirect_handler(request: Request, exc: HTTPException):
-    if exc.status_code == 401 and request.url.path in {"/", "/invite"}:
+    if exc.status_code == 401 and request.url.path in {"/", "/invite", "/dashboard"}:
         from fastapi.responses import RedirectResponse
 
         return RedirectResponse(url="/auth/login", status_code=307)

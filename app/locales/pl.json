@@ -446,5 +446,21 @@
   "shopping.item_updated": "Produkt zaktualizowany",
   "shopping.section_learned": "Zapami\u0119tane na przysz\u0142o\u015b\u0107!",
   "shopping.clear_all": "Wyczy\u015b\u0107 wszystko",
-  "shopping.clear_confirm": "Usun\u0105\u0107 wszystkie produkty z listy?"
+  "shopping.clear_confirm": "Usun\u0105\u0107 wszystkie produkty z listy?",
+  "dashboard.nav_home": "G\u0142\u00f3wna",
+  "dashboard.today_events": "Dzisiejsze wydarzenia",
+  "dashboard.week_preview": "Nast\u0119pne 7 dni",
+  "dashboard.budget_snapshot": "Podsumowanie bud\u017cetu",
+  "dashboard.quick_add": "Szybkie dodawanie",
+  "dashboard.add_event": "Dodaj wydarzenie",
+  "dashboard.add_expense": "Dodaj wydatek",
+  "dashboard.no_events_today": "Brak wydarze\u0144 na dzi\u015b",
+  "dashboard.no_events": "\u2014",
+  "dashboard.more_events": "wi\u0119cej",
+  "dashboard.view_overview": "Zobacz pe\u0142ny przegl\u0105d \u2192",
+  "dashboard.setup_budget": "Skonfiguruj bud\u017cet",
+  "dashboard.account_balance": "Saldo konta",
+  "dashboard.income": "Przychody",
+  "dashboard.expenses": "Wydatki",
+  "dashboard.top_categories": "Top kategorie"
 }
