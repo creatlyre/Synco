@@ -89,7 +89,7 @@
 ### Phase 25: Shopping List
 **Goal**: Both household users share a common shopping list with Biedronka store-section auto-grouping for route-optimized shopping
 **Depends on**: Nothing (independent feature)
-**Requirements**: SHOP-01, SHOP-02, SHOP-03, SHOP-04, SHOP-05
+**Requirements**: SHOP-01, SHOP-02, SHOP-04, SHOP-05
 **Success Criteria** (what must be TRUE):
   1. User can add individual items to the shopping list
   2. User can delete and edit items on the shopping list
