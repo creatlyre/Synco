@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import unicodedata
 from pathlib import Path
 
 from app.budget.expense_repository import ExpenseRepository
@@ -8,6 +9,13 @@ from app.budget.expense_schemas import ExpenseCreate, ExpenseUpdate
 from app.database.models import Expense
 
 _KEYWORDS_PATH = Path(__file__).parent / "category_keywords.json"
+
+
+def _normalize(text: str) -> str:
+    """Lowercase, strip diacritics (including Polish ł→l), collapse whitespace."""
+    text = text.lower().replace("ł", "l")
+    nfkd = unicodedata.normalize("NFKD", text)
+    return "".join(c for c in nfkd if not unicodedata.combining(c))
 
 
 def _load_keywords() -> dict[str, list[str]]:
@@ -84,8 +92,8 @@ class ExpenseService:
 
     def _detect_category(self, name: str, categories: list) -> str | None:
         """Match expense name against keyword map, return category_id or None."""
-        lower = name.lower()
-        words = lower.split()
+        norm = _normalize(name)
+        words = norm.split()
         cat_by_name = {c.name: c.id for c in categories}
         for cat_name, keywords in CATEGORY_KEYWORDS.items():
             if cat_name not in cat_by_name:

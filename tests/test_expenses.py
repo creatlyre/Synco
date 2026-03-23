@@ -311,11 +311,14 @@ class TestExpenseCategories:
         res = authenticated_client.get("/api/budget/expenses/categories")
         assert res.status_code == 200
         data = res.json()["data"]
-        assert len(data) == 8
+        assert len(data) == 20
         names = {c["name"] for c in data}
         assert "Groceries" in names
         assert "Rent" in names
         assert "Other" in names
+        assert "Home" in names
+        assert "Clothing" in names
+        assert "Children" in names
         # All are presets
         assert all(c["is_preset"] for c in data)
 

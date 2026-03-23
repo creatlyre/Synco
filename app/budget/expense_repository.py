@@ -121,7 +121,19 @@ class ExpenseRepository:
         {"name": "Entertainment", "color": "#ec4899", "sort_order": 5},
         {"name": "Health", "color": "#ef4444", "sort_order": 6},
         {"name": "Education", "color": "#8b5cf6", "sort_order": 7},
-        {"name": "Other", "color": "#64748b", "sort_order": 8},
+        {"name": "Home", "color": "#f97316", "sort_order": 8},
+        {"name": "Clothing", "color": "#d946ef", "sort_order": 9},
+        {"name": "Children", "color": "#fb7185", "sort_order": 10},
+        {"name": "Personal Care", "color": "#a78bfa", "sort_order": 11},
+        {"name": "Pets", "color": "#84cc16", "sort_order": 12},
+        {"name": "Events", "color": "#be123c", "sort_order": 13},
+        {"name": "Savings & Finance", "color": "#14b8a6", "sort_order": 14},
+        {"name": "Travel", "color": "#0ea5e9", "sort_order": 15},
+        {"name": "Shopping", "color": "#c084fc", "sort_order": 16},
+        {"name": "Electronics", "color": "#3b82f6", "sort_order": 17},
+        {"name": "Garden", "color": "#22c55e", "sort_order": 18},
+        {"name": "Loan", "color": "#eab308", "sort_order": 19},
+        {"name": "Other", "color": "#64748b", "sort_order": 20},
     ]
 
     def list_categories(self, calendar_id: str) -> list[ExpenseCategory]:

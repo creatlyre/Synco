@@ -311,7 +311,8 @@
 
   function detectCategory(name) {
     if (!name || !categories.length || !Object.keys(categoryKeywords).length) return '';
-    var lower = name.toLowerCase();
+    var lower = name.toLowerCase().replace(/\u0142/g, 'l');
+    lower = lower.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
     var words = lower.split(/\s+/);
     for (var catName in categoryKeywords) {
       var keywords = categoryKeywords[catName];
