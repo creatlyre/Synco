@@ -1,16 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Dashboard, Notifications & Categories
-current_phase: 27
-status: completed
-stopped_at: v3.0 milestone complete
-last_updated: "2026-03-23T16:00:00.000Z"
+milestone: v1.0
+milestone_name: milestone
+status: executing
+stopped_at: milestone kickoff complete
+last_updated: "2026-03-23T16:27:39.445Z"
 last_activity: 2026-03-23
 progress:
-  total_phases: 5
+  total_phases: 9
   completed_phases: 5
-  total_plans: 11
+  total_plans: 13
   completed_plans: 11
 ---
 
@@ -21,19 +20,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** A shared calendar both partners can edit that stays in sync with Google Calendar.
-**Current focus:** Planning next milestone
+**Current focus:** Phase 28 — Licensing and Commercial Terms Foundation
 
 ## Position
 
-**Milestone:** v3.0 Dashboard, Notifications & Categories — SHIPPED 2026-03-23
-**Status:** Milestone complete, archived
+**Milestone:** v4.0 Monetization Foundation
+**Status:** Executing Phase 28
 Last activity: 2026-03-23
 
-[████████████████████] 5/5 phases — 11/11 plans
+[░░░░░░░░░░░░░░░░░░░░] 0/6 phases — 0 plans defined
 
 ## Accumulated Context
 
-Cleared at milestone boundary. See `.planning/milestones/v3.0-ROADMAP.md` for full history.
+Previous milestone archived. See `.planning/milestones/v3.0-ROADMAP.md` for full history.
 
 ### Decisions
 
@@ -41,20 +40,18 @@ Cleared at milestone boundary. See `.planning/milestones/v3.0-ROADMAP.md` for fu
 
 ### Pending Todos
 
-None.
+- Define detailed phase plans for phases 28-33
+- Start execution with `/gsd-plan-phase 28`
 
 ## Session Continuity
 
 Last session: 2026-03-23
-Stopped at: v3.0 milestone complete
-Next action: `/gsd-new-milestone` to start next milestone
+Stopped at: milestone kickoff complete
+Next action: `/gsd-plan-phase 28` to start implementation planning
 
 ## Session Log
 
-- 2026-03-22: Started v3.0 milestone — Dashboard, Notifications & Categories
-- 2026-03-22: Phase 23 complete — Event Categories & Colors
-- 2026-03-23: Phase 24 complete — Expense Categories & Charts
-- 2026-03-23: Phase 25 complete — Shopping List
-- 2026-03-23: Phase 26 complete — Notifications
-- 2026-03-23: Phase 27 complete — Dashboard
 - 2026-03-23: v3.0 milestone archived — 5 phases, 11 plans, 331 tests, 60 commits
+- 2026-03-23: Started v4.0 milestone — Monetization Foundation
+- 2026-03-23: Scope selected — Option 3 (SaaS primary + self-hosted purchase option)
+- 2026-03-23: Roadmap created — phases 28-33 (licensing, billing, SaaS ops, self-hosted, mobile path, launch)
