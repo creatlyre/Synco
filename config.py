@@ -44,4 +44,10 @@ class Settings(BaseSettings):
     SMTP_FROM_ADDRESS: str = ""
     SMTP_USE_TLS: bool = True
 
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PUBLISHABLE_KEY: str = ""
+    STRIPE_PRO_PRICE_ID: str = ""
+    STRIPE_FAMILY_PLUS_PRICE_ID: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

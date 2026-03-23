@@ -216,3 +216,28 @@ class ShoppingKeywordOverride:
     keyword: str = ""
     section_id: str = ""
     created_at: datetime | None = None
+
+
+@dataclass
+class Subscription:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str = ""
+    stripe_customer_id: str | None = None
+    stripe_subscription_id: str | None = None
+    plan: str = "free"
+    status: str = "active"
+    current_period_end: datetime | None = None
+    cancel_at_period_end: bool = False
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+@dataclass
+class BillingEvent:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str = ""
+    event_type: str = ""
+    plan: str | None = None
+    stripe_event_id: str | None = None
+    metadata: dict = field(default_factory=dict)
+    created_at: datetime | None = None
