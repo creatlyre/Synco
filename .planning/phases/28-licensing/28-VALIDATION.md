@@ -1,7 +1,7 @@
 ---
 phase: 28
 slug: licensing
-status: draft
+status: approved
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-03-23
@@ -19,16 +19,16 @@ created: 2026-03-23
 |----------|-------|
 | **Framework** | pytest 7.x (existing) |
 | **Config file** | pyproject.toml |
-| **Quick run command** | `python -m pytest tests/ -x --timeout=10 -q` |
-| **Full suite command** | `python -m pytest tests/ --timeout=30` |
+| **Quick run command** | `python -m pytest tests/ -x -q` |
+| **Full suite command** | `python -m pytest tests/` |
 | **Estimated runtime** | ~15 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `python -m pytest tests/ -x --timeout=10 -q`
-- **After every plan wave:** Run `python -m pytest tests/ --timeout=30`
+- **After every task commit:** Run `python -m pytest tests/ -x -q`
+- **After every plan wave:** Run `python -m pytest tests/`
 - **Before `/gsd-verify-work`:** Full suite must be green
 - **Max feedback latency:** 15 seconds
 
@@ -38,10 +38,10 @@ created: 2026-03-23
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 28-01-01 | 01 | 1 | MON-01 | file check | `grep "AFFERO" LICENSE` | ✅ | ⬜ pending |
-| 28-01-02 | 01 | 1 | MON-02 | file check | `test -f COMMERCIAL-LICENSE.md` | ❌ W0 | ⬜ pending |
-| 28-02-01 | 02 | 1 | MON-03 | file check | `test -f MONETIZATION.md` | ❌ W0 | ⬜ pending |
-| 28-02-02 | 02 | 1 | MON-03 | content | `grep "free\|paid" README.md` | ✅ | ⬜ pending |
+| 28-01-01 | 01 | 1 | MON-01 | file check | `Select-String "AFFERO" LICENSE` | ✅ | ✅ green |
+| 28-01-02 | 01 | 1 | MON-02 | file check | `Test-Path COMMERCIAL-LICENSE.md` | ✅ | ✅ green |
+| 28-02-01 | 02 | 1 | MON-03 | file check | `Test-Path MONETIZATION.md` | ✅ | ✅ green |
+| 28-02-02 | 02 | 1 | MON-03 | content | `Select-String "free|paid" README.md` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -71,4 +71,16 @@ created: 2026-03-23
 - [x] Feedback latency < 15s
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-03-23
+
+---
+
+## Validation Audit 2026-03-23
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+All file checks verified green. Phase 28 is documentation-only — no new test files needed.
