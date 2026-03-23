@@ -41,7 +41,7 @@
   Plans:
   - [ ] 23-01-PLAN.md — Backend foundation: DB migration, models, category CRUD API, event category_id integration
   - [ ] 23-02-PLAN.md — Frontend: category selector in forms, color-coded grid/day view, category filter bar
-- [ ] **Phase 24: Expense Categories & Charts** — Expense categorization, category selector in forms, pie/bar chart spending breakdown
+- [x] **Phase 24: Expense Categories & Charts** — Expense categorization, category selector in forms, pie/bar chart spending breakdown (completed 2026-03-23)
   **Plans:** 2 plans
   Plans:
   - [ ] 24-01-PLAN.md — Backend: DB migration, models, expense category CRUD API, category_id integration, stats breakdown endpoint
@@ -126,7 +126,7 @@
 | 21. Year-over-Year Comparison | v2.1 | 1/1 | Complete | 2026-03-21 |
 | 22. Historical Year Import | v2.1 | 1/1 | Complete | 2026-03-21 |
 | 23. Event Categories & Colors | 2/2 | Complete   | 2026-03-22 | - |
-| 24. Expense Categories & Charts | 1/2 | In Progress|  | - |
+| 24. Expense Categories & Charts | 2/2 | Complete   | 2026-03-23 | - |
 | 25. Shopping List | v3.0 | 0/? | Not started | - |
 | 26. Notifications | v3.0 | 0/? | Not started | - |
 | 27. Dashboard | v3.0 | 0/? | Not started | - |
