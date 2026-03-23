@@ -463,6 +463,7 @@
   "dashboard.view_overview": "View full overview \u2192",
   "dashboard.setup_budget": "Set up your budget",
   "dashboard.account_balance": "Account Balance",
+  "dashboard.monthly_balance": "Monthly Balance",
   "dashboard.income": "Income",
   "dashboard.expenses": "Expenses",
   "dashboard.top_categories": "Top Categories"

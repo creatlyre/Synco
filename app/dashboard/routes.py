@@ -31,6 +31,19 @@ async def dashboard_page(
     budget_snapshot = service.get_budget_snapshot(user.calendar_id)
     top_categories = service.get_top_expense_categories(user.calendar_id)
 
+    # Build category name → i18n key map for translation
+    _CAT_I18N_SLUGS = {
+        "Groceries": "groceries", "Rent": "rent", "Utilities": "utilities",
+        "Transport": "transport", "Entertainment": "entertainment",
+        "Health": "health", "Education": "education", "Home": "home",
+        "Clothing": "clothing", "Children": "children",
+        "Personal Care": "personal_care", "Pets": "pets",
+        "Events": "events", "Savings & Finance": "savings",
+        "Travel": "travel", "Shopping": "shopping",
+        "Electronics": "electronics", "Garden": "garden",
+        "Loan": "loan", "Other": "other",
+    }
+
     from datetime import datetime
 
     now = datetime.utcnow()
@@ -53,10 +66,19 @@ async def dashboard_page(
             "category_map": category_map,
             "budget_snapshot": budget_snapshot,
             "top_categories": top_categories,
+            "cat_i18n": {},  # placeholder, filled after inject
             "budget_month_key": month_keys[now.month - 1],
             "budget_year": now.year,
         },
     )
+
+    # Now translate category names using the t() function from context
+    t_fn = context.get("t")
+    if t_fn:
+        context["cat_i18n"] = {
+            name: t_fn(f"budget.expense_category_{slug}")
+            for name, slug in _CAT_I18N_SLUGS.items()
+        }
 
     response = templates.TemplateResponse(
         request=request, name="dashboard.html", context=context,
