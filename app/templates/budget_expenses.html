@@ -45,10 +45,10 @@
     <!-- Loading skeleton -->
     <div id="skeleton-loader">
       <div class="glass rounded-2xl p-6 mb-6">
-        <div class="animate-pulse bg-white/5 h-8 w-48 rounded mb-4 mx-auto"></div>
+        <div class="skeleton-shimmer h-8 w-48 rounded mb-4 mx-auto"></div>
         <div class="space-y-2">
           {% for i in range(5) %}
-          <div class="animate-pulse bg-white/5 h-6 rounded"></div>
+          <div class="skeleton-shimmer h-6 rounded"></div>
           {% endfor %}
         </div>
       </div>
@@ -178,8 +178,8 @@
 </div>
 
 <!-- Bulk paste modal -->
-<div id="bulk-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-3 py-3" style="background: rgba(0,0,0,0.6);" role="dialog" aria-modal="true" aria-labelledby="bulk-modal-title">
-  <div class="glass rounded-2xl p-6 w-full max-w-2xl mx-4">
+<div id="bulk-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-3 py-3 modal-backdrop is-visible" role="dialog" aria-modal="true" aria-labelledby="bulk-modal-title">
+  <div class="glass-elevated rounded-2xl p-6 w-full max-w-2xl mx-4 modal-panel">
     <h3 id="bulk-modal-title" class="text-sm font-semibold mb-3"></h3>
     <textarea id="bulk-textarea" rows="10" class="glass-input w-full rounded-lg px-3 py-2 text-xs font-mono mb-3" placeholder=""></textarea>
     <div id="bulk-preview" class="hidden mb-3">
@@ -245,6 +245,30 @@
     autoCategorized: '{{ t("budget.expense_category_auto_done") }}'
   };
 
+  const catTranslations = {
+    'Groceries': {{ t('budget.expense_category_groceries')|tojson }},
+    'Rent': {{ t('budget.expense_category_rent')|tojson }},
+    'Utilities': {{ t('budget.expense_category_utilities')|tojson }},
+    'Transport': {{ t('budget.expense_category_transport')|tojson }},
+    'Entertainment': {{ t('budget.expense_category_entertainment')|tojson }},
+    'Health': {{ t('budget.expense_category_health')|tojson }},
+    'Education': {{ t('budget.expense_category_education')|tojson }},
+    'Home': {{ t('budget.expense_category_home')|tojson }},
+    'Clothing': {{ t('budget.expense_category_clothing')|tojson }},
+    'Children': {{ t('budget.expense_category_children')|tojson }},
+    'Personal Care': {{ t('budget.expense_category_personal_care')|tojson }},
+    'Pets': {{ t('budget.expense_category_pets')|tojson }},
+    'Events': {{ t('budget.expense_category_events')|tojson }},
+    'Savings & Finance': {{ t('budget.expense_category_savings')|tojson }},
+    'Travel': {{ t('budget.expense_category_travel')|tojson }},
+    'Shopping': {{ t('budget.expense_category_shopping')|tojson }},
+    'Electronics': {{ t('budget.expense_category_electronics')|tojson }},
+    'Garden': {{ t('budget.expense_category_garden')|tojson }},
+    'Loan': {{ t('budget.expense_category_loan')|tojson }},
+    'Other': {{ t('budget.expense_category_other')|tojson }}
+  };
+  function translateCat(name) { return catTranslations[name] || name; }
+
   let currentYear = new Date().getFullYear();
   let recurringData = [];
   let onetimeData = [];
@@ -292,7 +316,7 @@
         ? '<option value="">' + labels.categoryFilterAll + '</option>'
         : '<option value="">' + labels.categoryNone + '</option>';
       categories.forEach(function(c) {
-        sel.innerHTML += '<option value="' + c.id + '">' + c.name + '</option>';
+        sel.innerHTML += '<option value="' + c.id + '">' + translateCat(c.name) + '</option>';
       });
       sel.value = val;
     });
@@ -356,11 +380,11 @@
       total += e.amount;
       const cat = categoryMap[e.category_id];
       const catCell = cat
-        ? '<span class="inline-block w-2 h-2 rounded-full mr-1" style="background:' + cat.color + '"></span>' + cat.name
+        ? '<span class="inline-block w-2 h-2 rounded-full mr-1" style="background:' + cat.color + '"></span>' + translateCat(cat.name)
         : '<span class="opacity-40">—</span>';
       return `<tr class="border-b border-white/5" data-id="${e.id}">
         <td class="py-1 px-2 editable-name cursor-pointer hover:bg-white/5" data-id="${e.id}" data-field="name">${e.name}</td>
-        <td class="py-1 px-2 text-xs">${catCell}</td>
+        <td class="py-1 px-2 text-xs editable-category cursor-pointer hover:bg-white/5" data-id="${e.id}" data-cat-id="${e.category_id || ''}">${catCell}</td>
         <td class="py-1 px-2 text-right editable-amount cursor-pointer hover:bg-white/5" data-id="${e.id}" data-field="amount">${e.amount.toFixed(2)}</td>
         <td class="py-1 px-2 text-right"><button class="glass-btn-danger rounded px-1.5 py-0.5 text-xs del-btn" data-id="${e.id}" data-recurring="1" aria-label="Delete ${e.name}">✕</button></td>
       </tr>`;
@@ -415,12 +439,12 @@
       total += e.amount;
       const cat = categoryMap[e.category_id];
       const catCell = cat
-        ? '<span class="inline-block w-2 h-2 rounded-full mr-1" style="background:' + cat.color + '"></span>' + cat.name
+        ? '<span class="inline-block w-2 h-2 rounded-full mr-1" style="background:' + cat.color + '"></span>' + translateCat(cat.name)
         : '<span class="opacity-40">—</span>';
       return `<tr class="border-b border-white/5" data-id="${e.id}">
         <td class="py-1 px-2 text-xs opacity-70">${e.month} - ${monthNames[e.month - 1]}</td>
         <td class="py-1 px-2 editable-name cursor-pointer hover:bg-white/5" data-id="${e.id}" data-field="name">${e.name}</td>
-        <td class="py-1 px-2 text-xs">${catCell}</td>
+        <td class="py-1 px-2 text-xs editable-category cursor-pointer hover:bg-white/5" data-id="${e.id}" data-cat-id="${e.category_id || ''}">${catCell}</td>
         <td class="py-1 px-2 text-right editable-amount cursor-pointer hover:bg-white/5" data-id="${e.id}" data-field="amount">${e.amount.toFixed(2)}</td>
         <td class="py-1 px-2 text-right"><button class="glass-btn-danger rounded px-1.5 py-0.5 text-xs del-btn" data-id="${e.id}" data-recurring="0" aria-label="Delete ${e.name}">✕</button></td>
       </tr>`;
@@ -442,6 +466,10 @@
     // Inline edit — amount cells
     tbody.querySelectorAll('.editable-amount').forEach(cell => {
       cell.addEventListener('click', () => startEdit(cell, 'amount'));
+    });
+    // Inline edit — category cells
+    tbody.querySelectorAll('.editable-category').forEach(cell => {
+      cell.addEventListener('click', () => startCategoryEdit(cell));
     });
   }
 
@@ -489,6 +517,141 @@
       if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
       if (ev.key === 'Escape') { cell.textContent = oldValue; }
     });
+  }
+
+  function startCategoryEdit(cell) {
+    if (cell.querySelector('.cat-combobox')) return;
+    const id = cell.dataset.id;
+    const oldCatId = cell.dataset.catId || '';
+
+    // Build combobox container
+    const wrapper = document.createElement('div');
+    wrapper.className = 'cat-combobox';
+    wrapper.style.cssText = 'position:relative;';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'glass-input w-full rounded px-1 py-0.5 text-xs';
+    input.placeholder = labels.categoryLabel + '...';
+    wrapper.appendChild(input);
+
+    const list = document.createElement('div');
+    list.className = 'cat-dropdown';
+    list.style.cssText = 'position:absolute;left:0;right:0;top:100%;z-index:50;max-height:180px;overflow-y:auto;border-radius:8px;margin-top:2px;background:rgba(30,30,40,0.95);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(12px);';
+    wrapper.appendChild(list);
+
+    cell.innerHTML = '';
+    cell.appendChild(wrapper);
+    input.focus();
+
+    let highlightIdx = -1;
+
+    function normalize(s) {
+      return s.toLowerCase().replace(/\u0142/g, 'l').normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function buildItems(filter) {
+      const norm = normalize(filter);
+      const items = [{id: '', name: '', color: '', label: labels.categoryNone}];
+      categories.forEach(function(c) {
+        items.push({id: c.id, name: c.name, color: c.color, label: translateCat(c.name)});
+      });
+      if (!norm) return items;
+      return items.filter(function(it) {
+        return normalize(it.label).indexOf(norm) !== -1;
+      });
+    }
+
+    function renderList(filter) {
+      const items = buildItems(filter || '');
+      highlightIdx = -1;
+      list.innerHTML = items.map(function(it, idx) {
+        const dot = it.color
+          ? '<span class="inline-block w-2 h-2 rounded-full mr-1.5 flex-shrink-0" style="background:' + it.color + '"></span>'
+          : '';
+        const selected = it.id === oldCatId ? ' style="background:rgba(255,255,255,0.08)"' : '';
+        return '<div class="cat-option flex items-center px-2 py-1.5 text-xs cursor-pointer hover:bg-white/10 transition-colors" data-idx="' + idx + '" data-id="' + it.id + '"' + selected + '>'
+          + dot + '<span>' + (it.label || labels.categoryNone) + '</span></div>';
+      }).join('');
+      attachOptionEvents();
+    }
+
+    function attachOptionEvents() {
+      list.querySelectorAll('.cat-option').forEach(function(opt) {
+        opt.addEventListener('mousedown', function(ev) {
+          ev.preventDefault();
+          selectCategory(opt.dataset.id);
+        });
+      });
+    }
+
+    function highlightOption(idx) {
+      const opts = list.querySelectorAll('.cat-option');
+      opts.forEach(function(o) { o.style.background = ''; });
+      if (idx >= 0 && idx < opts.length) {
+        highlightIdx = idx;
+        opts[idx].style.background = 'rgba(255,255,255,0.12)';
+        opts[idx].scrollIntoView({block: 'nearest'});
+      }
+    }
+
+    function selectCategory(catId) {
+      // Update local data
+      const allData = [...recurringData, ...onetimeData];
+      const item = allData.find(function(e) { return e.id === id; });
+      if (item) item.category_id = catId || null;
+      cell.dataset.catId = catId || '';
+
+      // Update UI
+      const cat = categoryMap[catId];
+      cell.innerHTML = cat
+        ? '<span class="inline-block w-2 h-2 rounded-full mr-1" style="background:' + cat.color + '"></span>' + translateCat(cat.name)
+        : '<span class="opacity-40">—</span>';
+
+      // Save to API
+      updateExpense(id, {category_id: catId || null});
+    }
+
+    function cancel() {
+      const cat = categoryMap[oldCatId];
+      cell.innerHTML = cat
+        ? '<span class="inline-block w-2 h-2 rounded-full mr-1" style="background:' + cat.color + '"></span>' + translateCat(cat.name)
+        : '<span class="opacity-40">—</span>';
+    }
+
+    input.addEventListener('input', function() {
+      renderList(this.value);
+    });
+
+    input.addEventListener('keydown', function(ev) {
+      const opts = list.querySelectorAll('.cat-option');
+      if (ev.key === 'ArrowDown') {
+        ev.preventDefault();
+        highlightOption(Math.min(highlightIdx + 1, opts.length - 1));
+      } else if (ev.key === 'ArrowUp') {
+        ev.preventDefault();
+        highlightOption(Math.max(highlightIdx - 1, 0));
+      } else if (ev.key === 'Enter') {
+        ev.preventDefault();
+        if (highlightIdx >= 0 && highlightIdx < opts.length) {
+          selectCategory(opts[highlightIdx].dataset.id);
+        }
+      } else if (ev.key === 'Escape') {
+        ev.preventDefault();
+        cancel();
+      } else if (ev.key === 'Tab') {
+        cancel();
+      }
+    });
+
+    input.addEventListener('blur', function() {
+      // Small delay to allow mousedown on options to fire
+      setTimeout(function() {
+        if (cell.querySelector('.cat-combobox')) cancel();
+      }, 150);
+    });
+
+    renderList('');
   }
 
   function updateTotals() {

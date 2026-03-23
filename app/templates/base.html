@@ -23,10 +23,10 @@
               <svg class="inline-block w-5 h-5 -mt-0.5 mr-0.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               {{ t('app.name') }}
             </a>
-            <a href="/dashboard" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex">{{ t('dashboard.nav_home') }}</a>
-            <a href="/calendar" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex">{{ t('app.calendar_short') }}</a>
-            <a href="/budget/overview" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex">{{ t('budget.nav_link') }}</a>
-            <a href="/shopping" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex">{{ t('shopping.nav_link') }}</a>
+            <a href="/dashboard" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex {{ 'desktop-nav-active' if request.url.path == '/dashboard' else '' }}">{{ t('dashboard.nav_home') }}</a>
+            <a href="/calendar" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex {{ 'desktop-nav-active' if request.url.path == '/calendar' else '' }}">{{ t('app.calendar_short') }}</a>
+            <a href="/budget/overview" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex {{ 'desktop-nav-active' if '/budget' in request.url.path else '' }}">{{ t('budget.nav_link') }}</a>
+            <a href="/shopping" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex {{ 'desktop-nav-active' if request.url.path == '/shopping' else '' }}">{{ t('shopping.nav_link') }}</a>
             <div class="flex items-center gap-2">
                 <!-- Theme Toggle -->
                 <button id="theme-toggle" class="glass-btn-secondary rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center p-2" aria-label="Toggle dark/light mode" title="Toggle theme (Press D)">
@@ -91,7 +91,10 @@
     </main>
 
     <!-- Global toast container for aria-live announcements -->
-    <div id="global-toast" class="fixed bottom-4 right-4 z-[100] hidden rounded-xl px-4 py-3 text-sm font-medium shadow-lg toast-success" role="status" aria-live="polite"></div>
+    <div id="global-toast" class="fixed bottom-4 right-4 z-[100] hidden rounded-xl px-4 py-3 text-sm font-medium shadow-lg toast-success toast-enter" role="status" aria-live="polite"></div>
+
+    <!-- Second ambient orb (bottom-left, complementary to body::after) -->
+    <div class="fixed bottom-[-10%] left-[-5%] w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] rounded-full pointer-events-none z-0" style="background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, rgba(34, 197, 94, 0.04) 40%, transparent 70%); filter: blur(50px); animation: orbFloat 25s ease-in-out infinite alternate-reverse;"></div>
 
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-bottom-nav" aria-label="Mobile navigation">

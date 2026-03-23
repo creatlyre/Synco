@@ -52,15 +52,15 @@
     <!-- Loading skeleton -->
     <div id="skeleton-loader">
       <div class="glass rounded-2xl p-6 mb-6">
-        <div class="animate-pulse bg-white/5 h-8 w-48 rounded mb-4 mx-auto"></div>
+        <div class="skeleton-shimmer h-8 w-48 rounded mb-4 mx-auto"></div>
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {% for i in range(6) %}
           <div class="glass rounded-xl p-4">
-            <div class="animate-pulse bg-white/5 h-5 w-24 rounded mb-3"></div>
+            <div class="skeleton-shimmer h-5 w-24 rounded mb-3"></div>
             <div class="space-y-2">
-              <div class="animate-pulse bg-white/5 h-8 rounded-xl"></div>
-              <div class="animate-pulse bg-white/5 h-8 rounded-xl"></div>
-              <div class="animate-pulse bg-white/5 h-8 rounded-xl"></div>
+              <div class="skeleton-shimmer h-8 rounded-xl"></div>
+              <div class="skeleton-shimmer h-8 rounded-xl"></div>
+              <div class="skeleton-shimmer h-8 rounded-xl"></div>
             </div>
           </div>
           {% endfor %}
@@ -145,7 +145,7 @@
   }
 
   async function loadSettings() {
-    const res = await fetch('/api/budget/settings');
+    const res = await fetch('/api/budget/settings?year=' + currentYear);
     const json = await res.json();
     settings = json.data;
   }

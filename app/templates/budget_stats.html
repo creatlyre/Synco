@@ -49,10 +49,10 @@
     <!-- Loading skeleton -->
     <div id="skeleton-loader">
       <div class="glass rounded-2xl p-6">
-        <div class="animate-pulse bg-white/5 h-8 w-48 rounded mb-4 mx-auto"></div>
+        <div class="skeleton-shimmer h-8 w-48 rounded mb-4 mx-auto"></div>
         <div class="space-y-2">
           {% for i in range(6) %}
-          <div class="animate-pulse bg-white/5 h-8 rounded"></div>
+          <div class="skeleton-shimmer h-8 rounded"></div>
           {% endfor %}
         </div>
       </div>
@@ -184,6 +184,30 @@
   let currentYear = new Date().getFullYear();
   let yearBounds = null;
 
+  const catTranslations = {
+    'Groceries': {{ t('budget.expense_category_groceries')|tojson }},
+    'Rent': {{ t('budget.expense_category_rent')|tojson }},
+    'Utilities': {{ t('budget.expense_category_utilities')|tojson }},
+    'Transport': {{ t('budget.expense_category_transport')|tojson }},
+    'Entertainment': {{ t('budget.expense_category_entertainment')|tojson }},
+    'Health': {{ t('budget.expense_category_health')|tojson }},
+    'Education': {{ t('budget.expense_category_education')|tojson }},
+    'Home': {{ t('budget.expense_category_home')|tojson }},
+    'Clothing': {{ t('budget.expense_category_clothing')|tojson }},
+    'Children': {{ t('budget.expense_category_children')|tojson }},
+    'Personal Care': {{ t('budget.expense_category_personal_care')|tojson }},
+    'Pets': {{ t('budget.expense_category_pets')|tojson }},
+    'Events': {{ t('budget.expense_category_events')|tojson }},
+    'Savings & Finance': {{ t('budget.expense_category_savings')|tojson }},
+    'Travel': {{ t('budget.expense_category_travel')|tojson }},
+    'Shopping': {{ t('budget.expense_category_shopping')|tojson }},
+    'Electronics': {{ t('budget.expense_category_electronics')|tojson }},
+    'Garden': {{ t('budget.expense_category_garden')|tojson }},
+    'Loan': {{ t('budget.expense_category_loan')|tojson }},
+    'Other': {{ t('budget.expense_category_other')|tojson }}
+  };
+  function translateCat(name) { return catTranslations[name] || name; }
+
   function fmt(n) {
     const s = Math.abs(n).toFixed(2);
     const parts = s.split('.');
@@ -203,7 +227,7 @@
   }
 
   async function loadSettings() {
-    const res = await fetch('/api/budget/settings');
+    const res = await fetch('/api/budget/settings?year=' + currentYear);
     const json = await res.json();
     return json.data;
   }
@@ -349,7 +373,7 @@
     var uncatLabel = {{ t('budget.expense_category_uncategorized')|tojson }};
     legendEl.innerHTML = data.map(function(c) {
       var pct = ((c.total_amount / total) * 100).toFixed(1);
-      var name = c.category_name || uncatLabel;
+      var name = translateCat(c.category_name) || uncatLabel;
       return '<span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:' + (c.color || '#64748b') + '"></span>' + name + ' (' + pct + '%)</span>';
     }).join('');
   }
@@ -366,7 +390,7 @@
     container.innerHTML = data.map(function(c) {
       var pct = Math.min((c.total_amount / maxAmount) * 100, 100);
       var color = c.color || '#64748b';
-      var name = c.category_name || uncatLabel;
+      var name = translateCat(c.category_name) || uncatLabel;
       return '<div class="flex items-center gap-3">' +
         '<span class="text-xs w-24 text-right opacity-70 flex-shrink-0 truncate">' + name + '</span>' +
         '<div class="flex-1 h-5 rounded bg-white/5 overflow-hidden relative">' +

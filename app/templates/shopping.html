@@ -12,10 +12,10 @@
   <!-- Loading skeleton -->
   <div id="skeleton-loader">
     <div class="glass rounded-2xl p-6 mb-4">
-      <div class="animate-pulse bg-white/5 h-8 w-48 rounded mb-4 mx-auto"></div>
+      <div class="skeleton-shimmer h-8 w-48 rounded mb-4 mx-auto"></div>
       <div class="space-y-2">
         {% for i in range(4) %}
-        <div class="animate-pulse bg-white/5 h-6 rounded"></div>
+        <div class="skeleton-shimmer h-6 rounded"></div>
         {% endfor %}
       </div>
     </div>
@@ -60,17 +60,20 @@
 
     <!-- Empty state -->
     <div id="empty-state" class="hidden">
-      <div class="glass rounded-xl p-8 text-center">
-        <div class="text-4xl mb-3">🛒</div>
-        <p class="text-caption">{{ t('shopping.empty') }}</p>
+      <div class="glass rounded-xl p-8">
+        <div class="empty-state">
+          <div class="empty-state-icon">🛒</div>
+          <p class="empty-state-title">{{ t('shopping.empty') }}</p>
+          <p class="empty-state-text">{{ t('shopping.add_item') }}</p>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Multi-add modal -->
-<div id="multi-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-3 py-3" style="background: rgba(0,0,0,0.6);" role="dialog" aria-modal="true" aria-labelledby="multi-modal-title">
-  <div class="glass rounded-2xl p-6 w-full max-w-lg mx-4">
+<div id="multi-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-3 py-3 modal-backdrop is-visible" role="dialog" aria-modal="true" aria-labelledby="multi-modal-title">
+  <div class="glass-elevated rounded-2xl p-6 w-full max-w-lg mx-4 modal-panel">
     <h3 id="multi-modal-title" class="text-sm font-semibold mb-3">📋 {{ t('shopping.multi_add') }}</h3>
     <textarea id="multi-textarea" rows="6" class="glass-input w-full rounded-lg px-3 py-2 text-sm mb-3" placeholder="{{ t('shopping.multi_placeholder') }}"></textarea>
     <div class="flex gap-2 justify-end">
@@ -81,8 +84,8 @@
 </div>
 
 <!-- Section picker modal (for uncategorized items) -->
-<div id="section-picker-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-3 py-3" style="background: rgba(0,0,0,0.6);" role="dialog" aria-modal="true" aria-labelledby="section-picker-title">
-  <div class="glass rounded-2xl p-6 w-full max-w-sm mx-4">
+<div id="section-picker-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-3 py-3 modal-backdrop is-visible" role="dialog" aria-modal="true" aria-labelledby="section-picker-title">
+  <div class="glass-elevated rounded-2xl p-6 w-full max-w-sm mx-4 modal-panel">
     <h3 id="section-picker-title" class="text-sm font-semibold mb-3">{{ t('shopping.pick_section') }}</h3>
     <p id="section-picker-item-name" class="text-xs opacity-70 mb-3"></p>
     <div id="section-picker-list" class="space-y-1 max-h-64 overflow-y-auto"></div>
