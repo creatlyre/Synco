@@ -16,6 +16,12 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # === Stage 2: Runtime ===
 FROM python:3.12-slim AS runtime
 
+# TODO: Replace OWNER with your GitHub username
+LABEL org.opencontainers.image.source="https://github.com/OWNER/synco"
+LABEL org.opencontainers.image.description="Synco – shared household calendar, budget & shopping list"
+LABEL org.opencontainers.image.licenses="AGPL-3.0-only"
+LABEL org.opencontainers.image.title="Synco"
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH"
