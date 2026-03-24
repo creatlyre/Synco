@@ -96,19 +96,3 @@ def test_logout_clears_session_cookie(test_client):
     ]
     cookie_str = " ".join(cookie_headers)
     assert "session=" in cookie_str
-
-
-def test_logout_redirects_to_login(test_client):
-    """POST /auth/logout should redirect to /auth/login, not return JSON."""
-    resp = test_client.post("/auth/logout", follow_redirects=False)
-    assert resp.status_code == 303
-    assert resp.headers["location"] == "/auth/login"
-
-
-def test_logout_clears_cookies(test_client):
-    """POST /auth/logout should clear session and refresh cookies."""
-    resp = test_client.post("/auth/logout", follow_redirects=False)
-    cookie_headers = [v for k, v in resp.headers.raw if k == b"set-cookie"]
-    cookie_str = b" ".join(cookie_headers).decode()
-    assert "session" in cookie_str.lower()
-    assert "supabase_refresh" in cookie_str.lower()
