@@ -75,8 +75,8 @@ async def create_portal(
     request: Request,
     user=Depends(get_current_user),
     service: BillingService = Depends(_get_billing_service),
+    db=Depends(get_db),
 ):
-    db = next(get_db())
     repo = BillingRepository(db)
     sub = repo.get_subscription(user.id)
 

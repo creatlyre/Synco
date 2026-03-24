@@ -22,7 +22,7 @@ def _load_keywords() -> dict[str, list[str]]:
     with open(_KEYWORDS_PATH, encoding="utf-8") as f:
         data = json.load(f)
     # Strip _meta key — only category entries
-    return {k: v for k, v in data.items() if not k.startswith("_")}
+    return {k: [_normalize(kw) for kw in v] for k, v in data.items() if not k.startswith("_")}
 
 
 # Loaded once at module import
@@ -98,9 +98,22 @@ class ExpenseService:
         for cat_name, keywords in CATEGORY_KEYWORDS.items():
             if cat_name not in cat_by_name:
                 continue
-            for kw in keywords:
+            for norm_kw in keywords:
                 for w in words:
-                    if kw in w or (len(w) >= 3 and w in kw):
+                    if norm_kw in w or (len(w) >= 3 and w in norm_kw):
+                        return cat_by_name[cat_name]
+        return None
+
+    def _detect_category_fast(self, name: str, cat_by_name: dict) -> str | None:
+        """Faster version of _detect_category that skips redundant map building."""
+        norm = _normalize(name)
+        words = norm.split()
+        for cat_name, keywords in CATEGORY_KEYWORDS.items():
+            if cat_name not in cat_by_name:
+                continue
+            for norm_kw in keywords:
+                for w in words:
+                    if norm_kw in w or (len(w) >= 3 and w in norm_kw):
                         return cat_by_name[cat_name]
         return None
 
@@ -110,9 +123,11 @@ class ExpenseService:
         expenses = self.repo.get_by_calendar_year(calendar_id, year)
         uncategorized = [e for e in expenses if not e.category_id]
 
+        cat_by_name = {c.name: c.id for c in categories}
+
         updated = 0
         for e in uncategorized:
-            cat_id = self._detect_category(e.name, categories)
+            cat_id = self._detect_category_fast(e.name, cat_by_name)
             if cat_id:
                 from app.budget.expense_schemas import ExpenseUpdate
                 self.repo.update(e.id, ExpenseUpdate(category_id=cat_id))

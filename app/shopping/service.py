@@ -21,7 +21,7 @@ def _normalize(text: str) -> str:
 def _load_keywords() -> dict[str, list[str]]:
     with open(_KEYWORDS_PATH, encoding="utf-8") as f:
         data = json.load(f)
-    return {k: v for k, v in data.items() if not k.startswith("_")}
+    return {k: [_normalize(kw) for kw in v] for k, v in data.items() if not k.startswith("_")}
 
 
 SECTION_KEYWORDS: dict[str, list[str]] = _load_keywords()
@@ -103,10 +103,13 @@ class ShoppingService:
         items_text = re.split(r"[,\n]+", text)
         names = [t.strip() for t in items_text if t.strip()]
 
+        sections = self.ensure_sections(calendar_id)
+        overrides = self.repo.get_overrides(calendar_id)
+
         created: list[ShoppingItem] = []
         uncategorized_names: list[str] = []
         for name in names:
-            section_id = self._categorize_item(calendar_id, name)
+            section_id = self._categorize_item(calendar_id, name, sections=sections, overrides=overrides)
             item = self.repo.create_item(calendar_id, name, section_id)
             created.append(item)
             if not section_id:
@@ -136,13 +139,15 @@ class ShoppingService:
 
     # ── Auto-categorization ──────────────────────────────────────────────
 
-    def _categorize_item(self, calendar_id: str, item_name: str) -> str | None:
+    def _categorize_item(self, calendar_id: str, item_name: str, sections=None, overrides=None) -> str | None:
         norm = _normalize(item_name)
-        sections = self.ensure_sections(calendar_id)
+        if sections is None:
+            sections = self.ensure_sections(calendar_id)
         section_by_name = {s.name: s.id for s in sections}
 
         # 1. Check user overrides first (learned keywords take priority)
-        overrides = self.repo.get_overrides(calendar_id)
+        if overrides is None:
+            overrides = self.repo.get_overrides(calendar_id)
         for ovr in overrides:
             if ovr.keyword in norm or norm in ovr.keyword:
                 return ovr.section_id
@@ -151,8 +156,7 @@ class ShoppingService:
         for section_name, keywords in SECTION_KEYWORDS.items():
             if section_name not in section_by_name:
                 continue
-            for kw in keywords:
-                norm_kw = _normalize(kw)
+            for norm_kw in keywords:
                 if norm_kw in norm:
                     return section_by_name[section_name]
                 # Reverse match for short item names
