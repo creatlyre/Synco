@@ -42,6 +42,11 @@
         .cta-primary:hover { background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%); box-shadow: 0 12px 40px rgba(99,102,241,0.45), 0 4px 12px rgba(0,0,0,0.2); transform: translateY(-1px); }
         .feature-card { transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
         .feature-card:hover { transform: translateY(-4px); border-color: rgba(99,102,241,0.4); box-shadow: 0 16px 48px rgba(99,102,241,0.12), 0 4px 16px rgba(0,0,0,0.15); }
+        .feature-bullets { max-height: 0; overflow: hidden; opacity: 0; margin-top: 0; transition: max-height 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease, margin-top 0.3s ease; display: flex; flex-direction: column; gap: 0.5rem; }
+        .feature-card.is-expanded .feature-bullets { max-height: 300px; opacity: 1; margin-top: 0.875rem; }
+        .feature-chevron { transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+        .feature-card.is-expanded .feature-chevron { transform: rotate(180deg); }
+        .feature-card.is-expanded { border-color: rgba(99,102,241,0.35); }
         .step-connector { position: relative; }
         .step-connector::after { content: ''; position: absolute; top: 50%; right: -1rem; width: 2rem; height: 2px; background: linear-gradient(90deg, rgba(99,102,241,0.4), transparent); display: none; }
         @media (min-width: 768px) { .step-connector::after { display: block; } .step-connector:last-child::after { display: none; } }
@@ -205,20 +210,31 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
                 {% set features = [
-                    ('landing.feat_calendar_title', 'landing.feat_calendar_desc', '#6366f1', 'M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5'),
-                    ('landing.feat_budget_title', 'landing.feat_budget_desc', '#f59e0b', 'M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'),
-                    ('landing.feat_shopping_title', 'landing.feat_shopping_desc', '#10b981', 'M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0z'),
-                    ('landing.feat_notif_title', 'landing.feat_notif_desc', '#ec4899', 'M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0'),
-                    ('landing.feat_sync_title', 'landing.feat_sync_desc', '#3b82f6', 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182'),
-                    ('landing.feat_pwa_title', 'landing.feat_pwa_desc', '#8b5cf6', 'M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-6 18h6')
+                    ('landing.feat_calendar_title', 'landing.feat_calendar_desc', '#6366f1', 'M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5', ['landing.feat_calendar_b1','landing.feat_calendar_b2','landing.feat_calendar_b3']),
+                    ('landing.feat_budget_title', 'landing.feat_budget_desc', '#f59e0b', 'M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z', ['landing.feat_budget_b1','landing.feat_budget_b2','landing.feat_budget_b3']),
+                    ('landing.feat_shopping_title', 'landing.feat_shopping_desc', '#10b981', 'M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0z', ['landing.feat_shopping_b1','landing.feat_shopping_b2','landing.feat_shopping_b3']),
+                    ('landing.feat_notif_title', 'landing.feat_notif_desc', '#ec4899', 'M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0', ['landing.feat_notif_b1','landing.feat_notif_b2','landing.feat_notif_b3']),
+                    ('landing.feat_sync_title', 'landing.feat_sync_desc', '#3b82f6', 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182', ['landing.feat_sync_b1','landing.feat_sync_b2','landing.feat_sync_b3']),
+                    ('landing.feat_pwa_title', 'landing.feat_pwa_desc', '#8b5cf6', 'M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-6 18h6', ['landing.feat_pwa_b1','landing.feat_pwa_b2','landing.feat_pwa_b3'])
                 ] %}
-                {% for title_key, desc_key, color, icon_path in features %}
-                <div class="feature-card rounded-2xl border border-white/[0.07] p-6 md:p-7" style="background: linear-gradient(180deg, rgba(26,20,68,0.5) 0%, rgba(15,10,46,0.4) 100%);">
-                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style="background: {{ color }}15; border: 1px solid {{ color }}25;">
-                        <svg class="w-5 h-5" style="color: {{ color }};" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{ icon_path }}"/></svg>
+                {% for title_key, desc_key, color, icon_path, bullets in features %}
+                <div class="feature-card rounded-2xl border border-white/[0.07] p-6 md:p-7 cursor-pointer select-none" style="background: linear-gradient(180deg, rgba(26,20,68,0.5) 0%, rgba(15,10,46,0.4) 100%);" onclick="this.classList.toggle('is-expanded')">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style="background: {{ color }}15; border: 1px solid {{ color }}25;">
+                            <svg class="w-5 h-5" style="color: {{ color }};" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{ icon_path }}"/></svg>
+                        </div>
+                        <svg class="feature-chevron w-5 h-5 text-gray-500 flex-shrink-0 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
-                    <h3 class="text-base font-bold font-display mb-2 text-gray-100">{{ t(title_key) }}</h3>
+                    <h3 class="text-base font-bold font-display mb-2 mt-4 text-gray-100">{{ t(title_key) }}</h3>
                     <p class="text-sm text-gray-400 leading-relaxed">{{ t(desc_key) }}</p>
+                    <ul class="feature-bullets">
+                        {% for bk in bullets %}
+                        <li class="flex items-start gap-2 text-sm text-gray-300 leading-relaxed">
+                            <svg class="w-4 h-4 flex-shrink-0 mt-0.5" style="color: {{ color }};" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+                            <span>{{ t(bk) }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
                 </div>
                 {% endfor %}
             </div>

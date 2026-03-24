@@ -184,21 +184,6 @@
             <p class="text-xs opacity-40">{{ t('dashboard.no_onetime') }}</p>
           {% endif %}
 
-          <!-- Inline add expense form (hidden by default) -->
-          <div id="dash-expense-form" class="hidden mt-3 p-3 rounded-xl glass-subtle">
-            <div class="space-y-2">
-              <input type="text" id="dash-exp-name" placeholder="{{ t('budget.expenses_name') }}" class="glass-input w-full rounded-lg px-3 py-2 text-sm">
-              <div class="flex gap-2">
-                <input type="number" id="dash-exp-amount" placeholder="{{ t('budget.expenses_amount') }}" step="0.01" min="0.01" class="glass-input flex-1 rounded-lg px-3 py-2 text-sm">
-                <button type="button" id="dash-exp-submit" class="glass-btn-primary rounded-lg px-4 py-2 text-sm">{{ t('dashboard.add_expense') }}</button>
-              </div>
-              <details class="text-xs opacity-60">
-                <summary class="cursor-pointer hover:opacity-100 transition-opacity">{{ t('dashboard.bulk_paste') }}</summary>
-                <textarea id="dash-exp-bulk" rows="3" placeholder="{{ t('dashboard.bulk_paste_hint') }}" class="glass-input w-full rounded-lg px-3 py-2 text-sm mt-1"></textarea>
-                <button type="button" id="dash-exp-bulk-submit" class="glass-btn-info rounded-lg px-3 py-1.5 text-xs mt-1">{{ t('dashboard.bulk_add') }}</button>
-              </details>
-            </div>
-          </div>
         </div>
 
         <a href="/budget/overview" class="block text-center text-sm text-indigo-400 hover:text-indigo-300 transition-colors py-1">
@@ -220,26 +205,124 @@
   </div>
 </div>
 
+<!-- Add Expense Modal -->
+<div id="dash-expense-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-3 py-3 modal-backdrop is-visible" role="dialog" aria-modal="true" aria-labelledby="dash-modal-title">
+  <div class="glass-elevated rounded-2xl p-6 w-full max-w-md mx-4 modal-panel">
+    <div class="flex items-center justify-between mb-4">
+      <h3 id="dash-modal-title" class="text-sm font-semibold">{{ t('dashboard.add_expense') }}</h3>
+      <button type="button" id="dash-modal-close" class="opacity-40 hover:opacity-100 transition-opacity text-lg leading-none" aria-label="Close">&times;</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-1 mb-4 p-1 rounded-lg bg-white/5">
+      <button type="button" class="dash-modal-tab flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors" data-tab="single">{{ t('dashboard.modal_tab_single') }}</button>
+      <button type="button" class="dash-modal-tab flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors" data-tab="bulk">{{ t('dashboard.modal_tab_bulk') }}</button>
+    </div>
+
+    <!-- Single tab -->
+    <div id="dash-tab-single" class="dash-tab-content">
+      <div class="space-y-3">
+        <input type="text" id="dash-exp-name" placeholder="{{ t('budget.expenses_name') }}" class="glass-input w-full rounded-lg px-3 py-2.5 text-sm" autocomplete="off">
+        <input type="number" id="dash-exp-amount" placeholder="{{ t('budget.expenses_amount') }}" step="0.01" min="0.01" class="glass-input w-full rounded-lg px-3 py-2.5 text-sm">
+        <button type="button" id="dash-exp-submit" class="glass-btn-primary w-full rounded-lg px-4 py-2.5 text-sm font-medium">{{ t('dashboard.add_expense') }}</button>
+      </div>
+    </div>
+
+    <!-- Bulk tab -->
+    <div id="dash-tab-bulk" class="dash-tab-content hidden">
+      <textarea id="dash-exp-bulk" rows="6" placeholder="{{ t('dashboard.bulk_paste_hint') }}" class="glass-input w-full rounded-lg px-3 py-2.5 text-sm font-mono mb-3"></textarea>
+      <div id="dash-bulk-preview" class="hidden mb-3">
+        <div class="text-xs mb-2">
+          <span class="font-medium" id="dash-bulk-count"></span>
+          <span id="dash-bulk-skipped" class="opacity-50 ml-2"></span>
+        </div>
+        <div class="max-h-40 overflow-y-auto rounded-lg bg-white/3 p-2">
+          <table class="w-full text-xs">
+            <thead><tr class="border-b border-white/10">
+              <th class="text-left py-1 px-1">{{ t('budget.expenses_name') }}</th>
+              <th class="text-right py-1 px-1">{{ t('budget.expenses_amount') }}</th>
+            </tr></thead>
+            <tbody id="dash-bulk-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button type="button" id="dash-bulk-parse" class="glass-btn-info flex-1 rounded-lg px-4 py-2.5 text-sm font-medium">{{ t('dashboard.modal_parse') }}</button>
+        <button type="button" id="dash-bulk-confirm" class="glass-btn-primary flex-1 rounded-lg px-4 py-2.5 text-sm font-medium hidden">{{ t('dashboard.modal_confirm') }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 (function() {
   const now = new Date();
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth() + 1;
 
-  // Toggle add expense form
+  const labels = {
+    parsed: {{ t('dashboard.modal_parsed')|tojson }},
+    skipped: {{ t('dashboard.modal_skipped')|tojson }},
+  };
+
+  // --- Modal open / close ---
+  const modal = document.getElementById('dash-expense-modal');
   const toggle = document.getElementById('dash-add-expense-toggle');
-  const form = document.getElementById('dash-expense-form');
-  if (toggle && form) {
-    toggle.addEventListener('click', () => form.classList.toggle('hidden'));
+
+  function openModal() {
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    switchTab('single');
+    const nameInput = document.getElementById('dash-exp-name');
+    if (nameInput) { nameInput.value = ''; setTimeout(() => nameInput.focus(), 80); }
+    const amountInput = document.getElementById('dash-exp-amount');
+    if (amountInput) amountInput.value = '';
+    resetBulk();
   }
 
-  // Single expense add
+  function closeModal() {
+    if (modal) modal.classList.add('hidden');
+  }
+
+  if (toggle) toggle.addEventListener('click', openModal);
+  const closeBtn = document.getElementById('dash-modal-close');
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (modal) {
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    modal.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  }
+
+  // --- Tab switching ---
+  function switchTab(tab) {
+    document.querySelectorAll('.dash-modal-tab').forEach(btn => {
+      const isActive = btn.dataset.tab === tab;
+      btn.style.background = isActive ? 'rgba(255,255,255,0.1)' : 'transparent';
+      btn.style.opacity = isActive ? '1' : '0.5';
+    });
+    document.querySelectorAll('.dash-tab-content').forEach(el => el.classList.add('hidden'));
+    const target = document.getElementById('dash-tab-' + tab);
+    if (target) target.classList.remove('hidden');
+    if (tab === 'single') {
+      const nameInput = document.getElementById('dash-exp-name');
+      if (nameInput) setTimeout(() => nameInput.focus(), 50);
+    } else {
+      const textarea = document.getElementById('dash-exp-bulk');
+      if (textarea) setTimeout(() => textarea.focus(), 50);
+    }
+  }
+
+  document.querySelectorAll('.dash-modal-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // --- Single expense add ---
   const submitBtn = document.getElementById('dash-exp-submit');
   if (submitBtn) {
     submitBtn.addEventListener('click', async () => {
       const name = document.getElementById('dash-exp-name').value.trim();
       const amount = parseFloat(document.getElementById('dash-exp-amount').value);
       if (!name || !amount || amount <= 0) return;
+      submitBtn.disabled = true;
       try {
         const resp = await fetch('/api/budget/expenses', {
           method: 'POST',
@@ -248,28 +331,108 @@
         });
         if (resp.ok) location.reload();
       } catch (e) { /* ignore */ }
+      submitBtn.disabled = false;
     });
   }
 
-  // Bulk paste add
-  const bulkBtn = document.getElementById('dash-exp-bulk-submit');
-  if (bulkBtn) {
-    bulkBtn.addEventListener('click', async () => {
-      const raw = document.getElementById('dash-exp-bulk').value.trim();
-      if (!raw) return;
-      const lines = raw.split('\n').filter(l => l.trim());
-      const expenses = [];
-      for (const line of lines) {
-        // Support "Name Amount" or "Name\tAmount" format
-        const match = line.match(/^(.+?)\s+([\d.,]+)\s*$/);
-        if (match) {
-          const amt = parseFloat(match[2].replace(',', '.'));
-          if (amt > 0) {
-            expenses.push({ year, month, name: match[1].trim(), amount: amt, recurring: false });
-          }
+  // Enter key: name → amount, amount → submit
+  const nameInput = document.getElementById('dash-exp-name');
+  const amountInput = document.getElementById('dash-exp-amount');
+  if (nameInput) {
+    nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); if (amountInput) amountInput.focus(); }
+    });
+  }
+  if (amountInput) {
+    amountInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); if (submitBtn) submitBtn.click(); }
+    });
+  }
+
+  // --- Bulk paste ---
+  let bulkParsed = [];
+
+  function resetBulk() {
+    bulkParsed = [];
+    const textarea = document.getElementById('dash-exp-bulk');
+    if (textarea) textarea.value = '';
+    const preview = document.getElementById('dash-bulk-preview');
+    if (preview) preview.classList.add('hidden');
+    const parseBtn = document.getElementById('dash-bulk-parse');
+    if (parseBtn) { parseBtn.classList.remove('hidden'); parseBtn.disabled = false; }
+    const confirmBtn = document.getElementById('dash-bulk-confirm');
+    if (confirmBtn) confirmBtn.classList.add('hidden');
+  }
+
+  function parseBulkText(text) {
+    const results = [];
+    const skipped = [];
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+    for (const line of lines) {
+      // Try tab-separated first
+      let parts = line.split('\t').map(p => p.trim());
+      if (parts.length >= 2) {
+        const name = parts[0];
+        const amt = parseFloat(parts[1].replace(',', '.'));
+        if (name && !isNaN(amt) && amt > 0) {
+          results.push({ name, amount: amt });
+          continue;
         }
       }
-      if (!expenses.length) return;
+      // Fallback: "Name Amount" with last token as number
+      const match = line.match(/^(.+?)\s+([\d.,]+)\s*$/);
+      if (match) {
+        const amt = parseFloat(match[2].replace(',', '.'));
+        if (amt > 0) {
+          results.push({ name: match[1].trim(), amount: amt });
+          continue;
+        }
+      }
+      skipped.push(line);
+    }
+    return { results, skipped };
+  }
+
+  const parseBtn = document.getElementById('dash-bulk-parse');
+  if (parseBtn) {
+    parseBtn.addEventListener('click', () => {
+      const raw = document.getElementById('dash-exp-bulk').value.trim();
+      if (!raw) return;
+      const parsed = parseBulkText(raw);
+      bulkParsed = parsed.results;
+
+      const countEl = document.getElementById('dash-bulk-count');
+      const skippedEl = document.getElementById('dash-bulk-skipped');
+      const tbody = document.getElementById('dash-bulk-body');
+
+      countEl.textContent = labels.parsed + ': ' + bulkParsed.length;
+      if (parsed.skipped.length > 0) {
+        skippedEl.textContent = '(' + labels.skipped + ': ' + parsed.skipped.length + ')';
+      } else {
+        skippedEl.textContent = '';
+      }
+
+      tbody.innerHTML = bulkParsed.map(e =>
+        '<tr class="border-b border-white/5"><td class="py-0.5 px-1">' + e.name +
+        '</td><td class="py-0.5 px-1 text-right">' + e.amount.toFixed(2) + '</td></tr>'
+      ).join('');
+
+      document.getElementById('dash-bulk-preview').classList.remove('hidden');
+      parseBtn.classList.add('hidden');
+      if (bulkParsed.length > 0) {
+        document.getElementById('dash-bulk-confirm').classList.remove('hidden');
+      }
+    });
+  }
+
+  const confirmBtn = document.getElementById('dash-bulk-confirm');
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', async () => {
+      if (!bulkParsed.length) return;
+      confirmBtn.disabled = true;
+      const expenses = bulkParsed.map(e => ({
+        year, month, name: e.name, amount: e.amount, recurring: false
+      }));
       try {
         const resp = await fetch('/api/budget/expenses/bulk', {
           method: 'POST',
@@ -278,6 +441,18 @@
         });
         if (resp.ok) location.reload();
       } catch (e) { /* ignore */ }
+      confirmBtn.disabled = false;
+    });
+  }
+
+  // Re-show parse button when textarea changes
+  const bulkTextarea = document.getElementById('dash-exp-bulk');
+  if (bulkTextarea) {
+    bulkTextarea.addEventListener('input', () => {
+      document.getElementById('dash-bulk-preview').classList.add('hidden');
+      document.getElementById('dash-bulk-confirm').classList.add('hidden');
+      const pb = document.getElementById('dash-bulk-parse');
+      if (pb) pb.classList.remove('hidden');
     });
   }
 })();
