@@ -151,6 +151,17 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — Fix redirects, logout link, pricing toast + tests
 
+### Phase 3: Login and Register Pages — Email/Password Authentication with Google OAuth
+
+**Goal:** Build dedicated Login and Register pages (not just a Google button). Login page offers both Google OAuth and Supabase email/password sign-in. Register page with email/password signup, email verification flow, and password reset. Full auth UI with form validation, error handling, and branded design matching Synco's glassmorphic dark theme.
+**Requirements**: [AUTH-01, AUTH-02]
+**Depends on:** Phase 2
+**Plans:** 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Login & Register pages with email/password forms + Google OAuth button
+- [ ] 03-02-PLAN.md — Forgot password flow, email verification callback, update password
+
 ---
 
 *Roadmap updated: 2026-03-24 — Phase 34 added for v5.0 Growth & Conversion*
