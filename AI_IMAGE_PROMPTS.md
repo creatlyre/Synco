@@ -5,6 +5,26 @@
 
 ---
 
+## Progress
+
+| # | Section | Status | Files |
+|---|---------|--------|-------|
+| 1 | Logo — Logomark | ✅ Done | `logo-mark.webp` |
+| 2 | Logo — Wordmark | ✅ Done | `logo-wordmark.webp` |
+| 3 | Logo — App Icon | ✅ Done | `logo-app-512.png` |
+| 4 | Hero Background | ✅ Done | `hero-bg.webp` |
+| 5 | OG Image | ⬜ Todo | using wordmark as fallback |
+| 6 | Feature Illustrations (×6) | ✅ Done | `feature-*.webp` |
+| 7 | Empty States (×4) | ⬜ Todo | — |
+| 8 | Error Pages (×3) | ⬜ Todo | — |
+| 9 | Onboarding (×3) | ⬜ Todo | — |
+| 10 | Pricing Tiers (×3) | ⬜ Todo | — |
+| 11 | Email Header | ⬜ Todo | — |
+
+**Done: 6/11** · Remaining: OG image, empty states, error pages, onboarding, pricing, email
+
+---
+
 ## Brand Context
 
 - **App:** Synco — shared household calendar, budget tracker & shopping list
@@ -16,8 +36,9 @@
 
 ---
 
-## 1. LOGO — Logomark (Icon Only)
+## 1. LOGO — Logomark (Icon Only) ✅ DONE
 
+> **File:** `public/images/logo-mark.webp` — used in navbar (landing, base, offline)
 > **Use for:** Favicon, PWA icon, app icon, social avatar
 
 ```
@@ -33,8 +54,9 @@ Cal.com. Transparent background, centered, single continuous form. Square 1:1.
 
 ---
 
-## 2. LOGO — Logomark + Wordmark
+## 2. LOGO — Logomark + Wordmark ✅ DONE
 
+> **File:** `public/images/logo-wordmark.webp` — used for OG/Twitter meta image
 > **Use for:** Navbar, footer, email header, documents
 
 ```
@@ -49,8 +71,9 @@ alone must work as a favicon. Wide format ~3:1 with text.
 
 ---
 
-## 3. LOGO — App Icon (PWA / Mobile)
+## 3. LOGO — App Icon (PWA / Mobile) ✅ DONE
 
+> **File:** `public/icons/logo-app-512.png` — used in PWA manifest + apple-touch-icon
 > **Use for:** PWA install icon, Android/iOS home screen
 > **Export:** 512x512 PNG + 192x192 PNG + maskable variants
 
@@ -65,8 +88,9 @@ no fine details that disappear at small sizes. Clean vector, flat design,
 
 ---
 
-## 4. HERO BACKGROUND — Landing Page
+## 4. HERO BACKGROUND — Landing Page ✅ DONE
 
+> **File:** `public/images/hero-bg.webp` — landing hero with gradient overlay + preload
 > **Use for:** Landing page hero section background behind text and CTAs
 > **Export:** 1920x900 WebP, quality 80%
 
@@ -81,8 +105,9 @@ behind white text and buttons without competing. Ultra-wide 1920x900.
 
 ---
 
-## 5. OG IMAGE — Social Sharing Preview
+## 5. OG IMAGE — Social Sharing Preview ⬜ TODO
 
+> **Status:** Using `logo-wordmark.webp` as temporary fallback — a dedicated 1200x630 OG image would be better
 > **Use for:** Open Graph / Twitter Card when someone shares a Synco link
 > **Export:** 1200x630 WebP
 
@@ -98,8 +123,9 @@ clutter. 1200x630px.
 
 ---
 
-## 6. FEATURE ILLUSTRATIONS — Landing Page Cards
+## 6. FEATURE ILLUSTRATIONS — Landing Page Cards ✅ DONE
 
+> **Files:** `public/images/feature-{calendar,budget,shopping,notifications,sync,pwa}.webp`
 > **Use for:** Feature section cards on landing page (6 features)
 > **Export:** 400x300 WebP each
 
@@ -152,7 +178,7 @@ laptop — arranged in a fan/cascade, all showing the same screen. Colors: viole
 
 ---
 
-## 7. EMPTY STATE ILLUSTRATIONS
+## 7. EMPTY STATE ILLUSTRATIONS ⬜ TODO
 
 > **Use for:** Shown when a section has no data yet (motivates user to add content)
 > **Export:** 300x250 WebP each
@@ -189,7 +215,7 @@ transparent background. Line-art style. No text. 300x250px.
 
 ---
 
-## 8. ERROR PAGE ILLUSTRATIONS
+## 8. ERROR PAGE ILLUSTRATIONS ⬜ TODO
 
 > **Use for:** 404 Not Found, 500 Server Error, Offline page
 > **Export:** 400x300 WebP each
@@ -218,7 +244,7 @@ logo mark faintly visible behind it. Soft muted indigo tones on dark navy
 
 ---
 
-## 9. ONBOARDING / WELCOME ILLUSTRATIONS
+## 9. ONBOARDING / WELCOME ILLUSTRATIONS ⬜ TODO
 
 > **Use for:** First-time user walkthrough or welcome modal
 > **Export:** 500x400 WebP each
@@ -247,7 +273,7 @@ clarity and control. Modern minimal. No text. 500x400px.
 
 ---
 
-## 10. PRICING PAGE — Plan Tier Illustrations
+## 10. PRICING PAGE — Plan Tier Illustrations ⬜ TODO
 
 > **Use for:** Pricing cards to visually differentiate Free vs Pro vs Family+
 > **Export:** 200x200 WebP each
@@ -275,7 +301,7 @@ On dark background. Community/family feel. 200x200px.
 
 ---
 
-## 11. EMAIL HEADER — Notification Emails
+## 11. EMAIL HEADER — Notification Emails ⬜ TODO
 
 > **Use for:** Top banner in transactional/notification emails
 > **Export:** 600x120 WebP
