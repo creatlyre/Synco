@@ -140,8 +140,16 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 async def _upgrade_redirect_handler(request: Request, exc: UpgradeRedirect):
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/pricing", status_code=303)
+    context = inject_template_i18n(request, {
+        "request": request,
+        "feature": exc.feature,
+    })
+    return templates.TemplateResponse(
+        request=request,
+        name="upgrade_required.html",
+        context=context,
+        status_code=403,
+    )
 
 
 app.add_exception_handler(UpgradeRedirect, _upgrade_redirect_handler)

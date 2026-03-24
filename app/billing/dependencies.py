@@ -10,7 +10,9 @@ from app.database.database import get_db
 
 class UpgradeRedirect(Exception):
     """Raised when an HTML page requires a plan upgrade."""
-    pass
+    def __init__(self, feature: str = "generic"):
+        self.feature = feature
+        super().__init__(feature)
 
 
 async def get_current_plan(
@@ -36,7 +38,8 @@ def require_plan(*allowed_plans: str):
         if plan not in allowed_plans:
             accept = request.headers.get("accept", "")
             if "text/html" in accept:
-                raise UpgradeRedirect()
+                feature = _feature_from_path(request.url.path)
+                raise UpgradeRedirect(feature)
             raise HTTPException(
                 status_code=403,
                 detail="Upgrade required",
@@ -45,6 +48,20 @@ def require_plan(*allowed_plans: str):
         return plan
 
     return _dependency
+
+
+_PATH_FEATURE_MAP = {
+    "/shopping": "shopping",
+    "/budget/stats": "budget_stats",
+    "/budget/import": "budget_import",
+}
+
+
+def _feature_from_path(path: str) -> str:
+    for prefix, feature in _PATH_FEATURE_MAP.items():
+        if path.startswith(prefix):
+            return feature
+    return "generic"
 
 
 def get_user_plan_for_template(user, db) -> str:
