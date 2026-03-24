@@ -1,7 +1,9 @@
+import hashlib
 import json
 import logging
 import os
 import sys
+import time
 from datetime import datetime, timezone
 
 from fastapi import Depends, FastAPI, Request
@@ -55,6 +57,9 @@ app = FastAPI(
     debug=os.getenv("DEBUG", "false").lower() == "true",
 )
 
+# Cache-busting version: changes on each server restart / deploy
+_ASSET_VERSION = hashlib.md5(str(time.time()).encode()).hexdigest()[:8]
+
 # --- Structured logging ---
 
 class JSONFormatter(logging.Formatter):
@@ -99,6 +104,7 @@ if _settings.SENTRY_DSN:
     )
 
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["asset_version"] = _ASSET_VERSION
 
 
 @app.get("/manifest.json", include_in_schema=False)

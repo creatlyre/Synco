@@ -1,5 +1,5 @@
 // Synco Service Worker — offline shell with static asset caching
-var CACHE_NAME = 'synco-v1';
+var CACHE_NAME = 'synco-v2';
 var OFFLINE_URL = '/static/offline.html';
 
 var PRECACHE_URLS = [
