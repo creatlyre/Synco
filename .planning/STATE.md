@@ -44,6 +44,7 @@ Previous milestone archived. See `.planning/milestones/v3.0-ROADMAP.md` for full
 - Phase 35 added: Fix Logout Redirect — Replace Raw JSON With Proper Page Redirect (v5.0)
 - Phase 2 added: Eliminate Method Not Allowed errors and browser confirmation dialogs on public pages
 - Phase 3 added: Login and Register Pages — Email/Password Authentication with Google OAuth
+- Phase 4 added: Admin Dashboard — User Management, Plan Assignment, Admin Privileges and Statistics
 
 ### Quick Tasks Completed
 

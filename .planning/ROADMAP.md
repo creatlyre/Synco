@@ -162,6 +162,16 @@ Plans:
 - [ ] 03-01-PLAN.md — Login & Register pages with email/password forms + Google OAuth button
 - [ ] 03-02-PLAN.md — Forgot password flow, email verification callback, update password
 
+### Phase 4: Admin Dashboard — User Management, Plan Assignment, Admin Privileges and Statistics
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 3
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 4 to break down)
+
 ---
 
 *Roadmap updated: 2026-03-24 — Phase 34 added for v5.0 Growth & Conversion*
