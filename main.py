@@ -22,7 +22,7 @@ from starlette.middleware.cors import CORSMiddleware
 from config import Settings
 
 from app.auth.dependencies import get_current_user, get_current_user_optional
-from app.billing.dependencies import get_user_plan_for_template
+from app.billing.dependencies import get_user_plan_for_template, UpgradeRedirect
 from app.database.database import get_db
 from app.auth.routes import router as auth_router
 from app.events.routes import router as events_router
@@ -137,6 +137,14 @@ class StaticCacheMiddleware(BaseHTTPMiddleware):
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+async def _upgrade_redirect_handler(request: Request, exc: UpgradeRedirect):
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/pricing", status_code=303)
+
+
+app.add_exception_handler(UpgradeRedirect, _upgrade_redirect_handler)
 
 # --- Middleware (outermost first) ---
 
