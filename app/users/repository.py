@@ -35,6 +35,7 @@ def _to_user(row: dict[str, Any]) -> User:
         created_at=_parse_dt(row.get("created_at")),
         updated_at=_parse_dt(row.get("updated_at")),
         last_login=_parse_dt(row.get("last_login")),
+        is_admin=bool(row.get("is_admin", False)),
     )
 
 

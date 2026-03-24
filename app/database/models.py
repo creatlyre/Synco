@@ -18,6 +18,7 @@ class User:
     created_at: datetime | None = None
     updated_at: datetime | None = None
     last_login: datetime | None = None
+    is_admin: bool = False
 
 
 @dataclass
