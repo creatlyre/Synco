@@ -14,12 +14,13 @@
 
 ### v5.0 Growth & Conversion (Phase 34+)
 
-- [ ] Phase 34: Hero Landing Page — Pre-Login Marketing & Conversion
+- [ ] Phase 34: Hero Landing Page — Pre-Login Marketing & Conversion (1 plan)
   **Goal:** A stunning, conversion-focused hero/landing page at `/` that showcases CalendarPlanner's value proposition to visitors before they sign up. Includes CTA buttons to `/login` and `/register`, feature highlights, social proof, and pricing teaser. First impression that sells.
-  **Requirements:** TBD
+  **Requirements:** [HERO-01, HERO-02, HERO-03, HERO-04]
   **Depends on:** Phase 33
+  **Plans:** 1 plan
   Plans:
-  - [ ] TBD (run /gsd-plan-phase 34 to break down)
+  - [ ] 34-01-PLAN.md — Enhanced hero, social proof, SEO meta, i18n + tests
 
 <details>
 <summary>✅ v4.0 Monetization Foundation (Phases 28-33) — SHIPPED 2026-03-23</summary>
@@ -121,7 +122,7 @@
 | 32. Mobile Distribution Path (PWA + Android Wrapper) | v4.0 | 2/2 | Complete | 2026-03-23 |
 | 33. Go-to-Market, Pricing, and Launch Funnel | v4.0 | 3/3 | Complete | 2026-03-23 |
 
-| 34. Hero Landing Page | v5.0 | 0/0 | Not planned | — |
+| 34. Hero Landing Page | v5.0 | 0/1 | Planned | — |
 
 ---
 
