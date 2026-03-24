@@ -69,6 +69,28 @@ class TestLandingPage:
         assert resp.status_code == 302
         assert "/dashboard" in resp.headers.get("location", "")
 
+    def test_landing_page_has_og_tags(self, test_client):
+        """Landing page must include Open Graph meta tags for social sharing."""
+        resp = test_client.get("/")
+        html = resp.text
+        assert 'property="og:title"' in html
+        assert 'property="og:description"' in html
+        assert 'property="og:image"' in html
+        assert 'property="og:url"' in html
+        assert 'name="twitter:card"' in html
+
+    def test_landing_page_has_social_proof(self, test_client):
+        """Landing page must include a trust indicators / social proof section."""
+        resp = test_client.get("/")
+        html = resp.text.lower()
+        assert "trust" in html or "open source" in html or "gdpr" in html or "rodo" in html
+
+    def test_landing_page_has_register_cta(self, test_client):
+        """Primary hero CTA must point to /auth/register, not /auth/login."""
+        resp = test_client.get("/")
+        html = resp.text
+        assert "/auth/register" in html
+
 
 # ── GTM-03: Checkout Flow (self-hosted payment mode) ─────────────────────
 
