@@ -89,10 +89,11 @@ def test_logout_get_redirects_to_login(test_client):
 
 
 def test_logout_clears_session_cookie(test_client):
-    """POST /auth/logout should clear session cookie."""
+    """POST /auth/logout should clear session and supabase_refresh cookies."""
     resp = test_client.post("/auth/logout", follow_redirects=False)
     cookie_headers = [
         v for k, v in resp.headers.multi_items() if k.lower() == "set-cookie"
     ]
     cookie_str = " ".join(cookie_headers)
     assert "session=" in cookie_str
+    assert "supabase_refresh=" in cookie_str
