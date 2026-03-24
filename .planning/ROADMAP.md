@@ -164,13 +164,14 @@ Plans:
 
 ### Phase 4: Admin Dashboard — User Management, Plan Assignment, Admin Privileges and Statistics
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Admin dashboard with user management (list, search, view detail), plan assignment (change subscription plans), admin privilege toggle, and platform statistics (user count, plan distribution, recent signups). Includes is_admin role column, admin dependency gating, API endpoints, HTML views with Synco's glassmorphic theme, and full i18n.
+**Requirements**: [ADM-01, ADM-02, ADM-03, ADM-04]
 **Depends on:** Phase 3
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 4 to break down)
+- [ ] 04-01-PLAN.md — Admin role foundation, repository, service, API routes + tests
+- [ ] 04-02-PLAN.md — Admin HTML views, templates, nav link, i18n
 
 ---
 
