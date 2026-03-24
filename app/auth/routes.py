@@ -15,7 +15,10 @@ from app.auth.supabase_auth import (
     fetch_supabase_user,
     is_supabase_auth_enabled,
     supabase_password_sign_in,
+    supabase_request_password_reset,
     supabase_sign_up,
+    supabase_update_user_password,
+    supabase_verify_otp,
 )
 from app.auth.utils import encrypt_token
 from app.database.database import get_db
@@ -448,3 +451,99 @@ async def logout_page(request: Request):
     response.delete_cookie("session")
     response.delete_cookie("supabase_refresh")
     return response
+
+
+class ForgotPasswordPayload(BaseModel):
+    email: EmailStr
+
+
+class UpdatePasswordPayload(BaseModel):
+    password: str
+
+
+@router.get("/forgot-password")
+async def forgot_password_page(request: Request):
+    context = inject_template_i18n(request, {"request": request})
+    return templates.TemplateResponse(request, "forgot_password.html", context)
+
+
+@router.post("/forgot-password")
+async def forgot_password_submit(request: Request, payload: ForgotPasswordPayload):
+    settings = Settings()
+    if not is_supabase_auth_enabled(settings):
+        raise HTTPException(status_code=400, detail=_msg(request, "auth.supabase_not_configured"))
+    base_url = str(request.base_url).rstrip("/")
+    redirect_to = f"{base_url}/auth/confirm"
+    try:
+        await supabase_request_password_reset(payload.email, redirect_to)
+    except ValueError:
+        pass  # Don't reveal whether email exists
+    return {"message": _msg(request, "auth.reset_email_sent")}
+
+
+@router.get("/confirm")
+async def confirm_callback(
+    request: Request,
+    token_hash: str | None = None,
+    type: str | None = None,
+    next: str | None = None,
+    db=Depends(get_db),
+):
+    if not token_hash or not type:
+        return RedirectResponse(url="/auth/login", status_code=302)
+
+    try:
+        data = await supabase_verify_otp(token_hash, type)
+    except ValueError:
+        return RedirectResponse(url="/auth/login", status_code=302)
+
+    access_token = data.get("access_token")
+    if not access_token:
+        return RedirectResponse(url="/auth/login", status_code=302)
+
+    # Upsert local user
+    profile = await fetch_supabase_user(access_token)
+    if profile:
+        email = (profile.get("email") or "").lower()
+        metadata = profile.get("user_metadata") or {}
+        name = metadata.get("full_name") or metadata.get("name") or email
+        external_id = profile.get("id") or ""
+        try:
+            _upsert_local_user_from_profile(db, email, name, external_id)
+        except Exception:
+            pass
+
+    # Determine redirect
+    if type == "recovery":
+        redirect_url = next or "/auth/update-password"
+    else:
+        redirect_url = next or "/"
+
+    response = RedirectResponse(url=redirect_url, status_code=302)
+    _set_session_cookie(response, access_token)
+    if data.get("refresh_token"):
+        _set_refresh_cookie(response, data["refresh_token"])
+    return response
+
+
+@router.get("/update-password")
+async def update_password_page(request: Request):
+    session = request.cookies.get("session")
+    if not session:
+        return RedirectResponse(url="/auth/login", status_code=302)
+    context = inject_template_i18n(request, {"request": request})
+    return templates.TemplateResponse(request, "update_password.html", context)
+
+
+@router.post("/update-password")
+async def update_password_submit(request: Request, payload: UpdatePasswordPayload):
+    session = request.cookies.get("session")
+    if not session:
+        raise HTTPException(status_code=401, detail=_msg(request, "auth.not_authenticated"))
+    if len(payload.password) < 6:
+        raise HTTPException(status_code=400, detail=_msg(request, "auth.password_min_length"))
+    try:
+        await supabase_update_user_password(session, payload.password)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"message": _msg(request, "auth.password_updated")}
