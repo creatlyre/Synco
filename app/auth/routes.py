@@ -153,15 +153,92 @@ async def oauth_callback(
         # Supabase OAuth implicit flow delivers tokens in URL fragment; JS forwards them to /auth/session.
         locale = resolve_locale(request)
         unknown_error = json.dumps(_msg(request, "sync.unknown"))
+        app_name = _msg(request, "app.name")
         return HTMLResponse(
             f"""
 <!doctype html>
-<html lang=\"{locale}\">
-<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>{_msg(request, "auth.signing_in")}</title></head>
+<html lang="{locale}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{_msg(request, "auth.signing_in")} — {app_name}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
+    body{{
+      font-family:'DM Sans',ui-sans-serif,system-ui,sans-serif;
+      background:linear-gradient(135deg,#0f0c29 0%,#1e1553 25%,#2d2463 50%,#1a2a6c 75%,#0d1b4b 100%) fixed;
+      min-height:100vh;display:flex;align-items:center;justify-content:center;
+      color:rgba(255,255,255,.9);
+    }}
+    .card{{
+      text-align:center;padding:2.5rem 2rem;border-radius:1.25rem;
+      background:rgba(255,255,255,.07);
+      backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+      border:1px solid rgba(255,255,255,.16);
+      box-shadow:0 8px 32px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.12);
+      max-width:360px;width:90%;animation:fadeIn .5s ease-out;
+    }}
+    .brand{{
+      font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif;
+      font-weight:700;font-size:1.5rem;letter-spacing:-.02em;
+      margin-bottom:1.75rem;display:flex;align-items:center;justify-content:center;gap:.5rem;
+    }}
+    .brand svg{{width:1.5rem;height:1.5rem;filter:drop-shadow(0 0 6px rgba(165,180,252,.5))}}
+    .spinner{{
+      width:2.5rem;height:2.5rem;margin:0 auto 1.25rem;
+      border:3px solid rgba(255,255,255,.12);
+      border-top-color:#a5b4fc;border-radius:50%;
+      animation:spin .8s linear infinite;
+    }}
+    .status{{font-size:.9375rem;color:rgba(255,255,255,.7);line-height:1.5}}
+    .error{{
+      color:#fca5a5;background:rgba(239,68,68,.12);
+      border:1px solid rgba(239,68,68,.25);border-radius:.75rem;
+      padding:.75rem 1rem;font-size:.8125rem;line-height:1.5;
+      margin-top:1.25rem;word-break:break-word;display:none;
+    }}
+    .retry{{
+      display:none;margin-top:1rem;
+      color:#fff;background:linear-gradient(135deg,rgba(99,102,241,.82),rgba(139,92,246,.82));
+      border:1px solid rgba(139,92,246,.42);border-radius:.75rem;
+      padding:.625rem 1.5rem;font-size:.875rem;font-weight:500;cursor:pointer;
+      font-family:inherit;transition:filter .18s,transform .12s;
+    }}
+    .retry:hover{{filter:brightness(1.18);transform:translateY(-1px)}}
+    @keyframes spin{{to{{transform:rotate(360deg)}}}}
+    @keyframes fadeIn{{from{{opacity:0;transform:translateY(8px)}}to{{opacity:1;transform:translateY(0)}}}}
+  </style>
+</head>
 <body>
-  <p>{_msg(request, "auth.finalizing_sign_in")}</p>
+  <div class="card">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2l2.09 6.26L20.18 9l-5.09 3.74L16.18 19 12 15.27 7.82 19l1.09-6.26L3.82 9l6.09-.74L12 2z" fill="url(#g)"/>
+        <defs><linearGradient id="g" x1="3.82" y1="2" x2="20.18" y2="19" gradientUnits="userSpaceOnUse"><stop stop-color="#a5b4fc"/><stop offset="1" stop-color="#67e8f9"/></linearGradient></defs>
+      </svg>
+      {app_name}
+    </div>
+    <div class="spinner" id="spinner"></div>
+    <p class="status" id="status">{_msg(request, "auth.finalizing_sign_in")}</p>
+    <div class="error" id="error"></div>
+    <button class="retry" id="retry" onclick="window.location.href='/auth/login'">{_msg(request, "auth.try_again")}</button>
+  </div>
   <script>
     (async function () {{
+      const statusEl = document.getElementById('status');
+      const errorEl = document.getElementById('error');
+      const spinnerEl = document.getElementById('spinner');
+      const retryEl = document.getElementById('retry');
+      function showError(msg) {{
+        spinnerEl.style.display = 'none';
+        statusEl.style.display = 'none';
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+        retryEl.style.display = 'inline-block';
+      }}
       try {{
         const hash = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : '';
         const params = new URLSearchParams(hash);
@@ -172,7 +249,7 @@ async def oauth_callback(
           provider_refresh_token: params.get('provider_refresh_token')
         }};
         if (!payload.access_token) {{
-          document.body.innerHTML = '<p>{_msg(request, "auth.missing_oauth_access_token")}</p>';
+          showError('{_msg(request, "auth.missing_oauth_access_token")}');
           return;
         }}
         const response = await fetch('/auth/session', {{
@@ -182,18 +259,12 @@ async def oauth_callback(
         }});
         if (!response.ok) {{
           const data = await response.json().catch(() => ({{}}));
-          const p = document.createElement('p');
-          p.textContent = `{_msg(request, "auth.sign_in_failed")}: ` + (data.detail || {unknown_error});
-          document.body.innerHTML = '';
-          document.body.appendChild(p);
+          showError(`{_msg(request, "auth.sign_in_failed")}: ` + (data.detail || {unknown_error}));
           return;
         }}
         window.location.href = '/';
       }} catch (err) {{
-        const p = document.createElement('p');
-        p.textContent = `{_msg(request, "auth.sign_in_failed")}: ` + String(err);
-        document.body.innerHTML = '';
-        document.body.appendChild(p);
+        showError(`{_msg(request, "auth.sign_in_failed")}: ` + String(err));
       }}
     }})();
   </script>
@@ -352,7 +423,16 @@ async def login_with_password(request: Request, payload: PasswordAuthPayload, db
 
 
 @router.post("/logout")
-async def logout(request: Request, response: Response):
+async def logout(request: Request):
+    response = RedirectResponse(url="/auth/login", status_code=303)
     response.delete_cookie("session")
     response.delete_cookie("supabase_refresh")
-    return {"message": _msg(request, "auth.logged_out")}
+    return response
+
+
+@router.get("/logout")
+async def logout_page(request: Request):
+    response = RedirectResponse(url="/auth/login", status_code=302)
+    response.delete_cookie("session")
+    response.delete_cookie("supabase_refresh")
+    return response
