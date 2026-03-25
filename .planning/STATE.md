@@ -53,6 +53,7 @@ Previous milestone archived. See `.planning/milestones/v3.0-ROADMAP.md` for full
 | 260324-psh | Create dedicated SVG logo for Synco and replace inline SVGs in templates | 2026-03-24 | 03f92b3 | [260324-psh-create-dedicated-svg-logo-for-synco-and-](./quick/260324-psh-create-dedicated-svg-logo-for-synco-and-/) |
 | 260324-s45 | Fix pricing page showing authenticated nav items to unauthenticated users | 2026-03-24 | d15b454 | [260324-s45-fix-pricing-page-showing-authenticated-n](./quick/260324-s45-fix-pricing-page-showing-authenticated-n/) |
 | 260324-tlt | Refactor Szybkie dodawanie navbar button to open chooser modal (Event/Expense/Shopping) | 2026-03-24 | 97ba386 | [260324-tlt-refactor-szybkie-dodawanie-navbar-button](./quick/260324-tlt-refactor-szybkie-dodawanie-navbar-button/) |
+| 260325-cyy | Add live Stripe purchase flow integration tests (checkout, portal, webhook) | 2026-03-25 | 7764574 | [260325-cyy-test-stripe-purchase-of-plan-with-fake-a](./quick/260325-cyy-test-stripe-purchase-of-plan-with-fake-a/) |
 
 ### Pending Todos
 
@@ -60,8 +61,8 @@ Previous milestone archived. See `.planning/milestones/v3.0-ROADMAP.md` for full
 
 ## Session Continuity
 
-Last session: 2026-03-24
-Stopped at: Phase 34 added to v5.0 milestone
+Last session: 2026-03-25
+Stopped at: Completed quick task 260325-cyy (Stripe purchase flow tests)
 Next action: `/gsd-plan-phase 34` — plan the Hero Landing Page
 
 ## Session Log
