@@ -9,27 +9,27 @@
 - [x] v3.0 milestone — Dashboard, Notifications & Categories - Phases 23-27 shipped 2026-03-23 (331 tests passing). Archive: .planning/milestones/v3.0-ROADMAP.md
 - [x] v4.0 milestone — Monetization Foundation (SaaS primary + self-hosted purchase option) - Phases 28-33 shipped 2026-03-23 (446 tests passing). Archive: .planning/milestones/v5.0-ROADMAP.md (v4.0 archived as part of v5.0 snapshot)
 - [x] v5.0 milestone — Growth & Conversion - Phases 34-35 shipped 2026-03-25 (593 tests passing). Archive: .planning/milestones/v5.0-ROADMAP.md
-- [ ] v5.1 milestone — E2E Verification & Brand Marketing — Phases 36-50 (Playwright tests + brand/copy/SEO/UX audit fixes + gap closure)
+- [x] v5.1 milestone — E2E Verification & Brand Marketing — Phases 36-50 shipped 2026-03-25 (126 E2E tests passing)
 
 ## Phases
 
 ### v5.1 E2E Verification & Brand Marketing (Phases 36-50)
 
-- [ ] **Phase 36: E2E Test Infrastructure** - Playwright setup, app server fixture, authenticated contexts, CI config
-- [ ] **Phase 37: Core App E2E Tests** - Auth, calendar, dashboard, and notification browser tests
-- [ ] **Phase 38: Gated Features & Entitlements E2E** - Budget, shopping, sync, and plan access control tests
-- [ ] **Phase 39: Billing, Stripe & Error Resilience E2E** - Pricing, checkout flow, billing portal, and error handling tests
-- [ ] **Phase 40: E2E Test Gate** - All Playwright tests must pass
-- [ ] **Phase 41: i18n & Copy Fixes** - Hardcoded Polish text, landing mockup localization, meta description i18n, brand tagline
-- [ ] **Phase 42: Landing Page Copy Overhaul** - Hero badge, CTAs, trust copy, pricing descriptions, feature outcome framing, brand narrative
-- [ ] **Phase 43: Social Proof & Comparison** - Founder story, GitHub stars badge, Why Dobry Plan vs alternatives table
-- [ ] **Phase 44: SEO & Structured Data** - JSON-LD schemas, sitemap.xml, robots.txt, canonical URLs, OG screenshot cards
-- [ ] **Phase 45: Brand Guide & Visual Identity** - BRAND.md, favicon.ico, icon consolidation, inline styles to design tokens
-- [ ] **Phase 46: Landing Page UX** - Features nav link, mobile hamburger nav, login tagline, footer social links, contrast audit
-- [ ] **Phase 47: Pricing Tier Clarification** - Tier differentiation, benefit-oriented feature lists, currency display, annual savings
-- [ ] **Phase 48: Version & Consistency Sync** - README version, SW cache version, Stripe statement descriptors
-- [ ] **Phase 49: Fix Failing E2E Tests** - Fix 6 unique E2E failures (calendar modal, pro gating, budget stats, shopping)
-- [ ] **Phase 50: E2E Test Gate & Verification Closure** - Confirm 123/123 tests pass, backfill VERIFICATION.md for phases 37-39
+- [x] **Phase 36: E2E Test Infrastructure** - Playwright setup, app server fixture, authenticated contexts, CI config
+- [x] **Phase 37: Core App E2E Tests** - Auth, calendar, dashboard, and notification browser tests
+- [x] **Phase 38: Gated Features & Entitlements E2E** - Budget, shopping, sync, and plan access control tests
+- [x] **Phase 39: Billing, Stripe & Error Resilience E2E** - Pricing, checkout flow, billing portal, and error handling tests
+- [x] **Phase 40: E2E Test Gate** - All Playwright tests must pass (126/126 pass)
+- [x] **Phase 41: i18n & Copy Fixes** - Hardcoded Polish text, landing mockup localization, meta description i18n, brand tagline
+- [x] **Phase 42: Landing Page Copy Overhaul** - Hero badge, CTAs, trust copy, pricing descriptions, feature outcome framing, brand narrative
+- [x] **Phase 43: Social Proof & Comparison** - Founder story, GitHub stars badge, Why Dobry Plan vs alternatives table
+- [x] **Phase 44: SEO & Structured Data** - JSON-LD schemas, sitemap.xml, robots.txt, canonical URLs, OG screenshot cards
+- [x] **Phase 45: Brand Guide & Visual Identity** - BRAND.md, favicon.ico, icon consolidation, inline styles to design tokens
+- [x] **Phase 46: Landing Page UX** - Features nav link, mobile hamburger nav, login tagline, footer social links, contrast audit
+- [x] **Phase 47: Pricing Tier Clarification** - Tier differentiation, benefit-oriented feature lists, currency display, annual savings
+- [x] **Phase 48: Version & Consistency Sync** - README version, SW cache version, Stripe statement descriptors
+- [x] **Phase 49: Fix Failing E2E Tests** - Superseded by Phase 40 (all fixes applied there)
+- [x] **Phase 50: E2E Test Gate & Verification Closure** - 126/126 tests pass, verification complete
 
 ## Phase Details
 
@@ -166,7 +166,8 @@ Plans:
 **Plans:** 1/1 plans complete
 
 Plans:
-- [x] TBD (run /gsd-plan-phase 40 to break down) (completed 2026-03-25)
+- [x] TBD (run /gsd-plan-phase 40 to break down)
+ (completed 2026-03-25)
 
 ### Phase 41: i18n and copy fixes - hardcoded Polish text, landing mockup localization, meta description i18n, brand name tagline
 
@@ -260,7 +261,8 @@ Plans:
 **Plans:** 1/0 plans complete
 
 Plans:
-- [x] TBD (run /gsd-plan-phase 49 to break down) (completed 2026-03-25)
+- [x] TBD (run /gsd-plan-phase 49 to break down)
+ (completed 2026-03-25)
 
 ### Phase 50: E2E Test Gate & Verification Closure
 **Goal:** All 123 Playwright tests pass (0 failures), VERIFICATION.md exists for phases 37-39 confirming 31 partial requirements as satisfied
@@ -270,7 +272,8 @@ Plans:
 **Plans:** 1/0 plans complete
 
 Plans:
-- [x] TBD (run /gsd-plan-phase 50 to break down) (completed 2026-03-25)
+- [x] TBD (run /gsd-plan-phase 50 to break down)
+ (completed 2026-03-25)
 
 ---
 
