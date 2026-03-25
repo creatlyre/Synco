@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v5.1
-milestone_name: E2E Verification & Brand Marketing
-status: completed
-last_updated: "2026-03-25T17:12:56.487Z"
-last_activity: 2025-07-15
+milestone: null
+milestone_name: null
+status: idle
+last_updated: "2026-03-25T18:00:00.000Z"
+last_activity: 2026-03-25
 progress:
-  total_phases: 15
-  completed_phases: 10
-  total_plans: 13
-  completed_plans: 18
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 0
 ---
 
@@ -20,20 +20,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** A shared calendar both partners can edit that stays in sync with Google Calendar.
-**Current focus:** Phase 39 — Complete
+**Current focus:** Planning next milestone
 
 ## Position
 
-**Milestone:** v5.1 Stripe E2E Verification
-**Phase:** 39 of 39 (Complete)
-**Status:** Milestone complete
-Last activity: 2025-07-15
-
-Progress: [░░░░░░░░░░] 0%
+**Milestone:** None (v5.1 shipped 2026-03-25)
+**Status:** Idle — ready for next milestone
+Last activity: 2026-03-25
 
 ## Accumulated Context
 
-Previous milestone archived. See `.planning/milestones/v5.0-ROADMAP.md` for full history.
+Previous milestones archived. See `.planning/milestones/` for full history.
 
 ### Decisions
 
@@ -48,22 +45,11 @@ Previous milestone archived. See `.planning/milestones/v5.0-ROADMAP.md` for full
 | 260324-tlt | Refactor Szybkie dodawanie navbar button to open chooser modal (Event/Expense/Shopping) | 2026-03-24 | 97ba386 | [260324-tlt-refactor-szybkie-dodawanie-navbar-button](./quick/260324-tlt-refactor-szybkie-dodawanie-navbar-button/) |
 | 260325-cyy | Add live Stripe purchase flow integration tests (checkout, portal, webhook) | 2026-03-25 | 7764574 | [260325-cyy-test-stripe-purchase-of-plan-with-fake-a](./quick/260325-cyy-test-stripe-purchase-of-plan-with-fake-a/) |
 
-### Roadmap Evolution
-
-- Phase 40 added: E2E test gate - all Playwright tests must pass
-- Phase 41 added: i18n and copy fixes - hardcoded Polish text, landing mockup localization, meta description i18n, brand name tagline
-- Phase 42 added: Landing page copy and messaging overhaul - hero badge, CTAs, trust copy, pricing descriptions, feature outcome framing, brand narrative
-- Phase 43 added: Social proof and comparison section - founder story, GitHub stars badge, Why Dobry Plan vs alternatives table
-- Phase 44 added: SEO and structured data - JSON-LD schemas, sitemap.xml, robots.txt, canonical URLs, OG screenshot cards
-- Phase 45 added: Brand guide and visual identity cleanup - BRAND.md, favicon.ico, icon consolidation, inline styles to design tokens
-- Phase 46 added: Landing page UX improvements - features nav link, mobile hamburger nav, login tagline, footer social links, contrast audit
-- Phase 47 added: Pricing tier clarification - tier differentiation, benefit-oriented feature lists, currency display, annual savings reframe
-- Phase 48 added: Version and consistency sync - README version, service worker cache version, Stripe statement descriptors
-
 ### Pending Todos
 
 - Add filtered one-time expenses to main dashboard (2026-03-24)
 
 ## Session Log
 
-- 2026-03-25: v5.1 milestone started — Stripe E2E Verification
+- 2026-03-25: v5.1 milestone started — E2E Verification & Brand Marketing
+- 2026-03-25: v5.1 milestone shipped — 126/126 E2E tests passing, 15 phases complete
