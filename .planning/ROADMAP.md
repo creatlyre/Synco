@@ -172,7 +172,8 @@ Plans:
 **Plans:** 1/1 plans complete
 
 Plans:
-- [x] TBD (run /gsd-plan-phase 41 to break down) (completed 2026-03-25)
+- [x] TBD (run /gsd-plan-phase 41 to break down)
+ (completed 2026-03-25)
 
 ### Phase 42: Landing page copy and messaging overhaul - hero badge, CTAs, trust copy, pricing descriptions, feature outcome framing, brand narrative
 
@@ -182,7 +183,8 @@ Plans:
 **Plans:** 1/0 plans complete
 
 Plans:
-- [x] TBD (run /gsd-plan-phase 42 to break down) (completed 2026-03-25)
+- [x] TBD (run /gsd-plan-phase 42 to break down)
+ (completed 2026-03-25)
 
 ### Phase 43: Social proof and comparison section - founder story, GitHub stars badge, Why Dobry Plan vs alternatives table
 
@@ -192,7 +194,8 @@ Plans:
 **Plans:** 0/0 plans complete
 
 Plans:
-- [x] TBD (run /gsd-plan-phase 43 to break down) (completed 2026-03-25)
+- [x] TBD (run /gsd-plan-phase 43 to break down)
+ (completed 2026-03-25)
 
 ### Phase 44: SEO and structured data - JSON-LD schemas, sitemap.xml, robots.txt, canonical URLs, OG screenshot cards
 
@@ -202,47 +205,48 @@ Plans:
 **Plans:** 0/0 plans complete
 
 Plans:
-- [x] TBD (run /gsd-plan-phase 44 to break down) (completed 2026-03-25)
+- [x] TBD (run /gsd-plan-phase 44 to break down)
+ (completed 2026-03-25)
 
 ### Phase 45: Brand guide and visual identity cleanup - BRAND.md, favicon.ico, icon consolidation, inline styles to design tokens
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** BRAND.md documents the visual identity, base.html has favicon links, and landing page inline styles use CSS custom properties
+**Requirements**: BRAND-01, BRAND-02, BRAND-03
 **Depends on:** Phase 44
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 45 to break down)
+- [ ] 45-01-PLAN.md — Create BRAND.md, add favicon to base.html, extract inline styles to CSS custom properties
 
 ### Phase 46: Landing page UX improvements - features nav link, mobile hamburger nav, login tagline, footer social links, contrast audit
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Landing page has Features nav link, mobile hamburger menu, footer GitHub link, login page brand tagline, and WCAG AA contrast compliance
+**Requirements**: UX-01, UX-02, UX-03, UX-04, UX-05
 **Depends on:** Phase 45
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 46 to break down)
+- [ ] 46-01-PLAN.md — Features nav link, mobile hamburger, login tagline, footer GitHub, contrast fixes
 
 ### Phase 47: Pricing tier clarification - tier differentiation, benefit-oriented feature lists, currency display, annual savings reframe
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Pricing features rewritten as benefits, currency i18n'd, and landing page shows annual pricing toggle with savings
+**Requirements**: PRICE-01, PRICE-02, PRICE-03, PRICE-04
 **Depends on:** Phase 46
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 47 to break down)
+- [ ] 47-01-PLAN.md — Benefit-oriented feature copy, currency i18n, annual pricing toggle
 
 ### Phase 48: Version and consistency sync - README version, service worker cache version, Stripe statement descriptors
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** All version references updated to v5.1, README version history complete, SW cache busted, Stripe statement descriptor added
+**Requirements**: SYNC-01, SYNC-02, SYNC-03, SYNC-04
 **Depends on:** Phase 47
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 48 to break down)
+- [ ] 48-01-PLAN.md — Version sync (README, pyproject, SW, manifest), Stripe statement descriptor
 
 ---
 
