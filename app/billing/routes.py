@@ -20,6 +20,13 @@ def _get_billing_service(db=Depends(get_db)) -> BillingService:
     return BillingService(BillingRepository(db))
 
 
+def _get_base_url(request: Request) -> str:
+    """Derive public base URL, respecting X-Forwarded-Proto/Host behind proxies."""
+    scheme = request.headers.get("x-forwarded-proto", request.url.scheme)
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+    return f"{scheme}://{host}"
+
+
 @router.post("/checkout")
 async def create_checkout(
     body: CheckoutRequest,
@@ -27,7 +34,7 @@ async def create_checkout(
     user=Depends(get_current_user),
     service: BillingService = Depends(_get_billing_service),
 ):
-    base_url = str(request.base_url).rstrip("/")
+    base_url = _get_base_url(request)
 
     if body.plan == "self_hosted":
         success_url = f"{base_url}/pricing?purchased=true"

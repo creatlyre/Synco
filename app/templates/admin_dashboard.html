@@ -50,10 +50,14 @@
 </div>
 
 <!-- Quick Actions -->
-<div class="flex gap-4">
+<div class="flex flex-wrap gap-4">
   <a href="/admin/users" class="glass-btn-primary rounded-xl px-6 py-3 inline-flex items-center gap-2 text-sm font-medium">
     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     {{ t('admin.manage_users') }}
+  </a>
+  <a href="/admin/installations" class="glass rounded-xl px-6 py-3 inline-flex items-center gap-2 text-sm font-medium hover:ring-1 ring-indigo-400/50 transition">
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+    Tracked Installations
   </a>
 </div>
 {% endblock %}

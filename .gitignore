@@ -6,6 +6,7 @@ skills-lock.json
 
 # Environment & secrets
 .env
+.synco_install_id
 
 # Non-application docs
 MONETIZATION.md

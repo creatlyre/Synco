@@ -172,3 +172,207 @@ class TestLicenseCheckMiddleware:
         assert resp.status_code == 200
         data = resp.json()
         assert data == {"key": "value"}
+
+
+# --- Telemetry tests ---
+
+import uuid
+from datetime import datetime, timedelta
+from unittest.mock import patch
+from pathlib import Path
+
+from app.admin.dependencies import get_admin_user
+from app.auth.dependencies import get_current_user, get_current_user_optional
+from app.database.database import get_db
+from app.database.models import Calendar, User
+from app.licensing.telemetry import (
+    get_or_create_install_id,
+    check_integrity,
+    build_heartbeat_payload,
+    _host_fingerprint,
+)
+from main import app as main_app
+from tests.conftest import InMemoryStore
+
+
+class TestInstallId:
+    def test_creates_valid_uuid(self, tmp_path):
+        with patch("app.licensing.telemetry._project_root", return_value=tmp_path):
+            install_id = get_or_create_install_id()
+            uuid.UUID(install_id)
+
+    def test_persists_across_calls(self, tmp_path):
+        with patch("app.licensing.telemetry._project_root", return_value=tmp_path):
+            first = get_or_create_install_id()
+            second = get_or_create_install_id()
+            assert first == second
+
+    def test_regenerates_if_corrupt(self, tmp_path):
+        id_file = tmp_path / ".synco_install_id"
+        id_file.write_text("not-a-uuid\n")
+        with patch("app.licensing.telemetry._project_root", return_value=tmp_path):
+            install_id = get_or_create_install_id()
+            uuid.UUID(install_id)
+
+
+class TestIntegrity:
+    def test_check_integrity_returns_dict(self):
+        result = check_integrity()
+        assert "hashes" in result
+        assert "ok" in result
+        assert isinstance(result["ok"], bool)
+
+    def test_missing_file_makes_integrity_fail(self, tmp_path):
+        with patch("app.licensing.telemetry._project_root", return_value=tmp_path):
+            result = check_integrity()
+            assert result["ok"] is False
+
+
+class TestHeartbeatPayload:
+    def test_payload_contains_required_fields(self):
+        payload = build_heartbeat_payload(
+            install_id="test-id",
+            license_valid=False,
+            environment="test",
+        )
+        assert payload["installation_id"] == "test-id"
+        assert payload["license_valid"] is False
+        assert payload["environment"] == "test"
+        assert "version" in payload
+        assert "file_hashes" in payload
+        assert "host_fingerprint" in payload
+        assert "reported_at" in payload
+
+    def test_host_fingerprint_is_stable(self):
+        a = _host_fingerprint()
+        b = _host_fingerprint()
+        assert a == b
+        assert len(a) == 16
+
+
+# --- API tests: heartbeat receiver & admin endpoints ---
+
+
+@pytest.fixture
+def telemetry_db():
+    store = InMemoryStore()
+    cal = Calendar(id=str(uuid.uuid4()), name="Admin Cal")
+    store.add(cal)
+    admin = User(
+        id=str(uuid.uuid4()),
+        email="admin@test.com",
+        name="Admin",
+        is_admin=True,
+        calendar_id=cal.id,
+    )
+    store.add(admin)
+    return store, admin
+
+
+@pytest.fixture
+def telemetry_client(telemetry_db):
+    store, admin = telemetry_db
+
+    def override_get_db():
+        yield store
+
+    async def override_admin():
+        return admin
+
+    async def override_current():
+        return admin
+
+    main_app.dependency_overrides[get_db] = override_get_db
+    main_app.dependency_overrides[get_admin_user] = override_admin
+    main_app.dependency_overrides[get_current_user] = override_current
+    main_app.dependency_overrides[get_current_user_optional] = override_current
+
+    client = TestClient(main_app)
+    yield client
+    main_app.dependency_overrides.clear()
+
+
+class TestHeartbeatEndpoint:
+    def test_first_heartbeat_creates_record(self, telemetry_client):
+        resp = telemetry_client.post("/api/telemetry/heartbeat", json={
+            "installation_id": "aaaa-bbbb-cccc",
+            "version": "1.0.0",
+            "license_valid": True,
+            "integrity_ok": True,
+        })
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+
+    def test_second_heartbeat_updates_record(self, telemetry_client):
+        payload = {
+            "installation_id": "aaaa-bbbb-cccc",
+            "version": "1.0.0",
+            "license_valid": False,
+            "integrity_ok": True,
+        }
+        telemetry_client.post("/api/telemetry/heartbeat", json=payload)
+        payload["license_valid"] = True
+        telemetry_client.post("/api/telemetry/heartbeat", json=payload)
+
+        resp = telemetry_client.get("/api/admin/installations")
+        data = resp.json()
+        matching = [i for i in data["installations"] if i["installation_id"] == "aaaa-bbbb-cccc"]
+        assert len(matching) == 1
+        assert matching[0]["license_valid"] is True
+
+    def test_heartbeat_rejects_empty_install_id(self, telemetry_client):
+        resp = telemetry_client.post("/api/telemetry/heartbeat", json={
+            "installation_id": "",
+        })
+        assert resp.status_code == 422
+
+
+class TestAdminInstallations:
+    def test_list_installations(self, telemetry_client, telemetry_db):
+        store, _ = telemetry_db
+        store.insert("installations", {
+            "installation_id": "inst-1",
+            "version": "1.0.0",
+            "license_valid": True,
+            "integrity_ok": True,
+            "environment": "production",
+        })
+        store.insert("installations", {
+            "installation_id": "inst-2",
+            "version": "1.0.0",
+            "license_valid": False,
+            "integrity_ok": False,
+            "environment": "self-hosted",
+        })
+        resp = telemetry_client.get("/api/admin/installations")
+        data = resp.json()
+        assert data["total"] == 2
+        assert data["summary"]["licensed"] == 1
+        assert data["summary"]["unlicensed"] == 1
+        assert data["summary"]["tampered"] == 1
+
+    def test_filter_unlicensed(self, telemetry_client, telemetry_db):
+        store, _ = telemetry_db
+        store.insert("installations", {"installation_id": "lic-1", "license_valid": True, "integrity_ok": True})
+        store.insert("installations", {"installation_id": "unlic-1", "license_valid": False, "integrity_ok": True})
+        resp = telemetry_client.get("/api/admin/installations?license_filter=unlicensed")
+        ids = [i["installation_id"] for i in resp.json()["installations"]]
+        assert "unlic-1" in ids
+        assert "lic-1" not in ids
+
+    def test_filter_tampered(self, telemetry_client, telemetry_db):
+        store, _ = telemetry_db
+        store.insert("installations", {"installation_id": "clean-1", "license_valid": True, "integrity_ok": True})
+        store.insert("installations", {"installation_id": "tampered-1", "license_valid": False, "integrity_ok": False})
+        resp = telemetry_client.get("/api/admin/installations?integrity_filter=tampered")
+        ids = [i["installation_id"] for i in resp.json()["installations"]]
+        assert "tampered-1" in ids
+        assert "clean-1" not in ids
+
+    def test_stats_endpoint(self, telemetry_client, telemetry_db):
+        store, _ = telemetry_db
+        store.insert("installations", {"installation_id": "s1", "license_valid": True, "integrity_ok": True})
+        resp = telemetry_client.get("/api/admin/installations/stats")
+        data = resp.json()
+        assert data["total"] == 1
+        assert data["licensed"] == 1

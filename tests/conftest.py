@@ -41,6 +41,7 @@ class InMemoryStore:
             "expense_categories": [],
             "notification_preferences": [],
             "notifications": [],
+            "installations": [],
         }
 
     @staticmethod

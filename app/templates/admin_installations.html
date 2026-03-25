@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Installations — Admin{% endblock %}
+{% block page_heading %}Tracked Installations{% endblock %}
+
+{% block content %}
+<!-- Summary Cards -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+  <div class="glass rounded-2xl p-5 text-center">
+    <div class="text-3xl font-bold text-indigo-300 mb-1" id="stat-total">–</div>
+    <div class="text-xs opacity-70">Total</div>
+  </div>
+  <div class="glass rounded-2xl p-5 text-center">
+    <div class="text-3xl font-bold text-emerald-300 mb-1" id="stat-licensed">–</div>
+    <div class="text-xs opacity-70">Licensed</div>
+  </div>
+  <div class="glass rounded-2xl p-5 text-center">
+    <div class="text-3xl font-bold text-red-400 mb-1" id="stat-unlicensed">–</div>
+    <div class="text-xs opacity-70">Unlicensed</div>
+  </div>
+  <div class="glass rounded-2xl p-5 text-center">
+    <div class="text-3xl font-bold text-amber-400 mb-1" id="stat-tampered">–</div>
+    <div class="text-xs opacity-70">Tampered</div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="flex flex-wrap gap-3 mb-6">
+  <button data-filter="all" class="filter-btn glass-btn-primary rounded-lg px-4 py-2 text-sm active">All</button>
+  <button data-filter="unlicensed" class="filter-btn glass rounded-lg px-4 py-2 text-sm hover:ring-1 ring-red-400/50">Unlicensed</button>
+  <button data-filter="tampered" class="filter-btn glass rounded-lg px-4 py-2 text-sm hover:ring-1 ring-amber-400/50">Tampered</button>
+  <button data-filter="licensed" class="filter-btn glass rounded-lg px-4 py-2 text-sm hover:ring-1 ring-emerald-400/50">Licensed</button>
+</div>
+
+<!-- Installations Table -->
+<div class="glass rounded-2xl overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-white/10 text-left">
+          <th class="px-4 py-3 font-medium opacity-70">Install ID</th>
+          <th class="px-4 py-3 font-medium opacity-70">Version</th>
+          <th class="px-4 py-3 font-medium opacity-70">Environment</th>
+          <th class="px-4 py-3 font-medium opacity-70">License</th>
+          <th class="px-4 py-3 font-medium opacity-70">Integrity</th>
+          <th class="px-4 py-3 font-medium opacity-70">OS</th>
+          <th class="px-4 py-3 font-medium opacity-70">Last Seen</th>
+        </tr>
+      </thead>
+      <tbody id="installations-body">
+        <tr><td colspan="7" class="px-4 py-8 text-center opacity-50">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Back link -->
+<div class="mt-6">
+  <a href="/admin" class="text-sm opacity-60 hover:opacity-100 transition">&larr; Back to Admin Dashboard</a>
+</div>
+
+<script>
+(function() {
+  let currentLicenseFilter = null;
+  let currentIntegrityFilter = null;
+
+  async function load(licenseFilter, integrityFilter) {
+    const params = new URLSearchParams();
+    if (licenseFilter) params.set('license_filter', licenseFilter);
+    if (integrityFilter) params.set('integrity_filter', integrityFilter);
+    const resp = await fetch('/api/admin/installations?' + params.toString());
+    if (!resp.ok) return;
+    const data = await resp.json();
+    renderStats(data.summary);
+    renderTable(data.installations);
+  }
+
+  function renderStats(s) {
+    document.getElementById('stat-total').textContent = s.total;
+    document.getElementById('stat-licensed').textContent = s.licensed;
+    document.getElementById('stat-unlicensed').textContent = s.unlicensed;
+    document.getElementById('stat-tampered').textContent = s.tampered;
+  }
+
+  function renderTable(rows) {
+    const tbody = document.getElementById('installations-body');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center opacity-50">No installations tracked yet. Set <code>TELEMETRY_ENDPOINT</code> in your production&nbsp;<code>.env</code> to start collecting data.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(r => `
+      <tr class="border-b border-white/5 hover:bg-white/5 transition">
+        <td class="px-4 py-3 font-mono text-xs">${(r.installation_id || '').substring(0, 8)}…</td>
+        <td class="px-4 py-3">${esc(r.version)}</td>
+        <td class="px-4 py-3">${esc(r.environment)}</td>
+        <td class="px-4 py-3">
+          ${r.license_valid
+            ? '<span class="inline-block px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs">Valid</span>'
+            : '<span class="inline-block px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 text-xs">Missing</span>'}
+        </td>
+        <td class="px-4 py-3">
+          ${r.integrity_ok
+            ? '<span class="inline-block px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs">OK</span>'
+            : '<span class="inline-block px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs">Tampered</span>'}
+        </td>
+        <td class="px-4 py-3">${esc(r.os)} / Py ${esc(r.python_version)}</td>
+        <td class="px-4 py-3 text-xs opacity-60">${r.updated_at ? new Date(r.updated_at).toLocaleString() : '—'}</td>
+      </tr>`).join('');
+  }
+
+  function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active', 'glass-btn-primary'));
+      btn.classList.add('active', 'glass-btn-primary');
+      const f = btn.dataset.filter;
+      if (f === 'all') { currentLicenseFilter = null; currentIntegrityFilter = null; }
+      else if (f === 'unlicensed') { currentLicenseFilter = 'unlicensed'; currentIntegrityFilter = null; }
+      else if (f === 'licensed')   { currentLicenseFilter = 'licensed'; currentIntegrityFilter = null; }
+      else if (f === 'tampered')   { currentLicenseFilter = null; currentIntegrityFilter = 'tampered'; }
+      load(currentLicenseFilter, currentIntegrityFilter);
+    });
+  });
+
+  load();
+})();
+</script>
+{% endblock %}

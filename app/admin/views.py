@@ -104,3 +104,16 @@ async def admin_user_detail_page(
     )
     set_locale_cookie_if_param(response, request)
     return response
+
+
+@router.get("/installations", response_class=HTMLResponse)
+async def admin_installations_page(
+    request: Request,
+    user=Depends(get_admin_user),
+):
+    context = inject_template_i18n(request, {"request": request, "user": user})
+    response = templates.TemplateResponse(
+        request=request, name="admin_installations.html", context=context,
+    )
+    set_locale_cookie_if_param(response, request)
+    return response

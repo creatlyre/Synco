@@ -51,6 +51,13 @@ from app.billing.views import router as billing_views_router
 from app.billing.views import public_router as billing_public_router
 from app.admin.routes import router as admin_router
 from app.admin.views import router as admin_views_router
+from app.licensing.routes import router as telemetry_router
+from app.licensing.telemetry import (
+    get_or_create_install_id,
+    build_heartbeat_payload,
+    send_heartbeat_async,
+    TelemetryReporter,
+)
 
 app = FastAPI(
     title="Synco",
@@ -202,6 +209,53 @@ app.include_router(billing_views_router)
 app.include_router(billing_public_router)
 app.include_router(admin_router)
 app.include_router(admin_views_router)
+app.include_router(telemetry_router)
+
+
+# ── Telemetry: license compliance tracking ──────────────────────────────
+
+_telemetry_reporter: TelemetryReporter | None = None
+
+
+@app.on_event("startup")
+def _start_telemetry():
+    global _telemetry_reporter
+    endpoint = _settings.TELEMETRY_ENDPOINT
+    if not endpoint:
+        logger.info("TELEMETRY_ENDPOINT not set — installation tracking disabled")
+        return
+
+    install_id = get_or_create_install_id()
+    license_valid = False
+    if _settings.SYNCO_LICENSE_KEY and _settings.SYNCO_LICENSE_SECRET:
+        from app.licensing.keys import validate_license_key
+        license_valid = validate_license_key(
+            _settings.SYNCO_LICENSE_KEY, _settings.SYNCO_LICENSE_SECRET
+        )
+
+    # Fire an immediate heartbeat (non-blocking)
+    payload = build_heartbeat_payload(
+        install_id=install_id,
+        license_valid=license_valid,
+        environment=_settings.ENVIRONMENT,
+    )
+    send_heartbeat_async(endpoint, payload)
+
+    # Start periodic reporter
+    _telemetry_reporter = TelemetryReporter(
+        endpoint=endpoint,
+        install_id=install_id,
+        license_valid=license_valid,
+        environment=_settings.ENVIRONMENT,
+        interval=_settings.TELEMETRY_INTERVAL,
+    )
+    _telemetry_reporter.start()
+
+
+@app.on_event("shutdown")
+def _stop_telemetry():
+    if _telemetry_reporter:
+        _telemetry_reporter.stop()
 
 
 @app.get("/", response_class=HTMLResponse)
