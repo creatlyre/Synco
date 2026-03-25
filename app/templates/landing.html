@@ -289,6 +289,82 @@
         </div>
     </section>
 
+    {# Comparison table — Why Dobry Plan #}
+    <section class="py-20 md:py-28 relative">
+        <div class="absolute inset-0 section-fade pointer-events-none"></div>
+        <div class="relative mx-auto max-w-4xl px-4 sm:px-6">
+            <div class="text-center mb-14">
+                <p class="text-sm font-medium text-indigo-400 mb-3 uppercase tracking-wider">{{ t('landing.compare_label') }}</p>
+                <h2 class="text-3xl md:text-4xl font-extrabold font-display tracking-tight mb-4">{{ t('landing.compare_title') }}</h2>
+                <p class="text-gray-400 text-lg max-w-lg mx-auto">{{ t('landing.compare_subtitle') }}</p>
+            </div>
+            <div class="overflow-x-auto rounded-2xl border border-white/[0.07]" style="background: linear-gradient(180deg, rgba(26,20,68,0.5) 0%, rgba(15,10,46,0.4) 100%);">
+                <table class="w-full text-sm" role="table">
+                    <thead>
+                        <tr class="border-b border-white/10">
+                            <th class="text-left p-4 text-gray-400 font-medium" scope="col">{{ t('landing.compare_feature') }}</th>
+                            <th class="p-4 text-center text-indigo-300 font-bold" scope="col">{{ t('landing.compare_dobryplan') }}</th>
+                            <th class="p-4 text-center text-gray-400 font-medium" scope="col">{{ t('landing.compare_gcal') }}</th>
+                            <th class="p-4 text-center text-gray-400 font-medium" scope="col">{{ t('landing.compare_notion') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set compare_rows = [
+                            ('landing.compare_row_shared_cal', true, true, false),
+                            ('landing.compare_row_budget', true, false, false),
+                            ('landing.compare_row_shopping', true, false, false),
+                            ('landing.compare_row_notifications', true, false, false),
+                            ('landing.compare_row_aisle', true, false, false),
+                            ('landing.compare_row_gcal_sync', true, true, false),
+                            ('landing.compare_row_free', true, true, true),
+                            ('landing.compare_row_open_source', true, false, false)
+                        ] %}
+                        {% for row_key, dp, gc, nt in compare_rows %}
+                        <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                            <td class="p-4 text-gray-300">{{ t(row_key) }}</td>
+                            <td class="p-4 text-center">
+                                {% if dp %}<span class="text-emerald-400 font-bold text-base">{{ t('landing.compare_yes') }}</span>{% else %}<span class="text-gray-600">{{ t('landing.compare_no') }}</span>{% endif %}
+                            </td>
+                            <td class="p-4 text-center">
+                                {% if gc %}<span class="text-gray-400">{{ t('landing.compare_partial') }}</span>{% else %}<span class="text-gray-600">{{ t('landing.compare_no') }}</span>{% endif %}
+                            </td>
+                            <td class="p-4 text-center">
+                                {% if nt %}<span class="text-gray-400">{{ t('landing.compare_partial') }}</span>{% else %}<span class="text-gray-600">{{ t('landing.compare_no') }}</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# Founder story #}
+    <section class="py-20 md:py-28">
+        <div class="mx-auto max-w-3xl px-4 sm:px-6">
+            <div class="text-center mb-10">
+                <p class="text-sm font-medium text-indigo-400 mb-3 uppercase tracking-wider">{{ t('landing.founder_label') }}</p>
+                <h2 class="text-3xl md:text-4xl font-extrabold font-display tracking-tight">{{ t('landing.founder_title') }}</h2>
+            </div>
+            <div class="rounded-2xl border border-white/[0.07] p-8 md:p-10" style="background: linear-gradient(180deg, rgba(26,20,68,0.5) 0%, rgba(15,10,46,0.4) 100%);">
+                <blockquote class="text-gray-300 text-base md:text-lg leading-relaxed italic mb-6">
+                    "{{ t('landing.founder_text') }}"
+                </blockquote>
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 font-bold text-lg" aria-hidden="true">W</div>
+                    <div>
+                        <div class="font-bold text-gray-100">{{ t('landing.founder_name') }}</div>
+                        <div class="text-sm text-gray-400">{{ t('landing.founder_role') }}</div>
+                    </div>
+                    <a href="https://github.com/wojciech-dobryplan/dobryplan" class="ml-auto inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors border border-white/10 rounded-lg px-4 py-2 hover:bg-white/5" rel="noopener noreferrer" target="_blank">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        {{ t('landing.github_stars') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
     {# Pricing preview #}
     <section id="pricing" class="py-20 md:py-28 relative">
         <div class="absolute inset-0 section-fade pointer-events-none"></div>
