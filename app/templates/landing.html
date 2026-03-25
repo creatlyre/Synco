@@ -101,8 +101,8 @@
                     {{ t('landing.hero_subtitle') }}
                 </p>
                 <div class="flex flex-col items-center gap-2 text-sm text-gray-400/80 italic">
-                    <p><span class="brand-name">Dobry Plan</span>, aby zaoszczędzić czas w sklepie</p>
-                    <p><span class="brand-name">Dobry Plan</span>, aby dzielić się kalendarzem ułatwiającym życie</p>
+                    <p><span class="brand-name">{{ t('app.name') }}</span>, {{ t('landing.tagline_shopping') }}</p>
+                    <p><span class="brand-name">{{ t('app.name') }}</span>, {{ t('landing.tagline_calendar') }}</p>
                 </div>
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
                     <a href="/auth/register" class="cta-primary rounded-2xl px-10 py-4 text-base font-bold transition-all duration-300 inline-flex items-center gap-2">
@@ -157,7 +157,7 @@
                             {# Budget mini-widget #}
                             <div class="rounded-xl border border-white/5 p-3" style="background: rgba(255,255,255,0.02);">
                                 <div class="text-[10px] text-gray-500 mb-1.5 uppercase tracking-wider">{{ t('landing.mock_budget') }}</div>
-                                <div class="text-lg font-bold text-emerald-400">2,340 zł</div>
+                                <div class="text-lg font-bold text-emerald-400">{{ t('landing.mock_balance') }}</div>
                                 <div class="mt-2 h-1.5 rounded-full bg-white/5 overflow-hidden">
                                     <div class="h-full rounded-full w-3/5" style="background: linear-gradient(90deg, #34d399, #6366f1);"></div>
                                 </div>
@@ -166,9 +166,9 @@
                             <div class="rounded-xl border border-white/5 p-3" style="background: rgba(255,255,255,0.02);">
                                 <div class="text-[10px] text-gray-500 mb-1.5 uppercase tracking-wider">{{ t('landing.mock_shopping') }}</div>
                                 <div class="space-y-1.5">
-                                    <div class="flex items-center gap-2 text-xs text-gray-400"><span class="w-3.5 h-3.5 rounded bg-emerald-500/20 flex items-center justify-center text-[8px] text-emerald-400">✓</span> Mleko</div>
-                                    <div class="flex items-center gap-2 text-xs text-gray-400"><span class="w-3.5 h-3.5 rounded bg-emerald-500/20 flex items-center justify-center text-[8px] text-emerald-400">✓</span> Chleb</div>
-                                    <div class="flex items-center gap-2 text-xs text-gray-300"><span class="w-3.5 h-3.5 rounded bg-white/5"></span> Masło</div>
+                                    <div class="flex items-center gap-2 text-xs text-gray-400"><span class="w-3.5 h-3.5 rounded bg-emerald-500/20 flex items-center justify-center text-[8px] text-emerald-400">✓</span> {{ t('landing.mock_item_milk') }}</div>
+                                    <div class="flex items-center gap-2 text-xs text-gray-400"><span class="w-3.5 h-3.5 rounded bg-emerald-500/20 flex items-center justify-center text-[8px] text-emerald-400">✓</span> {{ t('landing.mock_item_bread') }}</div>
+                                    <div class="flex items-center gap-2 text-xs text-gray-300"><span class="w-3.5 h-3.5 rounded bg-white/5"></span> {{ t('landing.mock_item_butter') }}</div>
                                 </div>
                             </div>
                             {# Next event #}

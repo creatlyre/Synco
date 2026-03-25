@@ -810,5 +810,17 @@
   "admin.revoke_admin": "Odbierz uprawnienia",
   "admin.admin_updated": "Status administratora zaktualizowany",
   "admin.yes": "Tak",
-  "admin.no": "Nie"
+  "admin.no": "Nie",
+
+  "app.meta_desc": "Dobry Plan — Wspólny kalendarz domowy, budżet i lista zakupów",
+  "app.tagline": "Twój dom, wreszcie ogarnięty",
+  "pwa.install_prompt": "Zainstaluj Dobry Plan, aby mieć szybki dostęp",
+  "pwa.install_btn": "Zainstaluj",
+
+  "landing.tagline_shopping": "aby zaoszczędzić czas w sklepie",
+  "landing.tagline_calendar": "aby dzielić się kalendarzem ułatwiającym życie",
+  "landing.mock_item_milk": "Mleko",
+  "landing.mock_item_bread": "Chleb",
+  "landing.mock_item_butter": "Masło",
+  "landing.mock_balance": "2 340 zł"
 }

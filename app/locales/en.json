@@ -810,5 +810,17 @@
   "admin.revoke_admin": "Revoke Admin",
   "admin.admin_updated": "Admin status updated",
   "admin.yes": "Yes",
-  "admin.no": "No"
+  "admin.no": "No",
+
+  "app.meta_desc": "Dobry Plan — Smart household calendar & budget planner",
+  "app.tagline": "Your household, finally in sync",
+  "pwa.install_prompt": "Install Dobry Plan for quick access",
+  "pwa.install_btn": "Install",
+
+  "landing.tagline_shopping": "to save time at the store",
+  "landing.tagline_calendar": "to share a calendar that makes life easier",
+  "landing.mock_item_milk": "Milk",
+  "landing.mock_item_bread": "Bread",
+  "landing.mock_item_butter": "Butter",
+  "landing.mock_balance": "2,340 PLN"
 }
