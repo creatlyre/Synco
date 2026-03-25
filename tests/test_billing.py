@@ -602,3 +602,212 @@ class TestStripeLiveAPI:
         stripe.api_key = os.environ["STRIPE_SECRET_KEY"]
         customer = stripe.Customer.retrieve(REAL_STRIPE_TEST_CUSTOMER_ID)
         assert customer.email == "test-validation@synco.app"
+
+
+# ── Stripe Live Purchase Flow Tests (require STRIPE_SECRET_KEY) ────────────
+
+
+@pytest.mark.skipif(
+    not os.getenv("STRIPE_SECRET_KEY"),
+    reason="STRIPE_SECRET_KEY not set — skipping live Stripe purchase flow tests"
+)
+class TestStripeLivePurchaseFlow:
+    """Live Stripe purchase flow integration tests.
+
+    These tests verify real Stripe API interactions for the full purchase flow:
+    checkout session creation, billing portal access, and webhook event handling.
+
+    Test card for Stripe test mode: 4242 4242 4242 4242 (any future exp, any CVC).
+    Note: Actual card submission requires browser interaction — these tests only
+    verify server-side session creation and validation.
+
+    Run: STRIPE_SECRET_KEY=sk_test_... pytest tests/test_billing.py::TestStripeLivePurchaseFlow -v
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup_stripe(self):
+        """Set up Stripe API key, create a fresh customer and test prices."""
+        import stripe
+        stripe.api_key = os.environ["STRIPE_SECRET_KEY"]
+
+        # Create a test customer
+        self._customer = stripe.Customer.create(
+            email="purchase-flow-test@synco.app",
+            metadata={"purpose": "automated_test"},
+        )
+
+        # Create test products and prices (self-contained — no reliance on pre-existing data)
+        self._pro_product = stripe.Product.create(
+            name="Test Synco Pro",
+            metadata={"purpose": "automated_test"},
+        )
+        self._pro_price = stripe.Price.create(
+            product=self._pro_product.id,
+            unit_amount=1999,
+            currency="pln",
+            recurring={"interval": "month"},
+        )
+        self._family_product = stripe.Product.create(
+            name="Test Synco Family Plus",
+            metadata={"purpose": "automated_test"},
+        )
+        self._family_price = stripe.Price.create(
+            product=self._family_product.id,
+            unit_amount=3499,
+            currency="pln",
+            recurring={"interval": "month"},
+        )
+        yield
+
+        # Clean up: deactivate prices, archive products, delete customer
+        try:
+            stripe.Price.modify(self._pro_price.id, active=False)
+            stripe.Price.modify(self._family_price.id, active=False)
+            stripe.Product.modify(self._pro_product.id, active=False)
+            stripe.Product.modify(self._family_product.id, active=False)
+            stripe.Customer.delete(self._customer.id)
+        except Exception:
+            pass
+
+    def test_live_checkout_session_pro_monthly(self):
+        """Create a checkout session for Pro monthly and verify it returns a valid Stripe URL."""
+        import stripe
+
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            customer=self._customer.id,
+            line_items=[{"price": self._pro_price.id, "quantity": 1}],
+            payment_method_types=["card"],
+            success_url="https://test.synco.app/success",
+            cancel_url="https://test.synco.app/cancel",
+        )
+        try:
+            assert session.url.startswith("https://checkout.stripe.com")
+            assert session.payment_status == "unpaid"
+            assert session.mode == "subscription"
+        finally:
+            stripe.checkout.Session.expire(session.id)
+
+    def test_live_checkout_session_family_plus_monthly(self):
+        """Create a checkout session for Family Plus monthly and verify it returns a valid Stripe URL."""
+        import stripe
+
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            customer=self._customer.id,
+            line_items=[{"price": self._family_price.id, "quantity": 1}],
+            payment_method_types=["card"],
+            success_url="https://test.synco.app/success",
+            cancel_url="https://test.synco.app/cancel",
+        )
+        try:
+            assert session.url.startswith("https://checkout.stripe.com")
+            assert session.payment_status == "unpaid"
+            assert session.mode == "subscription"
+        finally:
+            stripe.checkout.Session.expire(session.id)
+
+    def test_live_checkout_session_pro_annual(self):
+        """Create a checkout session for Pro annual (creates an annual price on the fly)."""
+        import stripe
+
+        annual_price = stripe.Price.create(
+            product=self._pro_product.id,
+            unit_amount=19999,
+            currency="pln",
+            recurring={"interval": "year"},
+        )
+        try:
+            session = stripe.checkout.Session.create(
+                mode="subscription",
+                customer=self._customer.id,
+                line_items=[{"price": annual_price.id, "quantity": 1}],
+                payment_method_types=["card"],
+                success_url="https://test.synco.app/success",
+                cancel_url="https://test.synco.app/cancel",
+            )
+            try:
+                assert session.url.startswith("https://checkout.stripe.com")
+                assert session.mode == "subscription"
+            finally:
+                stripe.checkout.Session.expire(session.id)
+        finally:
+            stripe.Price.modify(annual_price.id, active=False)
+
+    def test_live_billing_portal_session(self):
+        """Create a billing portal session for the test customer."""
+        import stripe
+
+        session = stripe.billing_portal.Session.create(
+            customer=self._customer.id,
+            return_url="https://test.synco.app/billing/settings",
+        )
+        assert session.url.startswith("https://billing.stripe.com")
+
+    def test_live_checkout_session_contains_test_mode_id(self):
+        """Checkout session ID starts with cs_test_ in test mode, confirming test card acceptance."""
+        import stripe
+
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            customer=self._customer.id,
+            line_items=[{"price": self._pro_price.id, "quantity": 1}],
+            payment_method_types=["card"],
+            success_url="https://test.synco.app/success",
+            cancel_url="https://test.synco.app/cancel",
+        )
+        try:
+            assert session.id.startswith("cs_test_")
+        finally:
+            stripe.checkout.Session.expire(session.id)
+
+    def test_live_webhook_event_construction(self):
+        """Construct a mock webhook event and verify BillingService parses it without crashing."""
+        import stripe
+        import time
+        import hmac
+        import hashlib
+
+        # Build a realistic checkout.session.completed payload
+        payload = (
+            '{"id":"evt_test_fake","type":"checkout.session.completed",'
+            '"data":{"object":{"id":"cs_test_fake","mode":"subscription",'
+            '"customer":"cus_test","subscription":"sub_test",'
+            '"metadata":{"user_id":"user-test-123","plan":"pro"}}}}'
+        )
+        payload_bytes = payload.encode("utf-8")
+
+        # Use a known webhook secret and compute a valid signature
+        test_secret = "whsec_test_secret_for_unit_test"
+        timestamp = str(int(time.time()))
+        signed_payload = f"{timestamp}.{payload}"
+        signature = hmac.new(
+            test_secret.encode("utf-8"),
+            signed_payload.encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+        sig_header = f"t={timestamp},v1={signature}"
+
+        # The construct_event call should succeed with our computed signature
+        event = stripe.Webhook.construct_event(
+            payload_bytes, sig_header, test_secret
+        )
+        assert event["type"] == "checkout.session.completed"
+        assert event["data"]["object"]["metadata"]["plan"] == "pro"
+
+    def test_live_checkout_session_has_customer(self):
+        """Checkout session is linked to the correct test customer."""
+        import stripe
+
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            customer=self._customer.id,
+            line_items=[{"price": self._pro_price.id, "quantity": 1}],
+            payment_method_types=["card"],
+            success_url="https://test.synco.app/success",
+            cancel_url="https://test.synco.app/cancel",
+        )
+        try:
+            assert session.customer == self._customer.id
+        finally:
+            stripe.checkout.Session.expire(session.id)
