@@ -133,7 +133,15 @@
         </div>
     </nav>
 
-    <script>const I18N = {};</script>
+    <script>
+      const I18N = {};
+      function pad2(value) { return String(value).padStart(2, '0'); }
+      function formatReminderMinutes(minutes) {
+        if (minutes >= 1440 && minutes % 1440 === 0) return (minutes / 1440) + 'd';
+        if (minutes >= 60 && minutes % 60 === 0) return (minutes / 60) + 'h';
+        return minutes + ' min';
+      }
+    </script>
     <main id="main-content" class="mx-auto max-w-7xl px-4 py-6 animate-fade-in">
         <h1 class="sr-only">{% block page_heading %}{{ t('app.name') }}{% endblock %}</h1>
         {% block content %}{% endblock %}
