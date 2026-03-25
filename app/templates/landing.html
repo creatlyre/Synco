@@ -422,11 +422,21 @@
                 <h2 class="text-3xl md:text-4xl font-extrabold font-display tracking-tight mb-4">{{ t('landing.pricing_title') }}</h2>
                 <p class="text-gray-400 text-lg max-w-lg mx-auto">{{ t('landing.pricing_subtitle') }}</p>
             </div>
+            <div class="flex items-center justify-center gap-3 mb-8">
+                <span id="lp-label-monthly" class="text-sm font-medium text-white">{{ t('landing.pricing_monthly') }}</span>
+                <button id="lp-billing-toggle" type="button" role="switch" aria-checked="false"
+                        class="relative inline-flex h-6 w-11 items-center rounded-full bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        aria-label="{{ t('landing.pricing_annual') }}">
+                    <span id="lp-toggle-dot" class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1"></span>
+                </button>
+                <span id="lp-label-annual" class="text-sm font-medium text-gray-400">{{ t('landing.pricing_annual') }}</span>
+                <span id="lp-save-badge" class="hidden px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-medium">{{ t('landing.pricing_save') }}</span>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 items-stretch">
                 {# Free #}
                 <div class="rounded-2xl border border-white/[0.07] p-6 md:p-7 flex flex-col bg-brand-card">
                     <h3 class="text-lg font-bold font-display mb-1">{{ t('pricing.free_title') }}</h3>
-                    <div class="text-3xl font-extrabold mb-1">0 <span class="text-sm font-normal text-gray-400">zł</span></div>
+                    <div class="text-3xl font-extrabold mb-1">0 <span class="text-sm font-normal text-gray-400">{{ t('pricing.currency') }}</span></div>
                     <p class="text-xs text-gray-400 mb-5">{{ t('landing.pricing_free_note') }}</p>
                     <ul class="space-y-3 mb-8 flex-1 text-sm text-gray-300">
                         <li class="flex items-start gap-2.5"><svg class="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {{ t('pricing.free_f1') }}</li>
@@ -439,7 +449,7 @@
                 <div class="pricing-pro rounded-2xl p-6 md:p-7 flex flex-col relative">
                     <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-white text-xs font-bold" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">{{ t('pricing.recommended') }}</span>
                     <h3 class="text-lg font-bold font-display mb-1">{{ t('pricing.pro_title') }}</h3>
-                    <div class="text-3xl font-extrabold mb-1">19 <span class="text-sm font-normal text-gray-400">zł{{ t('pricing.per_month') }}</span></div>
+                    <div class="text-3xl font-extrabold mb-1"><span id="lp-pro-price">19</span> <span class="text-sm font-normal text-gray-400">{{ t('pricing.currency') }}{{ t('pricing.per_month') }}</span></div>
                     <p class="text-xs text-gray-400 mb-5">{{ t('landing.pricing_pro_note') }}</p>
                     <ul class="space-y-3 mb-8 flex-1 text-sm text-gray-300">
                         <li class="flex items-start gap-2.5"><svg class="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {{ t('pricing.pro_f1') }}</li>
@@ -451,7 +461,7 @@
                 {# Family Plus #}
                 <div class="rounded-2xl border border-white/[0.07] p-6 md:p-7 flex flex-col bg-brand-card">
                     <h3 class="text-lg font-bold font-display mb-1">{{ t('pricing.family_title') }}</h3>
-                    <div class="text-3xl font-extrabold mb-1">29 <span class="text-sm font-normal text-gray-400">zł{{ t('pricing.per_month') }}</span></div>
+                    <div class="text-3xl font-extrabold mb-1"><span id="lp-family-price">29</span> <span class="text-sm font-normal text-gray-400">{{ t('pricing.currency') }}{{ t('pricing.per_month') }}</span></div>
                     <p class="text-xs text-gray-400 mb-5">{{ t('landing.pricing_family_note') }}</p>
                     <ul class="space-y-3 mb-8 flex-1 text-sm text-gray-300">
                         <li class="flex items-start gap-2.5"><svg class="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {{ t('pricing.family_f1') }}</li>
@@ -500,6 +510,33 @@
             </div>
         </div>
     </footer>
+
+    <script>
+    (function() {
+        var isAnnual = false;
+        var btn = document.getElementById('lp-billing-toggle');
+        if (!btn) return;
+        btn.addEventListener('click', function() {
+            isAnnual = !isAnnual;
+            var dot = document.getElementById('lp-toggle-dot');
+            var badge = document.getElementById('lp-save-badge');
+            var labelM = document.getElementById('lp-label-monthly');
+            var labelA = document.getElementById('lp-label-annual');
+            btn.setAttribute('aria-checked', isAnnual);
+            dot.classList.toggle('translate-x-1', !isAnnual);
+            dot.classList.toggle('translate-x-6', isAnnual);
+            btn.classList.toggle('bg-indigo-500', isAnnual);
+            btn.classList.toggle('bg-white/20', !isAnnual);
+            badge.classList.toggle('hidden', !isAnnual);
+            labelM.classList.toggle('text-white', !isAnnual);
+            labelM.classList.toggle('text-gray-400', isAnnual);
+            labelA.classList.toggle('text-white', isAnnual);
+            labelA.classList.toggle('text-gray-400', !isAnnual);
+            document.getElementById('lp-pro-price').textContent = isAnnual ? '15' : '19';
+            document.getElementById('lp-family-price').textContent = isAnnual ? '24' : '29';
+        });
+    })();
+    </script>
 
 </body>
 </html>

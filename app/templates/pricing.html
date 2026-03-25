@@ -32,7 +32,7 @@
     <div class="glass rounded-2xl p-6 flex flex-col border border-white/10 hover:scale-[1.02] transition-transform">
       <h3 class="text-xl font-bold mb-1" style="font-family: var(--font-display);">{{ t('pricing.free_title') }}</h3>
       <p class="text-gray-400 text-sm mb-4">{{ t('pricing.free_desc') }}</p>
-      <div class="text-3xl font-bold mb-6">0 <span class="text-base font-normal text-gray-400">zł</span></div>
+      <div class="text-3xl font-bold mb-6">0 <span class="text-base font-normal text-gray-400">{{ t('pricing.currency') }}</span></div>
       <ul class="space-y-2 mb-8 flex-1">
         <li class="flex items-start gap-2 text-sm text-gray-300">
           <svg class="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -60,7 +60,7 @@
       <h3 class="text-xl font-bold mb-1" style="font-family: var(--font-display);">{{ t('pricing.pro_title') }}</h3>
       <p class="text-gray-400 text-sm mb-4">{{ t('pricing.pro_desc') }}</p>
       <div class="text-3xl font-bold mb-6">
-        <span id="pro-price">19</span> <span class="text-base font-normal text-gray-400">zł{{ t('pricing.per_month') }}</span>
+        <span id="pro-price">19</span> <span class="text-base font-normal text-gray-400">{{ t('pricing.currency') }}{{ t('pricing.per_month') }}</span>
       </div>
       <ul class="space-y-2 mb-8 flex-1">
         <li class="flex items-start gap-2 text-sm text-gray-300">
@@ -92,7 +92,7 @@
       <h3 class="text-xl font-bold mb-1" style="font-family: var(--font-display);">{{ t('pricing.family_title') }}</h3>
       <p class="text-gray-400 text-sm mb-4">{{ t('pricing.family_desc') }}</p>
       <div class="text-3xl font-bold mb-6">
-        <span id="family-price">29</span> <span class="text-base font-normal text-gray-400">zł{{ t('pricing.per_month') }}</span>
+        <span id="family-price">29</span> <span class="text-base font-normal text-gray-400">{{ t('pricing.currency') }}{{ t('pricing.per_month') }}</span>
       </div>
       <ul class="space-y-2 mb-8 flex-1">
         <li class="flex items-start gap-2 text-sm text-gray-300">
@@ -145,7 +145,7 @@
         </ul>
       </div>
       <div class="text-center md:text-right space-y-3 flex-shrink-0">
-        <div class="text-3xl font-bold">199 <span class="text-base font-normal text-gray-400">zł</span></div>
+        <div class="text-3xl font-bold">199 <span class="text-base font-normal text-gray-400">{{ t('pricing.currency') }}</span></div>
         <button onclick="checkout('self_hosted')" class="glass-btn-primary rounded-xl px-6 py-3 text-sm font-medium whitespace-nowrap">{{ t('pricing.buy_license') }}</button>
       </div>
     </div>
