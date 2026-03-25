@@ -59,7 +59,9 @@ Plans:
   2. Pro user accesses shopping list and budget stats pages without redirect
   3. Budget overview, expenses, and income pages render for authenticated users
   4. Google Sync section shows "not connected" state for test accounts (no Google association)
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 38-01-PLAN.md — Gating tests (free blocked + API 403) and feature render tests (budget, shopping, sync)
 
 ### Phase 39: Billing, Stripe & Error Resilience E2E
 **Goal**: Pricing-to-checkout flow works end-to-end and error scenarios produce graceful responses
