@@ -223,7 +223,7 @@ Plans:
 **Goal:** Landing page has Features nav link, mobile hamburger menu, footer GitHub link, login page brand tagline, and WCAG AA contrast compliance
 **Requirements**: UX-01, UX-02, UX-03, UX-04, UX-05
 **Depends on:** Phase 45
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 46-01-PLAN.md — Features nav link, mobile hamburger, login tagline, footer GitHub, contrast fixes
