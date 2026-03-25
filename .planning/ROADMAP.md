@@ -233,7 +233,7 @@ Plans:
 **Goal:** Pricing features rewritten as benefits, currency i18n'd, and landing page shows annual pricing toggle with savings
 **Requirements**: PRICE-01, PRICE-02, PRICE-03, PRICE-04
 **Depends on:** Phase 46
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 47-01-PLAN.md — Benefit-oriented feature copy, currency i18n, annual pricing toggle
