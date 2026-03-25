@@ -9,11 +9,11 @@
 - [x] v3.0 milestone — Dashboard, Notifications & Categories - Phases 23-27 shipped 2026-03-23 (331 tests passing). Archive: .planning/milestones/v3.0-ROADMAP.md
 - [x] v4.0 milestone — Monetization Foundation (SaaS primary + self-hosted purchase option) - Phases 28-33 shipped 2026-03-23 (446 tests passing). Archive: .planning/milestones/v5.0-ROADMAP.md (v4.0 archived as part of v5.0 snapshot)
 - [x] v5.0 milestone — Growth & Conversion - Phases 34-35 shipped 2026-03-25 (593 tests passing). Archive: .planning/milestones/v5.0-ROADMAP.md
-- [ ] v5.1 milestone — E2E Verification & Brand Marketing — Phases 36-48 (Playwright tests + brand/copy/SEO/UX audit fixes)
+- [ ] v5.1 milestone — E2E Verification & Brand Marketing — Phases 36-50 (Playwright tests + brand/copy/SEO/UX audit fixes + gap closure)
 
 ## Phases
 
-### v5.1 E2E Verification & Brand Marketing (Phases 36-48)
+### v5.1 E2E Verification & Brand Marketing (Phases 36-50)
 
 - [ ] **Phase 36: E2E Test Infrastructure** - Playwright setup, app server fixture, authenticated contexts, CI config
 - [ ] **Phase 37: Core App E2E Tests** - Auth, calendar, dashboard, and notification browser tests
@@ -28,6 +28,8 @@
 - [ ] **Phase 46: Landing Page UX** - Features nav link, mobile hamburger nav, login tagline, footer social links, contrast audit
 - [ ] **Phase 47: Pricing Tier Clarification** - Tier differentiation, benefit-oriented feature lists, currency display, annual savings
 - [ ] **Phase 48: Version & Consistency Sync** - README version, SW cache version, Stripe statement descriptors
+- [ ] **Phase 49: Fix Failing E2E Tests** - Fix 6 unique E2E failures (calendar modal, pro gating, budget stats, shopping)
+- [ ] **Phase 50: E2E Test Gate & Verification Closure** - Confirm 123/123 tests pass, backfill VERIFICATION.md for phases 37-39
 
 ## Phase Details
 
@@ -95,6 +97,8 @@ Plans:
 | 37. Core App E2E Tests | 0/2 | Planned | - |
 | 38. Gated Features & Entitlements E2E | 0/? | Not started | - |
 | 39. Billing, Stripe & Error Resilience E2E | 0/2 | Planned | - |
+| 49. Fix Failing E2E Tests | 0/? | Not started | - |
+| 50. E2E Test Gate & Verification Closure | 0/? | Not started | - |
 
 <details>
 <summary>✅ v5.0 Growth & Conversion (Phases 34-35) — SHIPPED 2026-03-25</summary>
@@ -248,6 +252,26 @@ Plans:
 Plans:
 - [ ] 48-01-PLAN.md — Version sync (README, pyproject, SW, manifest), Stripe statement descriptor
 
+### Phase 49: Fix Failing E2E Tests
+**Goal:** All 6 unique failing E2E tests pass — calendar event modal, pro user gating (/shopping, /budget/stats, /budget/import), budget stats page, shopping page
+**Requirements**: CAL-E2E-03, GATE-E2E-02, GATE-E2E-03, GATE-E2E-04, BUD-E2E-03, SHOP-E2E-01, SHOP-E2E-02
+**Depends on:** Phase 48
+**Gap Closure:** Closes failing requirement gaps from v5.1 audit
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 49 to break down)
+
+### Phase 50: E2E Test Gate & Verification Closure
+**Goal:** All 123 Playwright tests pass (0 failures), VERIFICATION.md exists for phases 37-39 confirming 31 partial requirements as satisfied
+**Requirements**: GATE-ALL (Phase 40 intent), verification backfill for AUTH-E2E-01 through ERR-E2E-03
+**Depends on:** Phase 49
+**Gap Closure:** Closes Phase 40 unexecuted gap and verification debt from v5.1 audit
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 50 to break down)
+
 ---
 
-*Roadmap updated: 2026-03-25 — v5.1 Stripe E2E Verification roadmap created (Phases 36-39)*
+*Roadmap updated: 2026-03-25 — Gap closure phases 49-50 added from v5.1 milestone audit*
