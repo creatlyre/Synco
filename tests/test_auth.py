@@ -25,7 +25,7 @@ def test_oauth_callback_creates_user(test_db, test_client, monkeypatch):
     response = test_client.get("/auth/callback?code=fake&state=fake", follow_redirects=False)
 
     assert response.status_code == 302
-    assert response.headers.get("location") == "/"
+    assert response.headers.get("location") == "/dashboard"
     assert "session=" in response.headers.get("set-cookie", "")
 
     user = UserRepository(test_db).get_user_by_email("newuser@example.com")
@@ -222,7 +222,7 @@ def test_confirm_callback_signup_redirects_to_home(test_client, monkeypatch):
         follow_redirects=False,
     )
     assert response.status_code == 302
-    assert response.headers.get("location") == "/"
+    assert response.headers.get("location") == "/dashboard"
     assert "session=" in response.headers.get("set-cookie", "")
 
 

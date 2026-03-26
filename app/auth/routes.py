@@ -293,7 +293,7 @@ async def oauth_callback(
           showError(`{_msg(request, "auth.sign_in_failed")}: ` + (data.detail || {unknown_error}));
           return;
         }}
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       }} catch (err) {{
         showError(`{_msg(request, "auth.sign_in_failed")}: ` + String(err));
       }}
@@ -332,7 +332,7 @@ async def oauth_callback(
     }
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
-    response = RedirectResponse(url="/", status_code=302)
+    response = RedirectResponse(url="/dashboard", status_code=302)
     _set_session_cookie(response, token)
     return response
 
@@ -533,7 +533,7 @@ async def confirm_callback(
     if type == "recovery":
         redirect_url = next or "/auth/update-password"
     else:
-        redirect_url = next or "/"
+        redirect_url = next or "/dashboard"
 
     response = RedirectResponse(url=redirect_url, status_code=302)
     _set_session_cookie(response, access_token)

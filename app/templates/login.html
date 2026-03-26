@@ -210,7 +210,7 @@
           submitBtn.textContent = '{{ t("auth.sign_in_button") }}';
           return;
         }
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       } catch (err) {
         showError('{{ t("auth.sign_in_failed") }}');
         submitBtn.disabled = false;

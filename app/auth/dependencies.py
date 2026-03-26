@@ -155,5 +155,5 @@ async def get_current_user_optional(
     """Same as get_current_user but returns None instead of raising 401."""
     try:
         return await get_current_user(session, supabase_refresh, response, db)
-    except HTTPException:
+    except Exception:
         return None

@@ -219,7 +219,7 @@
         }
         // Check if session cookie was set (auto-confirmed) or email confirmation needed
         if (document.cookie.includes('session=')) {
-          window.location.href = '/';
+          window.location.href = '/dashboard';
         } else {
           form.style.display = 'none';
           successEl.textContent = '{{ t("auth.check_email_confirmation") }}';
