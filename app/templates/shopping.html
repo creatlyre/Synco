@@ -197,8 +197,8 @@
   function renderItem(item) {
     return `<div class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-white/5 group" data-id="${esc(item.id)}">
       <span class="flex-1 text-sm" id="item-text-${esc(item.id)}">${esc(item.name)}</span>
-      <button class="edit-btn opacity-0 group-hover:opacity-70 text-xs px-2 py-1 rounded hover:bg-white/10 min-h-[32px]" data-id="${esc(item.id)}" data-name="${esc(item.name)}" title="${I18N.edit}">✏️</button>
-      <button class="delete-btn opacity-0 group-hover:opacity-70 text-xs px-2 py-1 rounded hover:bg-white/10 min-h-[32px]" data-id="${esc(item.id)}" title="${I18N.delete}">🗑</button>
+      <button class="edit-btn opacity-0 group-hover:opacity-70 text-xs px-2 py-1 rounded hover:bg-white/10 min-h-[32px]" data-id="${esc(item.id)}" data-name="${esc(item.name)}" title="${I18N.edit}" aria-label="${I18N.edit}">✏️</button>
+      <button class="delete-btn opacity-0 group-hover:opacity-70 text-xs px-2 py-1 rounded hover:bg-white/10 min-h-[32px]" data-id="${esc(item.id)}" title="${I18N.delete}" aria-label="${I18N.delete}">🗑</button>
     </div>`;
   }
 
@@ -206,8 +206,8 @@
     return `<div class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-white/5 group" data-id="${esc(item.id)}">
       <span class="flex-1 text-sm">${esc(item.name)}</span>
       <button class="learn-btn glass-btn-info rounded-lg px-2 py-1 text-xs min-h-[32px]" data-id="${esc(item.id)}" data-name="${esc(item.name)}">${I18N.pick_section}</button>
-      <button class="edit-btn opacity-0 group-hover:opacity-70 text-xs px-2 py-1 rounded hover:bg-white/10 min-h-[32px]" data-id="${esc(item.id)}" data-name="${esc(item.name)}" title="${I18N.edit}">✏️</button>
-      <button class="delete-btn opacity-0 group-hover:opacity-70 text-xs px-2 py-1 rounded hover:bg-white/10 min-h-[32px]" data-id="${esc(item.id)}" title="${I18N.delete}">🗑</button>
+      <button class="edit-btn opacity-0 group-hover:opacity-70 text-xs px-2 py-1 rounded hover:bg-white/10 min-h-[32px]" data-id="${esc(item.id)}" data-name="${esc(item.name)}" title="${I18N.edit}" aria-label="${I18N.edit}">✏️</button>
+      <button class="delete-btn opacity-0 group-hover:opacity-70 text-xs px-2 py-1 rounded hover:bg-white/10 min-h-[32px]" data-id="${esc(item.id)}" title="${I18N.delete}" aria-label="${I18N.delete}">🗑</button>
     </div>`;
   }
 
