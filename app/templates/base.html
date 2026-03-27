@@ -28,15 +28,15 @@
               {{ t('app.name') }}
             </a>
             {% if user is defined %}
-            <a href="/dashboard" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex {{ 'desktop-nav-active' if request.url.path == '/dashboard' else '' }}">{{ t('dashboard.nav_home') }}</a>
-            <a href="/calendar" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex {{ 'desktop-nav-active' if request.url.path == '/calendar' else '' }}">{{ t('app.calendar_short') }}</a>
-            <a href="/budget/overview" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex {{ 'desktop-nav-active' if '/budget' in request.url.path else '' }}">{{ t('budget.nav_link') }}</a>
-            <a href="/shopping" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex {{ 'desktop-nav-active' if request.url.path == '/shopping' else '' }}">{{ t('shopping.nav_link') }}</a>
-            <a href="/billing/settings" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden md:inline-flex {{ 'desktop-nav-active' if '/billing' in request.url.path else '' }}">
+            <a href="/dashboard" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden lg:inline-flex {{ 'desktop-nav-active' if request.url.path == '/dashboard' else '' }}">{{ t('dashboard.nav_home') }}</a>
+            <a href="/calendar" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden lg:inline-flex {{ 'desktop-nav-active' if request.url.path == '/calendar' else '' }}">{{ t('app.calendar_short') }}</a>
+            <a href="/budget/overview" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden lg:inline-flex {{ 'desktop-nav-active' if '/budget' in request.url.path else '' }}">{{ t('budget.nav_link') }}</a>
+            <a href="/shopping" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden lg:inline-flex {{ 'desktop-nav-active' if request.url.path == '/shopping' else '' }}">{{ t('shopping.nav_link') }}</a>
+            <a href="/billing/settings" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center hidden lg:inline-flex {{ 'desktop-nav-active' if '/billing' in request.url.path else '' }}">
                 {% if user_plan is defined and user_plan != 'free' %}<span class="inline-block w-2 h-2 rounded-full bg-emerald-400 mr-1.5"></span>{% endif %}{{ t('billing.nav_link') if t('billing.nav_link') != 'billing.nav_link' else 'Plan' }}
             </a>
             {% if user.is_admin is defined and user.is_admin %}
-            <a href="/admin" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center gap-1.5 hidden md:inline-flex {{ 'desktop-nav-active' if '/admin' in request.url.path else '' }}">
+            <a href="/admin" class="glass-btn-secondary rounded-xl px-4 py-2 text-sm font-medium min-h-[44px] inline-flex items-center gap-1.5 hidden lg:inline-flex {{ 'desktop-nav-active' if '/admin' in request.url.path else '' }}">
                 <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                 {{ t('nav.admin') }}
             </a>
@@ -44,7 +44,7 @@
             <div class="flex items-center gap-2">
                 <!-- Quick Add (global) -->
                 <button id="qa-global-btn" type="button"
-                        class="glass-btn-primary rounded-xl min-h-[44px] px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 hidden md:inline-flex"
+                        class="glass-btn-primary rounded-xl min-h-[44px] px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 hidden lg:inline-flex"
                         title="{{ t('calendar.quick_add') }}">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                   {{ t('calendar.quick_add') }}
@@ -192,7 +192,7 @@
 
     <!-- Mobile FAB for Quick Add -->
     <button id="qa-fab" type="button"
-            class="fixed bottom-20 right-4 z-40 md:hidden glass-btn-primary rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
+            class="fixed bottom-20 right-4 z-40 lg:hidden glass-btn-primary rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
             aria-label="{{ t('calendar.quick_add') }}">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
     </button>

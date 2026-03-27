@@ -814,7 +814,7 @@ html.light-mode .glass-interactive:hover {
 }
 
 /* ── Mobile touch target & accessibility overrides ──────── */
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   /* Ensure all buttons meet 44px minimum touch target */
   button, [role="button"], a.glass-btn-primary, a.glass-btn-secondary, a.glass-btn-info, a.glass-btn-danger {
     min-height: 44px;
@@ -1168,6 +1168,6 @@ html.light-mode .glass-interactive:hover {
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .mobile-bottom-nav { display: none; }
 }

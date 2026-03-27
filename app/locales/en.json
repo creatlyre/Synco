@@ -931,9 +931,9 @@
   "pwa_help.chrome_step4": "Confirm and tap \"Install\" — the app icon will appear on your home screen",
   "pwa_help.firefox_title": "Firefox (Android)",
   "pwa_help.firefox_step1": "Open this site in Firefox on your phone",
-  "pwa_help.firefox_step2": "Tap the three-dot menu (\u22ee) and select \"Install\" or \"Add to Home Screen\"",
-  "pwa_help.firefox_step3": "Confirm — the app icon will appear on your home screen",
-  "pwa_help.shortcut_tip": "Tip: After installing via Chrome, long-press the app icon for a \"Quick Add Expense\" shortcut.",
+  "pwa_help.firefox_step2": "Tap the three-dot menu (\u22ee)",
+  "pwa_help.firefox_step3": "Tap \"Add app to Home Screen\" — this installs the app in standalone mode",
+  "pwa_help.shortcut_tip": "Tip: After installing via Chrome, long-press the app icon for a \"Quick Add Expense\" shortcut. Firefox does not support app shortcuts.",
   "pwa_help.close": "Close",
 
   "landing.tagline_shopping": "to save time at the store",

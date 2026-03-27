@@ -931,9 +931,9 @@
   "pwa_help.chrome_step4": "Potwierdź i kliknij \"Zainstaluj\" — ikona aplikacji pojawi się na ekranie głównym",
   "pwa_help.firefox_title": "Firefox (Android)",
   "pwa_help.firefox_step1": "Otwórz tę stronę w Firefox na telefonie",
-  "pwa_help.firefox_step2": "Kliknij menu z trzema kropkami (⋮) i wybierz \"Zainstaluj\" lub \"Dodaj do ekranu głównego\"",
-  "pwa_help.firefox_step3": "Potwierdź — ikona aplikacji pojawi się na ekranie głównym",
-  "pwa_help.shortcut_tip": "Wskazówka: Po zainstalowaniu przez Chrome, przytrzymaj ikonę aplikacji, aby użyć skrótu \"Szybkie dodawanie wydatku\".",
+  "pwa_help.firefox_step2": "Kliknij menu z trzema kropkami (⋮)",
+  "pwa_help.firefox_step3": "Wybierz \"Dodaj aplikację do ekranu głównego\" — to zainstaluje aplikację w trybie pełnoekranowym",
+  "pwa_help.shortcut_tip": "Wskazówka: Po zainstalowaniu przez Chrome, przytrzymaj ikonę aplikacji, aby użyć skrótu \"Szybkie dodawanie wydatku\". Firefox nie obsługuje skrótów aplikacji.",
   "pwa_help.close": "Zamknij",
 
   "landing.tagline_shopping": "aby zaoszczędzić czas w sklepie",
