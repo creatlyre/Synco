@@ -131,9 +131,11 @@ html.light-mode body::after {
 }
 
 /* Ensure main content sits above the overlays */
-body > * {
-  position: relative;
-  z-index: 1;
+@layer base {
+  body > * {
+    position: relative;
+    z-index: 1;
+  }
 }
 
 /* ── Custom text selection colors ─────────────────────────── */

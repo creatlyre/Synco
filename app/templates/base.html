@@ -44,7 +44,6 @@
             <div class="flex items-center gap-2">
                 <!-- Quick Add (global) -->
                 <button id="qa-global-btn" type="button"
-                        onclick="var c=document.getElementById('qa-chooser-modal');if(c){c.classList.remove('hidden');c.classList.add('flex')}"
                         class="glass-btn-primary rounded-xl min-h-[44px] px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 hidden md:inline-flex"
                         title="{{ t('calendar.quick_add') }}">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -191,7 +190,6 @@
 
     <!-- Mobile FAB for Quick Add -->
     <button id="qa-fab" type="button"
-            onclick="var c=document.getElementById('qa-chooser-modal');if(c){c.classList.remove('hidden');c.classList.add('flex')}"
             class="fixed bottom-20 right-4 z-40 md:hidden glass-btn-primary rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
             aria-label="{{ t('calendar.quick_add') }}">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -199,14 +197,12 @@
 
     <!-- Quick-Add Chooser Modal -->
     <div id="qa-chooser-modal"
-         onclick="if(event.target===this){this.classList.add('hidden');this.classList.remove('flex')}"
          class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm"
          role="dialog" aria-modal="true" aria-labelledby="qa-chooser-title">
       <div class="relative glass shadow-2xl w-full max-w-sm rounded-2xl mx-4">
         <div class="flex items-center justify-between border-b border-white/20 px-6 py-4">
           <h2 id="qa-chooser-title" class="text-section-title text-white">{{ t('qa.chooser_title') }}</h2>
           <button id="qa-chooser-close" type="button"
-                  onclick="var c=document.getElementById('qa-chooser-modal');c.classList.add('hidden');c.classList.remove('flex')"
                   class="rounded-lg p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white"
                   aria-label="{{ t('qa.cancel') }}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
