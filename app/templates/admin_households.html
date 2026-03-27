@@ -11,16 +11,16 @@
 <!-- Merge Households Card -->
 <div class="glass rounded-2xl p-6 mb-8">
   <h2 class="text-lg font-semibold mb-4">{{ t('admin.merge_households') }}</h2>
-  <p class="text-sm opacity-60 mb-4">Move all members from the source household into the target household.</p>
+  <p class="text-sm opacity-60 mb-4">{{ t('admin.merge_description') }}</p>
   <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-3" id="merge-form">
     <div class="flex-1">
-      <label for="merge-source" class="block text-xs opacity-60 mb-1">Source (calendar ID)</label>
-      <input type="text" id="merge-source" placeholder="source calendar ID"
+      <label for="merge-source" class="block text-xs opacity-60 mb-1">{{ t('admin.merge_source') }}</label>
+      <input type="text" id="merge-source" placeholder="{{ t('admin.source_placeholder') }}"
              class="w-full rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm placeholder:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 min-h-[44px]">
     </div>
     <div class="flex-1">
       <label for="merge-target" class="block text-xs opacity-60 mb-1">{{ t('admin.merge_target') }}</label>
-      <input type="text" id="merge-target" placeholder="target calendar ID"
+      <input type="text" id="merge-target" placeholder="{{ t('admin.target_placeholder') }}"
              class="w-full rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm placeholder:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 min-h-[44px]">
     </div>
     <button type="button" onclick="mergeHouseholds()"
@@ -36,7 +36,7 @@
   <div class="glass rounded-2xl p-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
       <div>
-        <h3 class="font-semibold text-base">{{ h.calendar.name or 'Unnamed Calendar' }}</h3>
+        <h3 class="font-semibold text-base">{{ h.calendar.name or t('admin.unnamed_calendar') }}</h3>
         <p class="text-xs opacity-40 font-mono mt-1" id="cal-{{ h.calendar.id[:8] }}">{{ h.calendar.id }}</p>
       </div>
       <div class="flex items-center gap-3">
@@ -81,14 +81,14 @@
       </table>
     </div>
     {% else %}
-    <p class="text-sm opacity-40">No members in this household.</p>
+    <p class="text-sm opacity-40">{{ t('admin.no_members') }}</p>
     {% endif %}
   </div>
   {% endfor %}
 
   {% if not households %}
   <div class="glass rounded-2xl p-6 text-center">
-    <p class="text-sm opacity-50">No households found.</p>
+    <p class="text-sm opacity-50">{{ t('admin.no_households') }}</p>
   </div>
   {% endif %}
 </div>
@@ -97,17 +97,17 @@
 <div id="transfer-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="transfer-modal-title">
   <div class="glass rounded-2xl p-6 w-full max-w-md mx-4">
     <h3 id="transfer-modal-title" class="text-lg font-semibold mb-2">{{ t('admin.transfer_member') }}</h3>
-    <p class="text-sm opacity-60 mb-4" id="transfer-modal-desc">Transfer <span id="transfer-user-name" class="font-medium"></span> to another household.</p>
+    <p class="text-sm opacity-60 mb-4" id="transfer-modal-desc">{{ t('admin.transfer_description').replace('{name}', '') }}<span id="transfer-user-name" class="font-medium"></span></p>
     <input type="hidden" id="transfer-user-id">
     <div class="mb-4">
       <label for="transfer-target-cal" class="block text-xs opacity-60 mb-1">{{ t('admin.transfer_to') }}</label>
-      <input type="text" id="transfer-target-cal" placeholder="target calendar ID"
+      <input type="text" id="transfer-target-cal" placeholder="{{ t('admin.target_placeholder') }}"
              class="w-full rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm placeholder:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 min-h-[44px]">
     </div>
     <div class="flex justify-end gap-3">
       <button type="button" onclick="closeTransferModal()"
               class="glass-btn-secondary rounded-xl px-5 py-2.5 text-sm font-medium min-h-[44px]">
-        Cancel
+        {{ t('admin.cancel') }}
       </button>
       <button type="button" onclick="executeTransfer()"
               class="glass-btn-primary rounded-xl px-5 py-2.5 text-sm font-medium min-h-[44px]">
@@ -142,7 +142,7 @@ async function executeTransfer() {
   const userId = document.getElementById('transfer-user-id').value;
   const targetCalId = document.getElementById('transfer-target-cal').value.trim();
   if (!targetCalId) {
-    if (typeof showToast === 'function') showToast('Please enter a target calendar ID', 'error');
+    if (typeof showToast === 'function') showToast('{{ t("admin.enter_target_id") }}', 'error');
     return;
   }
   try {
@@ -168,7 +168,7 @@ async function mergeHouseholds() {
   const source = document.getElementById('merge-source').value.trim();
   const target = document.getElementById('merge-target').value.trim();
   if (!source || !target) {
-    if (typeof showToast === 'function') showToast('Please enter both source and target calendar IDs', 'error');
+    if (typeof showToast === 'function') showToast('{{ t("admin.enter_both_ids") }}', 'error');
     return;
   }
   try {

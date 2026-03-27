@@ -39,7 +39,7 @@
               Admin
             </span>
           {% else %}
-            <span class="text-xs opacity-40">User</span>
+            <span class="text-xs opacity-40">{{ t('admin.user_badge') }}</span>
           {% endif %}
         </span>
       </div>
@@ -89,7 +89,7 @@
     {% if target_user.id == user.id %}
       <button type="button" disabled
               class="glass-btn-secondary rounded-xl px-5 py-2.5 text-sm font-medium opacity-30 cursor-not-allowed min-h-[44px]"
-              title="Cannot change your own admin status">
+              title="{{ t('admin.cannot_change_own') }}">
         {{ t('admin.revoke_admin') if target_user.is_admin else t('admin.grant_admin') }}
       </button>
     {% else %}
