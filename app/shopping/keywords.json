@@ -17,9 +17,10 @@
     "lubczyk", "kolendra", "imbir", "kurkuma", "rzodkiewka", "cukinia",
     "papryka", "fasolka szpar", "groch", "bob ", "ciecierzyc", "soczewic",
     "bataty", "jarmuż", "jarmuz", "endywia", "pac choi", "bok choy",
-    "daktyl", "figa", "granat", "liczi", "marakuja", "papaja",
+    "daktyl", "fig", "granat", "liczi", "marakuja", "papaja",
     "szparag", "karczoch", "kalarepa", "oliwki", "oliwka", "kapary",
-    "warzywa mieszane", "jarzynk", "szczaw", "chrzan"
+    "warzywa mieszane", "jarzynk", "szczaw", "chrzan",
+    "limonk", "szalotk", "morel", "żurawin", "zurawin", "warzywa"
   ],
 
   "Lada Tradycyjna / Mięso": [
@@ -35,7 +36,8 @@
     "smalec", "słonina", "slonina", "bekon", "hamburger",
     "baleron", "metka", "krakowska", "żywiecka", "zywiecka",
     "podwawelska", "kiszka", "kaszanka", "flaki", "ozorki",
-    "stek", "steak", "kości rosołow", "kosci rosolow"
+    "stek", "steak", "kości rosołow", "kosci rosolow",
+    "szaszłyk", "szaszlyk"
   ],
 
   "Ryby": [
@@ -83,7 +85,7 @@
     "sos sojow", "pesto", "tahini", "tabasco", "wasabi",
     "galaretka", "lane kluski", "makaron instant",
     "panierka", "bułka tart", "bulka tart", "soda oczyszczon",
-    "wafle"
+    "wafle", "nachos", "guacamol"
   ],
 
   "Pieczenie / Bakalie": [
@@ -99,7 +101,8 @@
     "tort", "ciasto", "sernik", "szarlotka", "babka",
     "makowiec", "chleb tostow", "graham", "wafle ryżow", "wafle ryzow",
     "ciastka", "ciasteczk", "kwasek cytryn", "cukier wanili",
-    "aromat", "esencja", "piernik", "chałka", "chalka"
+    "aromat", "esencja", "piernik", "chałka", "chalka",
+    "siemię", "siemie", "baguette", "orzeszk", "wiórki"
   ],
 
   "Dział Dziecięcy": [
@@ -108,7 +111,8 @@
     "kaszk", "tubk", "deserek", "mleko modyfik", "mleko następ",
     "mleko nastep", "mleko pocz", "julia", "słoik julia", "słoiczek",
     "krem pod pieluszk", "oliwka dla dziec", "kąpiel dziec", "kapiel dziec",
-    "gryzak", "śliniaczek", "sliniaczek", "herbatka dla dziec"
+    "gryzak", "śliniaczek", "sliniaczek", "śliniak", "sliniak",
+    "herbatka dla dziec", "kąpiel", "kapiel"
   ],
 
   "Napoje": [
@@ -118,7 +122,8 @@
     "red bull", "tiger", "energetyk", "isotonic", "powerade", "gatorade",
     "smoothie", "koktajl", "woda smakow", "syrop do wody",
     "herbata mrożon", "herbata mrozon", "yerba", "mate",
-    "kawa rozpuszczal", "napój izotonicz", "napoj izotonicz", "woda kokosow"
+    "kawa rozpuszczal", "napój izotonicz", "napoj izotonicz", "woda kokosow",
+    "kombucha"
   ],
 
   "Alkohol": [
@@ -142,7 +147,7 @@
     "odzywka", "wacik", "płatki kosmet", "platki kosmet", "chusteczk higien",
     "golarki", "maszynka do gol", "żyletk", "zyletk", "tampon", "podpask",
     "płyn micelar", "plyn micelar", "tonik", "serum", "peeling",
-    "foli alumin", "foli spo", "woreczk", "reklamówk", "reklamowk",
+    "folia alumin", "folia spo", "woreczk", "reklamówk", "reklamowk",
     "serwetki", "zapałki", "zapalki", "świeczk", "swieczk", "baterie",
     "karma", "żwirek", "zwirek", "przysmak dla",
     "tabletki do zmywark", "płyn do płukan", "plyn do plukan",
@@ -151,7 +156,8 @@
     "kostka do wc", "żel do wc", "zel do wc", "odkamieniacz",
     "żarówka", "zarowka", "rękawice gumow", "rekawice gumow",
     "żel do włos", "zel do wlos", "lakier do włos", "pianka do włos",
-    "plaster", "opatrunek", "bandaż", "bandaz",
-    "rajstopy", "skarpet"
+    "plaster", "opatrunek", "bandaż", "bandaz", "aspiryn",
+    "rajstopy", "skarpet",
+    "kubeczk", "talerzyk", "sztućc", "sztucce", "jednorazow"
   ]
 }
