@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('admin.households_title') }} - {{ t('app.name') }}{% endblock %}
+{% block page_heading %}{{ t('admin.households_title') }}{% endblock %}
+
+{% block content %}
+<a href="/admin" class="text-sm opacity-60 hover:opacity-100 transition-opacity inline-flex items-center gap-1 mb-6">
+  ← {{ t('admin.dashboard_title') }}
+</a>
+
+<!-- Merge Households Card -->
+<div class="glass rounded-2xl p-6 mb-8">
+  <h2 class="text-lg font-semibold mb-4">{{ t('admin.merge_households') }}</h2>
+  <p class="text-sm opacity-60 mb-4">Move all members from the source household into the target household.</p>
+  <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-3" id="merge-form">
+    <div class="flex-1">
+      <label for="merge-source" class="block text-xs opacity-60 mb-1">Source (calendar ID)</label>
+      <input type="text" id="merge-source" placeholder="source calendar ID"
+             class="w-full rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm placeholder:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 min-h-[44px]">
+    </div>
+    <div class="flex-1">
+      <label for="merge-target" class="block text-xs opacity-60 mb-1">{{ t('admin.merge_target') }}</label>
+      <input type="text" id="merge-target" placeholder="target calendar ID"
+             class="w-full rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm placeholder:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 min-h-[44px]">
+    </div>
+    <button type="button" onclick="mergeHouseholds()"
+            class="glass-btn-primary rounded-xl px-5 py-2.5 text-sm font-medium min-h-[44px] whitespace-nowrap">
+      {{ t('admin.merge_households') }}
+    </button>
+  </div>
+</div>
+
+<!-- Household List -->
+<div class="space-y-4">
+  {% for h in households %}
+  <div class="glass rounded-2xl p-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+      <div>
+        <h3 class="font-semibold text-base">{{ h.calendar.name or 'Unnamed Calendar' }}</h3>
+        <p class="text-xs opacity-40 font-mono mt-1" id="cal-{{ h.calendar.id[:8] }}">{{ h.calendar.id }}</p>
+      </div>
+      <div class="flex items-center gap-3">
+        {% if h.owner %}
+        <span class="text-xs opacity-60">{{ t('admin.household_owner') }}: <span class="font-medium opacity-100">{{ h.owner.name or h.owner.email }}</span></span>
+        {% endif %}
+        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-indigo-500/20 text-indigo-300">
+          {{ h.members|length }} {{ t('admin.household_members') }}
+        </span>
+      </div>
+    </div>
+
+    {% if h.members %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-white/10">
+            <th class="text-left px-3 py-2 font-semibold opacity-70">{{ t('admin.name') }}</th>
+            <th class="text-left px-3 py-2 font-semibold opacity-70">{{ t('admin.email') }}</th>
+            <th class="text-right px-3 py-2 font-semibold opacity-70">{{ t('admin.actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in h.members %}
+          <tr class="border-b border-white/5">
+            <td class="px-3 py-2.5">
+              <a href="/admin/users/{{ m.id }}" class="hover:text-indigo-300 transition-colors">{{ m.name or '—' }}</a>
+            </td>
+            <td class="px-3 py-2.5 opacity-70">{{ m.email }}</td>
+            <td class="px-3 py-2.5 text-right">
+              <button type="button"
+                      onclick="promptTransfer('{{ m.id }}', '{{ m.name or m.email }}')"
+                      class="glass-btn-secondary rounded-lg px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1 min-h-[32px]"
+                      aria-label="{{ t('admin.transfer_member') }} {{ m.name or m.email }}">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/></svg>
+                {{ t('admin.transfer_member') }}
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-sm opacity-40">No members in this household.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  {% if not households %}
+  <div class="glass rounded-2xl p-6 text-center">
+    <p class="text-sm opacity-50">No households found.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Transfer Modal -->
+<div id="transfer-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="transfer-modal-title">
+  <div class="glass rounded-2xl p-6 w-full max-w-md mx-4">
+    <h3 id="transfer-modal-title" class="text-lg font-semibold mb-2">{{ t('admin.transfer_member') }}</h3>
+    <p class="text-sm opacity-60 mb-4" id="transfer-modal-desc">Transfer <span id="transfer-user-name" class="font-medium"></span> to another household.</p>
+    <input type="hidden" id="transfer-user-id">
+    <div class="mb-4">
+      <label for="transfer-target-cal" class="block text-xs opacity-60 mb-1">{{ t('admin.transfer_to') }}</label>
+      <input type="text" id="transfer-target-cal" placeholder="target calendar ID"
+             class="w-full rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm placeholder:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 min-h-[44px]">
+    </div>
+    <div class="flex justify-end gap-3">
+      <button type="button" onclick="closeTransferModal()"
+              class="glass-btn-secondary rounded-xl px-5 py-2.5 text-sm font-medium min-h-[44px]">
+        Cancel
+      </button>
+      <button type="button" onclick="executeTransfer()"
+              class="glass-btn-primary rounded-xl px-5 py-2.5 text-sm font-medium min-h-[44px]">
+        {{ t('admin.transfer_member') }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+function promptTransfer(userId, userName) {
+  document.getElementById('transfer-user-id').value = userId;
+  document.getElementById('transfer-user-name').textContent = userName;
+  document.getElementById('transfer-target-cal').value = '';
+  const modal = document.getElementById('transfer-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('transfer-target-cal').focus();
+}
+
+function closeTransferModal() {
+  const modal = document.getElementById('transfer-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+document.getElementById('transfer-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeTransferModal();
+});
+
+async function executeTransfer() {
+  const userId = document.getElementById('transfer-user-id').value;
+  const targetCalId = document.getElementById('transfer-target-cal').value.trim();
+  if (!targetCalId) {
+    if (typeof showToast === 'function') showToast('Please enter a target calendar ID', 'error');
+    return;
+  }
+  try {
+    const resp = await fetch('/api/admin/households/transfer', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_id: userId, target_calendar_id: targetCalId})
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+      if (typeof showToast === 'function') showToast('{{ t("admin.transfer_success") }}', 'success');
+      closeTransferModal();
+      setTimeout(() => location.reload(), 800);
+    } else {
+      if (typeof showToast === 'function') showToast(data.detail || 'Error', 'error');
+    }
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Network error', 'error');
+  }
+}
+
+async function mergeHouseholds() {
+  const source = document.getElementById('merge-source').value.trim();
+  const target = document.getElementById('merge-target').value.trim();
+  if (!source || !target) {
+    if (typeof showToast === 'function') showToast('Please enter both source and target calendar IDs', 'error');
+    return;
+  }
+  try {
+    const resp = await fetch('/api/admin/households/merge', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({source_calendar_id: source, target_calendar_id: target})
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+      if (typeof showToast === 'function') showToast('{{ t("admin.merge_success") }}', 'success');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      if (typeof showToast === 'function') showToast(data.detail || 'Error', 'error');
+    }
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Network error', 'error');
+  }
+}
+</script>
+{% endblock %}

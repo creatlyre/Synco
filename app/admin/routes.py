@@ -18,6 +18,16 @@ class AdminToggleRequest(BaseModel):
     is_admin: bool
 
 
+class TransferMemberRequest(BaseModel):
+    user_id: str
+    target_calendar_id: str
+
+
+class MergeHouseholdsRequest(BaseModel):
+    source_calendar_id: str
+    target_calendar_id: str
+
+
 @router.get("/users")
 async def list_users(
     offset: int = 0,
@@ -111,3 +121,64 @@ async def get_stats(
 ):
     service = AdminService(db)
     return service.get_stats()
+
+
+# ── Household management ──────────────────────────
+
+
+@router.get("/households")
+async def list_households(
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    service = AdminService(db)
+    households = service.list_households()
+    return {
+        "households": [
+            {
+                "calendar_id": h["calendar"].id,
+                "calendar_name": h["calendar"].name,
+                "owner": {
+                    "id": h["owner"].id,
+                    "email": h["owner"].email,
+                    "name": h["owner"].name,
+                } if h["owner"] else None,
+                "members": [
+                    {"id": m.id, "email": m.email, "name": m.name}
+                    for m in h["members"]
+                ],
+                "member_count": len(h["members"]),
+            }
+            for h in households
+        ],
+    }
+
+
+@router.post("/households/transfer")
+async def transfer_member(
+    body: TransferMemberRequest,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    service = AdminService(db)
+    try:
+        service.transfer_member(body.user_id, body.target_calendar_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"message": "Member transferred successfully"}
+
+
+@router.post("/households/merge")
+async def merge_households(
+    body: MergeHouseholdsRequest,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    service = AdminService(db)
+    try:
+        moved = service.merge_households(
+            body.source_calendar_id, body.target_calendar_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"message": f"Households merged — {moved} members transferred"}

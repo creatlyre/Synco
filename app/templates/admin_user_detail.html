@@ -101,6 +101,43 @@
   </div>
 </div>
 
+<!-- Household Info Card -->
+<div class="glass rounded-2xl p-6 mt-6">
+  <h2 class="text-lg font-semibold mb-4">{{ t('admin.household_info') }}</h2>
+  {% if household_calendar_id %}
+  <div class="mb-3">
+    <span class="text-sm opacity-60">{{ t('admin.household_calendar') }}:</span>
+    <span class="ml-2 text-xs font-mono opacity-50">{{ household_calendar_id }}</span>
+  </div>
+  {% if household_members %}
+  <div class="space-y-2 mb-4">
+    {% for m in household_members %}
+    <div class="flex items-center justify-between rounded-xl bg-white/5 px-4 py-2.5">
+      <div>
+        <a href="/admin/users/{{ m.id }}" class="text-sm font-medium hover:text-indigo-300 transition-colors">{{ m.name or '—' }}</a>
+        <span class="text-xs opacity-50 ml-2">{{ m.email }}</span>
+      </div>
+      {% if m.id != target_user.id %}
+      <button type="button"
+              onclick="transferFromDetail('{{ m.id }}', '{{ m.name or m.email }}')"
+              class="glass-btn-secondary rounded-lg px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1 min-h-[32px]"
+              aria-label="{{ t('admin.transfer_member') }} {{ m.name or m.email }}">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/></svg>
+        {{ t('admin.transfer_member') }}
+      </button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <a href="/admin/households" class="text-sm text-indigo-300 hover:text-indigo-200 transition-colors">
+    {{ t('admin.back_to_households') }}
+  </a>
+  {% else %}
+  <p class="text-sm opacity-40">{{ t('admin.no_household') }}</p>
+  {% endif %}
+</div>
+
 <script>
 async function changePlan(userId) {
   const plan = document.getElementById('plan-select').value;
@@ -132,6 +169,27 @@ async function toggleAdmin(userId, setAdmin) {
     const data = await resp.json();
     if (resp.ok) {
       if (typeof showToast === 'function') showToast('{{ t("admin.admin_updated") }}', 'success');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      if (typeof showToast === 'function') showToast(data.detail || 'Error', 'error');
+    }
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Network error', 'error');
+  }
+}
+
+async function transferFromDetail(userId, userName) {
+  const targetCalId = prompt('{{ t("admin.transfer_to") }}:');
+  if (!targetCalId || !targetCalId.trim()) return;
+  try {
+    const resp = await fetch('/api/admin/households/transfer', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_id: userId, target_calendar_id: targetCalId.trim()})
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+      if (typeof showToast === 'function') showToast('{{ t("admin.transfer_success") }}', 'success');
       setTimeout(() => location.reload(), 800);
     } else {
       if (typeof showToast === 'function') showToast(data.detail || 'Error', 'error');
