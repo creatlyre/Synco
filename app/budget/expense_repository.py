@@ -74,6 +74,27 @@ class ExpenseRepository:
         row = self.db.insert("expenses", data)
         return _to_expense(row)
 
+    def bulk_create(self, calendar_id: str, items: list[ExpenseCreate]) -> list[Expense]:
+        if not items:
+            return []
+
+        payloads = []
+        for item in items:
+            data = {
+                "calendar_id": calendar_id,
+                "year": item.year,
+                "month": item.month,
+                "name": item.name,
+                "amount": item.amount,
+                "recurring": item.recurring,
+            }
+            if item.category_id is not None:
+                data["category_id"] = item.category_id
+            payloads.append(data)
+
+        rows = self.db.bulk_insert("expenses", payloads)
+        return [_to_expense(row) for row in rows]
+
     def update(self, expense_id: str, payload: ExpenseUpdate) -> Expense | None:
         data: dict = {"updated_at": datetime.utcnow().isoformat()}
         if payload.name is not None:

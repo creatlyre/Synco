@@ -174,6 +174,32 @@ class SupabaseStore:
         data = response.json()
         return data[0] if data else {}
 
+    def bulk_insert(
+        self,
+        table: str,
+        payloads: List[Dict[str, Any]],
+        auth_token: str | None = None,
+    ) -> List[Dict[str, Any]]:
+        if not payloads:
+            return []
+
+        url = f"{self.base_url}/rest/v1/{table}"
+        response = self._client.post(
+            url,
+            json=payloads,
+            headers=self._headers(auth_token=auth_token, prefer="return=representation"),
+        )
+        if response.status_code >= 400:
+            raise SupabaseStoreError(
+                "bulk_insert",
+                table,
+                response.status_code,
+                response.text,
+                request_id=response.headers.get("x-request-id"),
+                auth_context=self._auth_context(auth_token),
+            )
+        return response.json()
+
     def update(
         self,
         table: str,

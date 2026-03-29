@@ -87,7 +87,7 @@ class ExpenseService:
                 detected = self._detect_category(item.name, categories)
                 if detected:
                     item.category_id = detected
-        return [self.repo.create(calendar_id, item) for item in items]
+        return self.repo.bulk_create(calendar_id, items)
 
     def delete_all_recurring(self, calendar_id: str, year: int) -> int:
         return self.repo.delete_by_year_recurring(calendar_id, year)
